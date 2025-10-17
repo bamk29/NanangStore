@@ -1,0 +1,90 @@
+/* General Reset & Font */
+body {
+    margin: 0;
+    padding: 4px;
+    font-family: 'monospace', sans-serif;
+    font-size: 10px;
+    color: #000;
+    background-color: #fff;
+}
+
+/* Container */
+.receipt-container {
+    width: 58mm; /* Standard thermal printer width */
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 8px;
+}
+.header .store-name {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Info Section */
+.info-section {
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+    padding: 4px 0;
+    margin-bottom: 4px;
+}
+.info-section .info-line {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Items Section */
+.items-section .item {
+    padding-bottom: 1px; /* Reduced padding for tighter spacing */
+}
+.items-section .item p {
+    margin: 0; /* Remove default paragraph margins */
+}
+.items-section .item-details {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 8px;
+}
+
+/* Totals Section */
+.totals-section {
+    border-top: 1px dashed #000;
+    margin-top: 4px;
+    padding-top: 4px;
+}
+.totals-section .total-line {
+    display: flex;
+    justify-content: space-between;
+}
+.totals-section .total-line.grand-total {
+    font-weight: bold;
+}
+
+/* Debt Section */
+.debt-section {
+    border-top: 1px dashed #000;
+    margin-top: 4px;
+    padding-top: 4px;
+    text-align: center;
+}
+.debt-section .debt-title {
+    font-weight: bold;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 9px;
+    margin-top: 12px;
+}
+
+/* Print-specific styles */
+@media print {
+    body, .receipt-container {
+        margin: 0;
+        padding: 0;
+    }
+}

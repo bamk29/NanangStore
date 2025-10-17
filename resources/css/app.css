@@ -1,0 +1,17 @@
+@import 'print.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    input[type='text'],
+    input[type='number'],
+    input[type='email'],
+    input[type='password'],
+    select,
+    textarea {
+        @apply mt-1 block rounded-md border-gray-400 shadow-sm px-3 py-2 focus:border-gray-800 focus:ring-gray-800;
+    }
+
+}
