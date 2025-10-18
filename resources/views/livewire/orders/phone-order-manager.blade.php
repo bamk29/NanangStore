@@ -3,8 +3,15 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-semibold">Daftar Pesanan Masuk</h2>
             <div class="flex space-x-2">
-                <button wire:click="printFilteredOrders" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Cetak Sesuai Filter</button>
-                <button wire:click="openModal" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buat Pesanan Baru</button>
+
+                <button type="button" wire:click="printFilteredOrders" wire:loading.attr="disabled"
+                    wire:target="printFilteredOrders"
+                    class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-yellow-600 hover:bg-yellow-700">
+                    Cetak Semua
+                </button>
+                <button wire:click="openModal"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buat Pesanan
+                    Baru</button>
             </div>
         </div>
 
@@ -12,11 +19,13 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
                 <label for="filterDate" class="block text-sm font-medium text-gray-700">Tanggal</label>
-                <input type="date" id="filterDate" wire:model.live="filterDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <input type="date" id="filterDate" wire:model.live="filterDate"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
             </div>
             <div>
                 <label for="statusFilter" class="block text-sm font-medium text-gray-700">Status</label>
-                <select id="statusFilter" wire:model.live="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <select id="statusFilter" wire:model.live="statusFilter"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     <option value="">Semua</option>
                     <option value="baru">Baru</option>
                     <option value="diproses">Diproses</option>
@@ -25,8 +34,11 @@
                 </select>
             </div>
             <div class="md:col-span-2">
-                <label for="search" class="block text-sm font-medium text-gray-700">Cari (ID Pesanan / Nama Pelanggan)</label>
-                <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Ketik untuk mencari..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <label for="search" class="block text-sm font-medium text-gray-700">Cari (ID Pesanan / Nama
+                    Pelanggan)</label>
+                <input type="text" id="search" wire:model.live.debounce.300ms="search"
+                    placeholder="Ketik untuk mencari..."
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
             </div>
         </div>
 
@@ -52,7 +64,7 @@
                             <td class="px-6 py-4 text-sm text-center">{{ $order->items->count() }}</td>
                             <td class="px-6 py-4 text-center">
                                 @php
-                                    $statusClass = match($order->status) {
+                                    $statusClass = match ($order->status) {
                                         'baru' => 'bg-blue-100 text-blue-800',
                                         'diproses' => 'bg-yellow-100 text-yellow-800',
                                         'selesai' => 'bg-green-100 text-green-800',
@@ -60,28 +72,76 @@
                                         default => 'bg-gray-100 text-gray-800',
                                     };
                                 @endphp
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                                <button wire:click="printOrderAndUpdateStatus({{ $order->id }})" class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
-                                    Cetak
+                            <td class="px-6 py-4 text-right text-sm font-medium space-x-1">
+
+                                <button type-="button" wire:click="printOrderAndUpdateStatus({{ $order->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="printOrderAndUpdateStatus({{ $order->id }})"
+                                    class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                    title="Cetak Pesanan">
+
+                                    <span wire:loading wire:target="printOrderAndUpdateStatus({{ $order->id }})">
+                                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                    </span>
+
+                                    <span wire:loading.remove
+                                        wire:target="printOrderAndUpdateStatus({{ $order->id }})">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                        </svg>
+                                    </span>
                                 </button>
-                                <button wire:click="editOrder({{ $order->id }})" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-yellow-600 hover:bg-yellow-700">
-                                    Edit
+
+                                <button wire:click="editOrder({{ $order->id }})"
+                                    class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                    title="Edit Pesanan">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" />
+                                    </svg>
                                 </button>
-                                <button wire:click="processToPos({{ $order->id }})" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Proses ke Kasir
+
+                                <button wire:click="processToPos({{ $order->id }})"
+                                    class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    title="Proses ke Kasir">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
                                 </button>
-                                <button wire:click="deleteOrder({{ $order->id }})" onclick="confirm('Anda yakin ingin menghapus pesanan ini?') || event.stopImmediatePropagation()" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700">
-                                    Hapus
+
+                                <button wire:click="deleteOrder({{ $order->id }})"
+                                    onclick="confirm('Anda yakin ingin menghapus pesanan ini?') || event.stopImmediatePropagation()"
+                                    class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                    title="Hapus Pesanan">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada pesanan.</td>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada pesanan.
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -92,98 +152,125 @@
 
     <!-- Create/Edit Modal -->
     @if ($showModal)
-    <div class="fixed z-10 inset-0 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                <form wire:submit.prevent="saveOrder">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">{{ $orderId ? 'Edit' : 'Buat' }} Pesanan</h3>
-                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Customer Search -->
-                            <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700">Pelanggan <span class="text-red-500">*</span></label>
-                                <input type="text" wire:model.live.debounce.300ms="customer_search" placeholder="Cari pelanggan..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                @error('customer_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                @if($selected_customer_name)
-                                    <div class="mt-1 text-sm">Terpilih: <span class="font-semibold">{{ $selected_customer_name }}</span></div>
-                                @endif
-                                @if(!empty($customers))
-                                    <ul class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
-                                        @foreach($customers as $customer)
-                                            <li wire:click="selectCustomer({{ $customer->id }}, '{{ $customer->name }}')" class="px-4 py-2 cursor-pointer hover:bg-gray-100">{{ $customer->name }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Catatan</label>
-                                <textarea wire:model="notes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
-                            </div>
+        <div class="fixed z-10 inset-0 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                    <form wire:submit.prevent="saveOrder">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ $orderId ? 'Edit' : 'Buat' }}
+                                Pesanan</h3>
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Customer Search -->
+                                <div class="relative">
+                                    <label class="block text-sm font-medium text-gray-700">Pelanggan <span
+                                            class="text-red-500">*</span></label>
+                                    <input type="text" wire:model.live.debounce.300ms="customer_search"
+                                        placeholder="Cari pelanggan..."
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    @error('customer_id')
+                                        <span class="text-red-500 text-sm">{{ $message }}</span>
+                                    @enderror
+                                    @if ($selected_customer_name)
+                                        <div class="mt-1 text-sm">Terpilih: <span
+                                                class="font-semibold">{{ $selected_customer_name }}</span></div>
+                                    @endif
+                                    @if (!empty($customers))
+                                        <ul
+                                            class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
+                                            @foreach ($customers as $customer)
+                                                <li wire:click="selectCustomer({{ $customer->id }}, '{{ $customer->name }}')"
+                                                    class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                                                    {{ $customer->name }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </div>
 
-                            @if ($orderId)
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700">Status Pesanan</label>
-                                <select id="status" wire:model="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                    <option value="baru">Baru</option>
-                                    <option value="diproses">Diproses</option>
-                                    <option value="selesai">Selesai</option>
-                                    <option value="dibatalkan">Dibatalkan</option>
-                                </select>
-                            </div>
-                            @endif
-                        </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Catatan</label>
+                                    <textarea wire:model="notes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                                </div>
 
-                        <!-- Product Search & Items -->
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700">Tambah Produk</label>
-                            <div class="relative">
-                                 <input type="text" wire:model.live.debounce.300ms="product_search" placeholder="Cari produk..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                 @if(!empty($search_results))
-                                    <ul class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
-                                        @foreach($search_results as $product)
-                                            <li wire:click="addProduct({{ $product->id }})" class="px-4 py-2 cursor-pointer hover:bg-gray-100">{{ $product->name }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </div>
-                             @error('items') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Items List (Responsive) -->
-                        <div class="mt-4 max-h-60 overflow-y-auto pr-2">
-                            <div class="space-y-2">
-                                @forelse($items as $index => $item)
-                                    <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                                        <div class="flex-grow pr-4">
-                                            <p class="text-sm font-medium text-gray-900">{{ $item['product_name'] }}</p>
-                                        </div>
-                                        <div class="w-24">
-                                            <input type="number" step="any" wire:model="items.{{$index}}.quantity" class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-center">
-                                        </div>
-                                        <div class="w-16 text-right">
-                                            <button wire:click="removeItem({{$index}})" type="button" class="text-red-500 hover:text-red-700">Hapus</button>
-                                        </div>
+                                @if ($orderId)
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium text-gray-700">Status
+                                            Pesanan</label>
+                                        <select id="status" wire:model="status"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <option value="baru">Baru</option>
+                                            <option value="diproses">Diproses</option>
+                                            <option value="selesai">Selesai</option>
+                                            <option value="dibatalkan">Dibatalkan</option>
+                                        </select>
                                     </div>
-                                @empty
-                                     <div class="text-center py-4 text-sm text-gray-500">Belum ada produk ditambahkan.</div>
-                                @endforelse
+                                @endif
                             </div>
-                        </div>
 
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">Simpan</button>
-                        <button wire:click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
-                    </div>
-                </form>
+                            <!-- Product Search & Items -->
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700">Tambah Produk</label>
+                                <div class="relative">
+                                    <input type="text" wire:model.live.debounce.300ms="product_search"
+                                        placeholder="Cari produk..."
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    @if (!empty($search_results))
+                                        <ul
+                                            class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto">
+                                            @foreach ($search_results as $product)
+                                                <li wire:click="addProduct({{ $product->id }})"
+                                                    class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                                                    {{ $product->name }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </div>
+                                @error('items')
+                                    <span class="text-red-500 text-sm mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <!-- Items List (Responsive) -->
+                            <div class="mt-4 max-h-60 overflow-y-auto pr-2">
+                                <div class="space-y-2">
+                                    @forelse($items as $index => $item)
+                                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                                            <div class="flex-grow pr-4">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    {{ $item['product_name'] }}</p>
+                                            </div>
+                                            <div class="w-24">
+                                                <input type="number" step="any"
+                                                    wire:model="items.{{ $index }}.quantity"
+                                                    class="w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-center">
+                                            </div>
+                                            <div class="w-16 text-right">
+                                                <button wire:click="removeItem({{ $index }})" type="button"
+                                                    class="text-red-500 hover:text-red-700">Hapus</button>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-4 text-sm text-gray-500">Belum ada produk
+                                            ditambahkan.</div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">Simpan</button>
+                            <button wire:click="closeModal" type="button"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 </div>
 
@@ -192,7 +279,9 @@
         @this.on('open-new-tab', (url) => {
             const newTab = window.open(url, '_blank');
             if (!newTab || newTab.closed || typeof newTab.closed == 'undefined') {
-                alert('Gagal membuka tab baru. Mohon nonaktifkan pemblokir pop-up untuk situs ini dan coba lagi.');
+                alert(
+                    'Gagal membuka tab baru. Mohon nonaktifkan pemblokir pop-up untuk situs ini dan coba lagi.'
+                );
             }
         });
     });

@@ -9,6 +9,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Http; // <-- PASTIKAN INI ADA
+
+
+
 
 class PhoneOrderManager extends Component
 {
@@ -177,41 +181,97 @@ class PhoneOrderManager extends Component
     public function printFilteredOrders()
     {
         $ordersToPrint = PhoneOrder::query()
+            ->with(['customer', 'items.product']) // Load relasi yang dibutuhkan
             ->whereDate('created_at', $this->filterDate)
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
             ->when($this->search, function ($query) {
                 $query->where('id', 'like', '%' . $this->search . '%')
                     ->orWhereHas('customer', function ($q) {
                         $q->where('name', 'like', '%' . $this->search . '%');
                     });
             })
+            ->latest()
             ->get();
 
         if ($ordersToPrint->isEmpty()) {
-            return; // Nothing to print
+            $this->dispatch('alert', ['type' => 'info', 'message' => 'Tidak ada pesanan untuk dicetak.']);
+            return;
         }
 
-        $orderIds = $ordersToPrint->pluck('id');
+        // --- Siapkan Data untuk Print Server ---
+        $formattedOrders = [];
+        foreach ($ordersToPrint as $order) {
+            $items = [];
+            foreach ($order->items as $item) {
+                $items[] = [
+                    'productName' => $item->product->name,
+                    'quantity' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
+                ];
+            }
+            $formattedOrders[] = [
+                'id' => $order->id,
+                'customerName' => $order->customer->name,
+                'items' => $items,
+                'notes' => $order->notes
+            ];
+        }
 
-        // Update status for the orders
-        PhoneOrder::whereIn('id', $orderIds)->update(['status' => 'diproses']);
+        $printData = [
+            'printType' => 'dailyRecap', // Menggunakan tipe cetak rekap harian
+            'date' => Carbon::parse($this->filterDate)->format('d M Y'),
+            'orders' => $formattedOrders
+        ];
 
-        // Build URL with specific IDs
-        $queryParams = http_build_query(['ids' => $orderIds->toArray()]);
-        $printUrl = route('orders.print-today') . '?' . $queryParams;
+        // --- Kirim ke Print Server ---
+        try {
+            Http::timeout(10)->post('http://192.168.18.101:8000/print', $printData);
 
-        $this->dispatch('open-new-tab', $printUrl);
+            // Update status pesanan setelah berhasil mengirim
+            PhoneOrder::whereIn('id', $ordersToPrint->pluck('id'))->update(['status' => 'diproses']);
+
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Rekap pesanan berhasil dikirim ke printer!']);
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
+        }
     }
-
     public function printOrderAndUpdateStatus($orderId)
     {
-        $order = PhoneOrder::find($orderId);
+        $order = PhoneOrder::with('customer', 'items.product')->find($orderId);
         if ($order) {
-            $order->update(['status' => 'diproses']);
-            $this->dispatch('open-new-tab', route('phone-orders.print', $order->id));
+            // --- Siapkan Data untuk Print Server ---
+            $items = [];
+            foreach ($order->items as $item) {
+                $items[] = [
+                    'productName' => $item->product->name,
+                    'quantity' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
+                ];
+            }
+
+            $printData = [
+                'printType' => 'singleOrder', // Menggunakan tipe cetak satu pesanan
+                'order' => [
+                    'id' => $order->id,
+                    'customerName' => $order->customer->name,
+                    'dateTime' => $order->created_at->format('d M Y H:i'),
+                    'items' => $items,
+                    'notes' => $order->notes
+                ]
+            ];
+
+            // --- Kirim ke Print Server ---
+            try {
+                Http::timeout(5)->post('http://192.168.18.101:8000/print', $printData);
+
+                // Update status setelah berhasil mengirim
+                $order->update(['status' => 'diproses']);
+
+                $this->dispatch('alert', ['type' => 'success', 'message' => 'Pesanan #' . $order->id . ' dikirim ke printer!']);
+            } catch (\Exception $e) {
+                $this->dispatch('alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
+            }
         }
     }
-    
+
     public function deleteOrder($orderId)
     {
         $order = PhoneOrder::find($orderId);
