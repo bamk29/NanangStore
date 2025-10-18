@@ -35,7 +35,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transaction->user->name ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     @switch($transaction->status)
                                         @case('completed') bg-green-100 text-green-800 @break
                                         @case('pending') bg-yellow-100 text-yellow-800 @break
@@ -46,7 +46,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('pos.invoice', $transaction->id) }}" target="_blank" class="text-indigo-600 hover:text-indigo-900">Cetak Ulang</a>
+                                <a href="{{ route('pos.invoice', $transaction->id) }}" wire:navigate="true" class="text-indigo-600 hover:text-indigo-900">Cetak Ulang</a>
                             </td>
                         </tr>
                     @empty

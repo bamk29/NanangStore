@@ -60,6 +60,8 @@ class PosIndex extends Component
             // IMPORTANT: Select only columns from the products table
             ->select('products.*')
 
+
+            
             // Order by popularity (usage_count) first, then by name
             ->orderBy('product_usages.usage_count', 'desc')
             ->orderBy('products.name', 'asc')

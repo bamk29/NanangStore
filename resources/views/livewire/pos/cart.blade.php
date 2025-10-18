@@ -44,7 +44,7 @@
     </div>
 
     {{-- Komponen utama keranjang dengan AlpineJS --}}
-    <div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))" x-on:add-to-cart.window="addToCart($event.detail.product)"
+    <div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))" x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
         x-on:customer:selected.window="setCustomer($event.detail.customer)"
         x-on:customer:cleared.window="clearCustomer()"
         x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
@@ -111,7 +111,7 @@
         <!-- Footer Keranjang -->
         <div class="p-3 border-t bg-gray-50 space-y-3">
             <div class="flex justify-between items-center font-semibold"><span
-                    class="text-gray-600">Subtotal</span><span class="text-lg" x-text="formatCurrency(subtotal)"></span>
+                    class="text-gray-600">Total Item</span><span class="text-lg" x-text="items.length + ' item'"></span>
             </div>
 
             <!-- Fitur Hutang Baru -->
@@ -237,7 +237,7 @@
                     <!-- Kembalian -->
                     <div>
                         <label class="block text-sm font-semibold mb-2">Kembalian</label>
-                        <div class="text-xl md:text-2xl font-bold" 
+                        <div class="text-xl md:text-2xl font-bold"
                              :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
                              x-text="formatCurrency(change)">
                         </div>
@@ -324,16 +324,23 @@
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
             },
 
-            addToCart(product) {
+            addToCart(product, quantity = 1) {
                 let existingItem = this.items.find(i => i.id === product.id);
+                const newQuantity = parseFloat(quantity) || 1;
+
                 if (existingItem) {
-                    if (existingItem.quantity < product.stock) existingItem.quantity++;
-                    else window.Livewire.dispatch('show-alert', {
-                        type: 'error',
-                        message: 'Stok tidak cukup'
-                    });
+                    const totalQuantity = existingItem.quantity + newQuantity;
+                    if (totalQuantity <= product.stock) {
+                        existingItem.quantity = totalQuantity;
+                    } else {
+                        existingItem.quantity = product.stock; // Set to max stock
+                        window.Livewire.dispatch('show-alert', {
+                            type: 'error',
+                            message: 'Stok tidak cukup. Kuantitas diatur ke stok maksimal.'
+                        });
+                    }
                 } else {
-                    if (product.stock > 0) {
+                    if (newQuantity <= product.stock) {
                         this.items.push({
                             id: product.id,
                             name: product.name,
@@ -342,9 +349,14 @@
                             retail_price: product.retail_price,
                             wholesale_price: product.wholesale_price,
                             wholesale_min_qty: product.wholesale_min_qty,
-                            quantity: 1,
+                            quantity: newQuantity,
                             price: product.retail_price,
-                            subtotal: product.retail_price
+                            subtotal: product.retail_price * newQuantity
+                        });
+                    } else {
+                         window.Livewire.dispatch('show-alert', {
+                            type: 'error',
+                            message: 'Stok tidak cukup.'
                         });
                     }
                 }
@@ -419,7 +431,7 @@
             calculateFinalTotal() {
                 let total = this.subtotal;
                 if (this.include_old_debt && this.customer && this.customer.debt > 0) {
-                    total += this.customer.debt;
+                    total += parseFloat(this.customer.debt);
                 }
                 this.final_total = total;
             },
@@ -517,3 +529,4 @@
         }
     }
 </script>
+

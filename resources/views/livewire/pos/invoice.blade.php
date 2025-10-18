@@ -1,6 +1,6 @@
 <div class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 md:p-10">
-        
+
         <div class="text-center mb-8">
             <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <h1 class="text-2xl font-bold text-gray-800 mt-2">Transaksi Berhasil</h1>
@@ -63,11 +63,14 @@
             <button wire:click="newTransaction" class="w-full md:w-auto flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                 Transaksi Baru
             </button>
-            <a href="{{ route('print.receipt', $transaction) }}" target="_blank" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+            <a href="{{ route('print.receipt', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
                 Print Struk (Kasir Bersama)
             </a>
-            <a href="{{ route('print.receipt_nanang_store', $transaction) }}" target="_blank" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
+            <a href="{{ route('print.receipt_nanang_store', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
                 Print Struk (Toko Nanang)
+            </a>
+            <a href="{{ route('print.direct', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
+                Print Struk Test
             </a>
         </div>
     </div>

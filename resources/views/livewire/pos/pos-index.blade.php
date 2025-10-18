@@ -1,4 +1,4 @@
-<div class="p-3 md:p-6 bg-gray-50 min-h-screen">
+<div x-data="quantityModal()" class="p-3 md:p-6 bg-gray-50 min-h-screen">
     <!-- Main Content -->
     <div class="flex-1 flex flex-col md:flex-row">
         <!-- Products Section -->
@@ -41,8 +41,8 @@
                 <div
                     class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
                     @foreach ($products as $product)
-                        <div x-data="{ product: JSON.parse('{{ json_encode($product, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}') }" @click="$dispatch('add-to-cart', { product: product })"
-                            class="bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border border-gray-900 ">
+                        <div x-data="{ product: JSON.parse('{{ json_encode($product, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}') }" @click="openModal(product)"
+                            class="bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border ">
                             <div class="p-2 flex flex-col h-full">
                                 <!-- Product Name -->
                                 <div class="mb-1">
@@ -82,7 +82,7 @@
 
         <!-- Cart Section -->
       <div
-    class="w-full md:w-1/3 bg-white flex flex-col border  rounded-2xl shadow-2xl border-gray-700 overflow-hidden mx-auto md:mx-3 mt-4 md:mt-0 z-50 ">
+    class="w-full md:w-1/3 bg-white flex flex-col border  rounded-2xl shadow-2xl border-gray-200 overflow-hidden mx-auto md:mx-3 mt-4 md:mt-0 z-50 ">
             <!-- Cart Header -->
             <div class="p-3 bg-white border-b border-gray-200 flex items-center justify-between rounded-t-lg">
                 <div>
@@ -96,7 +96,7 @@
             </div>
 
             <!-- Cart Content -->
-            <div class="flex-1 overflow-hidden border-spacing-1 bg-slate-500">
+            <div class="flex-1 overflow-hidden border-spacing-1 bg-gray-100">
                 <livewire:pos.cart />
             </div>
         </div>
@@ -115,4 +115,104 @@
         :class="{ 'bg-green-500': type === 'success', 'bg-red-500': type === 'error' }" style="display: none;">
         <p x-text="message"></p>
     </div>
+
+    <!-- Quantity Modal -->
+    <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div @click.away="closeModal()" class="bg-white rounded-lg shadow-xl p-5 md:p-6 w-full max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900" x-text="productForModal ? productForModal.name : ''"></h3>
+                <button @click="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+
+            <div class="mb-6">
+                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
+                <div class="flex items-center rounded-md shadow-sm">
+                    <button type="button" @click="decrement()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
+                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input="validate()" @keydown.enter.prevent="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <button type="button" @click="increment()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
+                <p x-show="!isQuantityValid" class="text-sm text-red-600 mt-2" x-text="errorMessage"></p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" @click="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Batal</button>
+                <button type="button" @click="addToCartFromModal()" :disabled="!isQuantityValid" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">Masukan ke Keranjang</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    function quantityModal() {
+        return {
+            isModalOpen: false,
+            productForModal: null,
+            quantity: 1,
+            isQuantityValid: true,
+            errorMessage: '',
+
+            openModal(product) {
+                if (product.stock <= 0) {
+                    window.Livewire.dispatch('show-alert', { type: 'error', message: 'Stok produk habis.' });
+                    return;
+                }
+                this.productForModal = product;
+                this.quantity = 1;
+                this.isQuantityValid = true;
+                this.errorMessage = '';
+                this.isModalOpen = true;
+                this.$nextTick(() => {
+                    this.$refs.quantityInput.focus();
+                    this.$refs.quantityInput.select();
+                });
+            },
+
+            closeModal() {
+                this.isModalOpen = false;
+                this.productForModal = null;
+            },
+
+            increment() {
+                let currentQuantity = parseFloat(this.quantity) || 0;
+                this.quantity = currentQuantity + 1;
+                this.validate();
+            },
+
+            decrement() {
+                let currentQuantity = parseFloat(this.quantity) || 0;
+                if (currentQuantity > 1) {
+                    this.quantity = currentQuantity - 1;
+                }
+                this.validate();
+            },
+
+            validate() {
+                let qty = parseFloat(this.quantity);
+                if (isNaN(qty) || qty <= 0) {
+                    this.isQuantityValid = false;
+                    this.errorMessage = 'Kuantitas harus lebih dari 0.';
+                    return;
+                }
+                if (qty > this.productForModal.stock) {
+                    this.isQuantityValid = false;
+                    this.errorMessage = 'Kuantitas melebihi stok yang tersedia.';
+                    return;
+                }
+                this.isQuantityValid = true;
+                this.errorMessage = '';
+            },
+
+            addToCartFromModal() {
+                this.validate();
+                if (!this.isQuantityValid) return;
+
+                this.$dispatch('add-to-cart', {
+                    product: this.productForModal,
+                    quantity: this.quantity
+                });
+                this.closeModal();
+            }
+        }
+    }
+</script>

@@ -19,6 +19,11 @@ class Invoice extends Component
         return redirect()->route('pos.index');
     }
 
+    public function printReceipt()
+    {
+        $this->dispatch('print-receipt', url: route('print.receipt', $this->transaction->id));
+    }
+
     public function render()
     {
         return view('livewire.pos.invoice')

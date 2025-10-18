@@ -87,16 +87,19 @@ Route::middleware('auth')->group(function () {
     });
 
     // Print Route (stand-alone)
-    Route::get('/print/receipt/{transaction}', function (App\Models\Transaction $transaction) {
-        $transaction->load('user', 'customer', 'details.product');
-        return view('print.receipt', compact('transaction'));
-    })->name('print.receipt');
+    Route::get('/print/receipt/{transaction}', [App\Http\Controllers\PrintController::class, 'printInvoice'])->name('print.receipt');
+    Route::get('/print/receipt-direct', [App\Http\Controllers\PrintController::class, 'printDirect'])->name('print.direct');
 
-    Route::get('/print/receipt-nanang-store/{transaction}', function (App\Models\Transaction $transaction) {
-        $transaction->load('user', 'customer', 'details.product');
-        return view('print.receipt_nanang_store', compact('transaction'));
-    })->name('print.receipt_nanang_store');
 
+
+    Route::get('/print/receipt-nanang-store/{transaction}', [
+        App\Http\Controllers\PrintController::class,
+        'printReceipt'
+    ])->name('print.receipt_nanang_store');
+
+    // Rute untuk mencetak pesanan (orders)
+    Route::post('/print/order/recap', [OrderController::class, 'printToday'])->name('print.dailyRecap');
+    Route::post('/print/order/{order}', [OrderController::class, 'printOrder'])->name('print.order');
     // Product Management Routes
     Route::prefix('products')->group(function () {
         Route::get('/', App\Livewire\Products\ProductList::class)->name('products.index');
@@ -139,23 +142,23 @@ Route::middleware('auth')->group(function () {
         Route::get('/giling-bakso', \App\Livewire\Financials\GilingBaksoDashboard::class)->name('financials.giling-bakso');
     });
 
-        //purchase-orders
-        Route::get('/purchase-orders', PurchaseOrderList::class)->name('purchase-orders.index');
+    //purchase-orders
+    Route::get('/purchase-orders', PurchaseOrderList::class)->name('purchase-orders.index');
 
-        // Phone Orders
-        Route::get('/orders/phone', PhoneOrderManager::class)->name('phone-orders.index');
-        Route::get('/orders/phone/{order}/print', [PhoneOrderController::class, 'print'])->name('phone-orders.print');
-    });
+    // Phone Orders
+    Route::get('/orders/phone', PhoneOrderManager::class)->name('phone-orders.index');
+    Route::get('/orders/phone/{order}/print', [PhoneOrderController::class, 'print'])->name('phone-orders.print');
+});
 
-    //Kasir Bersama
-    Route::prefix('kasir')->group(function () {
-         Route::get('/', App\Livewire\Kasir\PosTransaksi::class)->name('kasir-bersama.index');
-        Route::get('/invoice/{transaction}', App\Livewire\Kasir\PosInvoice::class)->name('kasir-bersama.invoice');
-    });
+//Kasir Bersama
+Route::prefix('kasir')->group(function () {
+    Route::get('/', App\Livewire\Kasir\PosTransaksi::class)->name('kasir-bersama.index');
+    Route::get('/invoice/{transaction}', App\Livewire\Kasir\PosInvoice::class)->name('kasir-bersama.invoice');
+});
 
-    Route::post('/logout', function () {
-        Auth::logout();
-        session()->invalidate();
-        session()->regenerateToken();
-        return redirect()->route('login');
-    })->name('logout');
+Route::post('/logout', function () {
+    Auth::logout();
+    session()->invalidate();
+    session()->regenerateToken();
+    return redirect()->route('login');
+})->name('logout');
