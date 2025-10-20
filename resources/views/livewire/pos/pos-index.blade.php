@@ -1,88 +1,96 @@
-<div x-data="quantityModal()" class="p-3 md:p-6 bg-gray-50 min-h-screen">
+<div x-data="posManager()" x-init="init()" @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id)" class="p-3 md:p-6 bg-gray-50 min-h-screen">
     <!-- Main Content -->
     <div class="flex-1 flex flex-col md:flex-row">
         <!-- Products Section -->
         <div class="flex-1 md:w-2/3 flex flex-col">
             <!-- Fixed Search Section -->
              <div class="bg-white p-4 rounded-lg shadow space-y-4 mb-4 mx-2 my-2">
-                <input wire:model.live.debounce.300ms="search"
-                    class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk...">
+                <input x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
+                    class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk atau scan barcode...">
 
                 <div x-data="{ showAll: false }">
                     <div class="flex items-center gap-2 overflow-hidden">
                         <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
-                            <button wire:click="$set('categoryFilter', '')"
-                                class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors {{ !$categoryFilter ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                            <button @click="categoryId = ''"
+                                class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors" 
+                                :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                                 Semua
                             </button>
-
+                            <template x-for="category in categories.slice(0, 5)" :key="category.id">
+                                <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+                                :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
+                                    <span x-text="category.name"></span>
+                                </button>
+                            </template>
                         </div>
-                        @if ($categories->count() > 5)
+                        <template x-if="categories.length > 5">
                             <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">
                                 <span>Lainnya</span>
                                 <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showAll }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                        @endif
+                        </template>
                     </div>
                     <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
                         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                            @foreach ($categories as $category)
-                                <button wire:click="$set('categoryFilter', '{{ $category->id }}')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors {{ $categoryFilter == $category->id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    {{ $category->name }}
+                            <template x-for="category in categories.slice(5)" :key="category.id">
+                                <button @click="categoryId = category.id" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
+                                    <span x-text="category.name"></span>
                                 </button>
-                            @endforeach
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Scrollable Products Grid -->
-            <div class="flex-1 overflow-y-auto bg-gray-50 px-2 pt-2 pb-safe">
-                <div
-                    class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
-                    @foreach ($products as $product)
-                        <div x-data="{ product: JSON.parse('{{ json_encode($product, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}') }" @click="openModal(product)"
-                            class="bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border ">
-                            <div class="p-2 flex flex-col h-full">
-                                <!-- Product Name -->
-                                <div class="mb-1">
-                                    <h3 class="text-sm font-semibold text-gray-800 leading-tight line-clamp-2">
-                                        {{ $product->name }}
-                                    </h3>
-                                    <div class="text-xs text-gray-500">{{ $product->code }}</div>
-                                </div>
+            <div class="flex-1 overflow-y-auto bg-gray-50 px-2 pt-2 pb-safe relative">
+                <div x-show="isLoading" class="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+                    <p class="text-gray-500">Memuat produk...</p>
+                </div>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
+                    <template x-for="product in products" :key="product.id">
+                        <div @click="openModal(product)"
+                            class="relative bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border"
+                            :class="{ 'border-blue-500 border-2 shadow-lg': cartItemIds.includes(product.id) }">
+                            
+                            <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600 active:scale-90 transition-transform flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            </button>
 
-                                <!-- Price and Stock -->
+                            <div class="p-2 flex flex-col h-full">
+                                <div class="mb-1">
+                                    <h3 class="text-sm font-semibold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
+                                    <div class="text-xs text-gray-500" x-text="product.code"></div>
+                                </div>
                                 <div class="mt-auto">
                                     <div class="flex items-center justify-between">
-                                        <div class="text-base font-bold text-blue-600">
-                                            {{ number_format($product->retail_price, 0, ',', '.') }}
-                                        </div>
-                                        <div
-                                            class="px-1.5 py-0.5 text-xs font-medium rounded-lg
-                                                {{ $product->stock > 5
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : ($product->stock > 0
-                                                        ? 'bg-yellow-100 text-yellow-700'
-                                                        : 'bg-red-100 text-red-700') }}">
-                                            Stok: {{ $product->stock }}
+                                        <div class="text-base font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
+                                        <div class="px-1.5 py-0.5 text-xs font-medium rounded-lg"
+                                            :class="{
+                                                'bg-green-100 text-green-700': product.stock > 5,
+                                                'bg-yellow-100 text-yellow-700': product.stock > 0 && product.stock <= 5,
+                                                'bg-red-100 text-red-700': product.stock <= 0
+                                            }">
+                                            <span x-text="'Stok: ' + product.stock"></span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    </template>
                 </div>
-
-                <div class="mt-4">
-                    {{ $products->links() }}
-                </div>
+                <template x-if="!isLoading && products.length === 0">
+                    <div class="text-center py-12">
+                        <p class="text-gray-500">Produk tidak ditemukan.</p>
+                    </div>
+                </template>
             </div>
         </div>
 
         <!-- Cart Section -->
       <div
-    class="w-full md:w-1/3 bg-white flex flex-col border  rounded-2xl shadow-2xl border-gray-200 overflow-hidden mx-auto md:mx-3 mt-4 md:mt-0 z-50 ">
+    class="w-full md:w-1/3 bg-white flex flex-col border  rounded-2xl shadow-2xl border-gray-200 mx-auto md:mx-3 mt-4 md:mt-0 z-50 ">
             <!-- Cart Header -->
             <div class="p-3 bg-white border-b border-gray-200 flex items-center justify-between rounded-t-lg">
                 <div>
@@ -96,7 +104,7 @@
             </div>
 
             <!-- Cart Content -->
-            <div class="flex-1 overflow-hidden border-spacing-1 bg-gray-100">
+            <div class="flex-1 border-spacing-1 bg-gray-100">
                 <livewire:pos.cart />
             </div>
         </div>
@@ -128,7 +136,7 @@
                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
                 <div class="flex items-center rounded-md shadow-sm">
                     <button type="button" @click="decrement()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
-                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input="validate()" @keydown.enter.prevent="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <button type="button" @click="increment()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
                 </div>
                 <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
@@ -144,14 +152,140 @@
 </div>
 
 <script>
-    function quantityModal() {
+    function posManager() {
         return {
+            // Product Search State
+            products: [],
+            categories: [],
+            searchQuery: '',
+            categoryId: '',
+            isLoading: true,
+
+            // Cart State
+            cartItemIds: [],
+
+            // Quantity Modal State
             isModalOpen: false,
             productForModal: null,
             quantity: 1,
             isQuantityValid: true,
             errorMessage: '',
+            
+            // Init
+            init() {
+                this.fetchCategories();
+                this.fetchProducts();
+                this.initBarcodeScanner();
 
+                this.$watch('searchQuery', (newValue, oldValue) => {
+                    if (newValue !== oldValue) {
+                        this.fetchProducts();
+                    }
+                });
+                this.$watch('categoryId', () => this.fetchProducts());
+            },
+
+            // Barcode Scanner
+            initBarcodeScanner() {
+                let barcode = '';
+                let lastKeystrokeTime = 0;
+                let processingBarcode = false;
+
+                window.addEventListener('keydown', (e) => {
+                    if (processingBarcode) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    const targetIsInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+
+                    if (e.key === 'Enter') {
+                        if (barcode.length > 3 && !targetIsInput) {
+                            e.preventDefault();
+                            processingBarcode = true;
+                            this.fetchProductsByBarcode(barcode).finally(() => {
+                                processingBarcode = false;
+                                barcode = '';
+                            });
+                        }
+                        barcode = '';
+                        return;
+                    }
+
+                    if (e.key.length > 1) return;
+                    if (targetIsInput) return;
+
+                    const now = Date.now();
+                    if (now - lastKeystrokeTime > 100) {
+                        barcode = '';
+                    }
+
+                    barcode += e.key;
+                    lastKeystrokeTime = now;
+                });
+            },
+
+            async fetchProductsByBarcode(barcode) {
+                this.isLoading = true;
+                this.searchQuery = barcode;
+                
+                try {
+                    const params = new URLSearchParams({ q: barcode, category_id: '' });
+                    const response = await fetch(`/api/products?${params}`);
+                    const data = await response.json();
+
+                    if (data.length === 1) {
+                        this.quickAddToCart(data[0]);
+                        this.searchQuery = ''; 
+                        await this.fetchProducts();
+                    } else {
+                        this.products = data;
+                    }
+                } catch (error) {
+                    console.error('Error fetching products by barcode:', error);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            // Product Search Methods
+            fetchCategories() {
+                fetch('/api/categories')
+                    .then(response => response.json())
+                    .then(data => { this.categories = data; });
+            },
+            fetchProducts() {
+                return new Promise((resolve, reject) => {
+                    this.isLoading = true;
+                    const params = new URLSearchParams({ q: this.searchQuery, category_id: this.categoryId });
+                    fetch(`/api/products?${params}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            this.products = data;
+                            this.isLoading = false;
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('Error fetching products:', error);
+                            this.isLoading = false;
+                            reject(error);
+                        });
+                });
+            },
+
+            // Cart Methods
+            quickAddToCart(product) {
+                if (product.stock <= 0) {
+                    window.Livewire.dispatch('show-alert', { type: 'error', message: 'Stok produk habis.' });
+                    return;
+                }
+                this.$dispatch('add-to-cart', {
+                    product: product,
+                    quantity: 1
+                });
+            },
+
+            // Quantity Modal Methods
             openModal(product) {
                 if (product.stock <= 0) {
                     window.Livewire.dispatch('show-alert', { type: 'error', message: 'Stok produk habis.' });
@@ -162,23 +296,20 @@
                 this.isQuantityValid = true;
                 this.errorMessage = '';
                 this.isModalOpen = true;
-                this.$nextTick(() => {
+                this.$nextTick(() => { 
                     this.$refs.quantityInput.focus();
                     this.$refs.quantityInput.select();
                 });
             },
-
             closeModal() {
                 this.isModalOpen = false;
                 this.productForModal = null;
             },
-
             increment() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
                 this.quantity = currentQuantity + 1;
                 this.validate();
             },
-
             decrement() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
                 if (currentQuantity > 1) {
@@ -186,7 +317,6 @@
                 }
                 this.validate();
             },
-
             validate() {
                 let qty = parseFloat(this.quantity);
                 if (isNaN(qty) || qty <= 0) {
@@ -202,7 +332,6 @@
                 this.isQuantityValid = true;
                 this.errorMessage = '';
             },
-
             addToCartFromModal() {
                 this.validate();
                 if (!this.isQuantityValid) return;
@@ -212,7 +341,17 @@
                     quantity: this.quantity
                 });
                 this.closeModal();
+            },
+
+            // Helper
+            formatCurrency(amount) {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(amount);
             }
         }
     }
 </script>
+

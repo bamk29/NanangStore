@@ -17,28 +17,36 @@
                 </button>
             </div>
         @else
-            <div class="relative">
-                <input type="text" wire:model.live.debounce.300ms="customer_search"
-                    placeholder="Cari pelanggan (nama/telp)..."
-                    class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @if (strlen($customer_search) >= 2)
-                    <div
-                        class="absolute z-20 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        @forelse($customers as $customer)
-                            <div wire:click="selectCustomer({{ $customer->id }}, '{{ addslashes($customer->name) }}')"
-                                class="px-4 py-2 cursor-pointer hover:bg-gray-100">
-                                <p class="font-semibold">{{ $customer->name }}</p>
-                                <p class="text-sm text-gray-600">{{ $customer->phone }}</p>
-                            </div>
-                        @empty
-                            <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
-                        @endforelse
-                        <div wire:click="$set('showCustomerCreateModal', true)"
-                            class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
-                            + Buat Pelanggan Baru
+            <div x-data="customerSearch()" class="relative">
+                <input type="text" 
+                       x-model.debounce.300ms="searchQuery"
+                       @focus="handleFocus()"
+                       @click.away="isOpen = false"
+                       placeholder="Cari pelanggan (nama/telp)..."
+                       class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <div x-show="isOpen && (results.length > 0 || isLoading)"
+                     x-transition
+                     class="absolute z-50 w-full bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <template x-if="isLoading">
+                        <div class="px-4 py-2 text-gray-500">Mencari...</div>
+                    </template>
+                    <template x-for="customer in results" :key="customer.id">
+                        <div @click="selectCustomer(customer)"
+                             class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                            <p class="font-semibold" x-text="customer.name"></p>
+                            <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                         </div>
+                    </template>
+                    <template x-if="!isLoading && results.length === 0 && searchQuery.length > 0">
+                         <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
+                    </template>
+                    
+                    <div @click="$wire.set('showCustomerCreateModal', true)"
+                         class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
+                        + Buat Pelanggan Baru
                     </div>
-                @endif
+                </div>
             </div>
         @endif
     </div>
@@ -301,6 +309,42 @@
 </div>
 
 <script>
+    function customerSearch() {
+        return {
+            searchQuery: '',
+            results: [],
+            isOpen: false,
+            isLoading: false,
+            init() {
+                this.$watch('searchQuery', (value) => {
+                    this.fetchCustomers();
+                });
+            },
+            fetchCustomers() {
+                this.isLoading = true;
+                fetch(`/api/customers?q=${this.searchQuery}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        this.results = data;
+                        this.isLoading = false;
+                        this.isOpen = true;
+                    });
+            },
+            handleFocus() {
+                if (this.searchQuery === '') {
+                    this.fetchCustomers();
+                }
+                this.isOpen = true;
+            },
+            selectCustomer(customer) {
+                this.$wire.selectCustomer(customer.id, customer.name);
+                this.searchQuery = '';
+                this.results = [];
+                this.isOpen = false;
+            }
+        }
+    }
+
     function cartManager() {
         return {
             items: [],
@@ -416,6 +460,7 @@
                 });
                 this.subtotal = currentSubtotal;
                 this.calculateFinalTotal();
+                this.$dispatch('cart-updated', { items: this.items });
             },
 
             setCustomer(customer) {

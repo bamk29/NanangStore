@@ -89,6 +89,7 @@
                     </div>
                 </a>
 
+                @if(auth()->user()->isAdmin())
                 <!-- Laporan Penjualan -->
                 <a href="{{ route('reports.sales') }}" wire:navigate class="bg-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 group">
                     <div class="flex flex-col items-center text-center space-y-2">
@@ -176,6 +177,7 @@
                         <span class="text-xs sm:text-sm text-gray-500 hidden sm:block">Tingkat stok</span>
                     </div>
                 </a>
+                @endif
 
                 <!-- Purchase Orders -->
                 <a href="{{ route('purchase-orders.index') }}" wire:navigate class="bg-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 group">
@@ -210,6 +212,7 @@
                     </div>
                 </a>
 
+                @if(auth()->user()->isAdmin())
                 <!-- Laporan Penjualan (Bakso) -->
                 <a href="{{ route('reports.sales-bakso') }}" wire:navigate class="bg-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 group">
                     <div class="flex flex-col items-center text-center space-y-2">
@@ -253,6 +256,7 @@
                         <span class="text-xs sm:text-sm text-gray-500 hidden sm:block">Detail transaksi hari ini</span>
                     </div>
                 </a>
+                @endif
             </div>
         </div>
     </main>

@@ -109,7 +109,7 @@
             </div>
 
             <!-- Detailed Data Table -->
-            <div class="-mx-4 mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg">
+            <div class="-mx-4 mt-8 overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg">
                 <table class="min-w-full divide-y divide-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
@@ -136,7 +136,7 @@
                 </table>
             </div>
         </div>
-        
+
         <!-- Loading Indicator -->
         <div wire:loading.flex class="w-full items-center justify-center py-10">
              <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

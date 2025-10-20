@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category; // pastikan model Category ada
+use App\Models\Customer; // Tambahkan model Customer
 
 /*
 |--------------------------------------------------------------------------
@@ -53,4 +54,46 @@ Route::get('/categories', function () {
         ->orderBy('name', 'asc')
         ->get();
     return response()->json($categories);
+});
+
+/*
+|--------------------------------------------------------------------------
+| API: Customers
+|--------------------------------------------------------------------------
+| Endpoint ini digunakan untuk pencarian customer dari Alpine.js di kasir
+| Contoh: /api/customers?q=nama
+*/
+Route::get('/customers', function (Request $request) {
+    $search = $request->query('q', '');
+
+    $query = Customer::query();
+
+    if (empty($search)) {
+        // Jika tidak ada pencarian, kembalikan 10 pelanggan terbaru
+        $customers = $query->latest()->limit(10)->get(['id', 'name', 'phone', 'debt']);
+    } else {
+        // Jika ada pencarian, lakukan pencarian
+        $customers = $query->where('name', 'like', "%{$search}%")
+            ->orWhere('phone', 'like', "%{$search}%")
+            ->limit(10)
+            ->get(['id', 'name', 'phone', 'debt']);
+    }
+
+    return response()->json($customers);
+});
+
+/*
+|--------------------------------------------------------------------------
+| API: Find Product by Code
+|--------------------------------------------------------------------------
+| Digunakan oleh barcode scanner untuk mendapatkan produk via kodenya.
+*/
+Route::get('/products/by-code/{code}', function ($code) {
+    $product = Product::where('code', $code)->first();
+
+    if ($product) {
+        return response()->json($product);
+    }
+
+    return response()->json(['message' => 'Produk tidak ditemukan'], 404);
 });

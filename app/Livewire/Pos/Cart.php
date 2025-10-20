@@ -12,9 +12,7 @@ use Livewire\Component;
 
 class Cart extends Component
 {
-    // Properti ini hanya untuk manajemen pelanggan via Livewire
-    public $customer_search = '';
-    public $customers = [];
+    // Properti pencarian pelanggan dihapus, akan ditangani Alpine.js
     public $selected_customer_id;
     public $selected_customer_name;
     public $showCustomerCreateModal = false;
@@ -114,14 +112,6 @@ class Cart extends Component
 
     }
 
-    public function updatedCustomerSearch($value)
-    {
-        if (strlen($value) < 2) {
-            $this->customers = [];
-            return;
-        }
-        $this->customers = Customer::where('name', 'like', "%{$value}%")->orWhere('phone', 'like', "%{$value}%")->limit(5)->get();
-    }
 
     public function selectCustomer($customerId, $customerName)
     {
@@ -132,11 +122,16 @@ class Cart extends Component
         $this->customers = [];
         // Kirim data pelanggan ke AlpineJS
         $this->dispatch('customer:selected', customer: $this->selectedCustomerModel->toArray());
+        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pelanggan berhasil dipilih.']);
+    }
+
+    public function updatedCustomerSearch($value)
+    {
     }
 
     public function clearCustomer()
     {
-        $this->reset(['selected_customer_id', 'selected_customer_name', 'customer_search', 'customers', 'selectedCustomerModel']);
+        $this->reset(['selected_customer_id', 'selected_customer_name', 'selectedCustomerModel']);
         $this->dispatch('customer:cleared');
     }
 
@@ -151,11 +146,14 @@ class Cart extends Component
         $phone = !empty($validatedData['new_customer_phone']) ? $validatedData['new_customer_phone'] : null;
 
         $customer = Customer::create([
+
             'name' => $validatedData['new_customer_name'],
             'phone' => $phone,
         ]);
 
         $this->selectCustomer($customer->id, $customer->name);
+        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pelanggan baru berhasil ditambahkan.']);
+
         $this->showCustomerCreateModal = false;
         $this->reset(['new_customer_name', 'new_customer_phone']);
     }
@@ -303,7 +301,10 @@ class Cart extends Component
                 }
 
                 $this->dispatch('transaction-saved', id: $transaction->id);
+                $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pembayaran berhasil.']);
+                $this->clearCart(); // Bersihkan state setelah berhasil
             });
+
 
             $this->clearCart(); // Bersihkan state setelah berhasil
         } catch (\Exception $e) {

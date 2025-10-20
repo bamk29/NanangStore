@@ -9,9 +9,9 @@
         <div class="md:col-span-2">
             <!-- Filter & Search -->
             <div class="bg-white p-4 rounded-lg shadow space-y-4 mb-4">
-                <input wire:model.live.debounce.300ms="search" 
+                <input wire:model.live.debounce.300ms="search"
                     class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk...">
-                
+
                 <div x-data="{ showAll: false }">
                     <div class="flex items-center gap-2 overflow-hidden">
                         <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
@@ -75,4 +75,3 @@
             <livewire:kasir.pos-cart />
         </div>
     </div>
-</div>

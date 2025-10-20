@@ -88,7 +88,7 @@
             <!-- Product Sales Details -->
             <div class="mt-8 overflow-auto">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">Rincian Penjualan Produk pada {{ \Carbon\Carbon::parse($selectedDate)->format('d F Y') }}</h3>
-                <div class="-mx-4 mt-4 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg print:shadow-none print:ring-0">
+                <div class="-mx-4 mt-4 overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg print:shadow-none print:ring-0">
                     <table class="min-w-full divide-y divide-gray-300 overflow-y-auto">
                         <thead class="bg-gray-50">
                             <tr>
