@@ -63,12 +63,14 @@
             <button wire:click="newTransaction" class="w-full md:w-auto flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                 Transaksi Baru
             </button>
-            <a href="{{ route('print.receipt', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+            <button wire:click="printInvoice('invoice')" wire:loading.attr="disabled" wire:target="printInvoice('invoice')" class="w-full md:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                <span wire:loading wire:target="printInvoice('invoice')" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
                 Print Struk (Kasir Bersama)
-            </a>
-            <a href="{{ route('print.receipt_nanang_store', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
+            </button>
+            <button wire:click="printInvoice('store')" wire:loading.attr="disabled" wire:target="printInvoice('store')" class="w-full md:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
+                <span wire:loading wire:target="printInvoice('store')" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
                 Print Struk (Toko Nanang)
-            </a>
+            </button>
             <a href="{{ route('print.direct', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
                 Print Struk Test
             </a>

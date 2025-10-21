@@ -18,13 +18,13 @@
             </div>
         @else
             <div x-data="customerSearch()" class="relative">
-                <input type="text" 
+                <input type="text"
                        x-model.debounce.300ms="searchQuery"
                        @focus="handleFocus()"
                        @click.away="isOpen = false"
                        placeholder="Cari pelanggan (nama/telp)..."
                        class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                
+
                 <div x-show="isOpen && (results.length > 0 || isLoading)"
                      x-transition
                      class="absolute z-50 w-full bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -41,7 +41,7 @@
                     <template x-if="!isLoading && results.length === 0 && searchQuery.length > 0">
                          <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
                     </template>
-                    
+
                     <div @click="$wire.set('showCustomerCreateModal', true)"
                          class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
                         + Buat Pelanggan Baru
@@ -152,11 +152,11 @@
         <!-- Modal Pembayaran -->
         <div x-show="showPaymentModal" x-cloak
             class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-hidden"
-            x-transition:enter="ease-out duration-300" 
-            x-transition:enter-start="opacity-0" 
-            x-transition:enter-end="opacity-100" 
-            x-transition:leave="ease-in duration-200" 
-            x-transition:leave-start="opacity-100" 
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0">
             <!-- Wrapper Modal -->
             <div @click.away="showPaymentModal = false"

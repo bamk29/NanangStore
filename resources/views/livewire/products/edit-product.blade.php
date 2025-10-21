@@ -1,4 +1,4 @@
-<div class="p-4 sm:p-6 lg:p-8">
+<div x-data="productFormScanner()" x-init="init()" class="p-4 sm:p-6 lg:p-8">
     <div class="mb-6">
         <h2 class="text-2xl font-semibold text-gray-900">Ubah Data Produk</h2>
         <a href="{{ route('products.index') }}" class="text-sm text-blue-600 hover:text-blue-700">&larr; Kembali ke Daftar Produk</a>
@@ -87,7 +87,48 @@
         </div>
 
         <div class="flex justify-end pt-4">
+            <button type="button" wire:click="printLabel" wire:loading.attr="disabled" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 mr-3">
+                <span wire:loading wire:target="printLabel" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
+                Cetak Label
+            </button>
             <button type="submit" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700">Perbarui Produk</button>
         </div>
     </form>
 </div>
+
+<script>
+function productFormScanner() {
+    return {
+        init() {
+            let barcode = '';
+            let lastKeystrokeTime = 0;
+
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+
+                if (e.key === 'Enter') {
+                    if (barcode.length > 3) {
+                        this.$wire.set('code', barcode);
+                        this.$nextTick(() => {
+                            document.getElementById('code').focus();
+                        });
+                    }
+                    barcode = '';
+                    return;
+                }
+
+                if (e.key.length > 1) return;
+
+                const now = Date.now();
+                if (now - lastKeystrokeTime > 100) {
+                    barcode = '';
+                }
+                barcode += e.key;
+                lastKeystrokeTime = now;
+            });
+        }
+    }
+}
+</script>

@@ -87,15 +87,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Print Route (stand-alone)
-    Route::get('/print/receipt/{transaction}', [App\Http\Controllers\PrintController::class, 'printInvoice'])->name('print.receipt');
     Route::get('/print/receipt-direct', [App\Http\Controllers\PrintController::class, 'printDirect'])->name('print.direct');
-
-
-
-    Route::get('/print/receipt-nanang-store/{transaction}', [
-        App\Http\Controllers\PrintController::class,
-        'printReceipt'
-    ])->name('print.receipt_nanang_store');
 
     // Rute untuk mencetak pesanan (orders)
     Route::post('/print/order/recap', [OrderController::class, 'printToday'])->name('print.dailyRecap');

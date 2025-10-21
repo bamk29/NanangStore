@@ -5,7 +5,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 landscape-card">
                 <div class="p-4 sm:p-6">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Selamat datang kembali, {{ auth()->user()->name }}!</h2>
-                    <p class="mt-1 text-gray-600">Apa yang ingin Anda lakukan hari ini?</p>
+                    <p class="mt-1 text-lg text-gray-600">Total Transaksi hari ini: <span class="font-bold text-gray-800">Rp {{ number_format($todayTotalTransactions, 0, ',', '.') }}</span></p>
                 </div>
             </div>
 

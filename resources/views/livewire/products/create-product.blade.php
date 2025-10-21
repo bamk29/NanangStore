@@ -1,4 +1,4 @@
-<div class="p-4 sm:p-6 lg:p-8">
+<div x-data="productFormScanner()" x-init="init()" class="p-4 sm:p-6 lg:p-8">
     <div class="mb-6">
         <h2 class="text-2xl font-semibold text-gray-900">Tambah Produk Baru</h2>
         <a href="{{ route('products.index') }}" class="text-sm text-blue-600 hover:text-blue-700">&larr; Kembali ke Daftar Produk</a>
@@ -94,3 +94,40 @@
         </div>
     </form>
 </div>
+
+<script>
+function productFormScanner() {
+    return {
+        init() {
+            let barcode = '';
+            let lastKeystrokeTime = 0;
+
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+
+                if (e.key === 'Enter') {
+                    if (barcode.length > 3) {
+                        this.$wire.set('code', barcode);
+                        this.$nextTick(() => {
+                            document.getElementById('code').focus();
+                        });
+                    }
+                    barcode = '';
+                    return;
+                }
+
+                if (e.key.length > 1) return;
+
+                const now = Date.now();
+                if (now - lastKeystrokeTime > 100) {
+                    barcode = '';
+                }
+                barcode += e.key;
+                lastKeystrokeTime = now;
+            });
+        }
+    }
+}
+</script>

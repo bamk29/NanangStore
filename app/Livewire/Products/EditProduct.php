@@ -5,6 +5,7 @@ namespace App\Livewire\Products;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 use App\Models\Unit;
 
@@ -98,6 +99,27 @@ class EditProduct extends Component
 
         $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil diperbarui.']);
         return redirect()->route('products.index');
+    }
+
+    public function printLabel()
+    {
+        $printData = [
+            'printType' => 'priceLabel',
+            'product' => [
+                'name' => $this->name,
+                'code' => $this->code,
+                'price' => $this->retail_price,
+                'base_unit' => $this->base_unit_id,
+                'box_unit' => $this->box_unit_id,
+            ]
+        ];
+
+        try {
+            Http::timeout(5)->post('http://192.168.18.101:8000/print', $printData);
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Label harga untuk ' . $this->name . ' dikirim ke printer!']);
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
+        }
     }
 
     public function render()

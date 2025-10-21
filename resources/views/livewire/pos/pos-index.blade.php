@@ -5,14 +5,14 @@
         <div class="flex-1 md:w-2/3 flex flex-col">
             <!-- Fixed Search Section -->
              <div class="bg-white p-4 rounded-lg shadow space-y-4 mb-4 mx-2 my-2">
-                <input x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
+                <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
                     class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk atau scan barcode...">
 
                 <div x-data="{ showAll: false }">
                     <div class="flex items-center gap-2 overflow-hidden">
                         <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
                             <button @click="categoryId = ''"
-                                class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors" 
+                                class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
                                 :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                                 Semua
                             </button>
@@ -49,12 +49,16 @@
                     <p class="text-gray-500">Memuat produk...</p>
                 </div>
                 <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
-                    <template x-for="product in products" :key="product.id">
+                    <template x-for="(product, index) in products" :key="product.id">
                         <div @click="openModal(product)"
+                            :id="'product-' + index"
                             class="relative bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border"
-                            :class="{ 'border-blue-500 border-2 shadow-lg': cartItemIds.includes(product.id) }">
-                            
-                            <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600 active:scale-90 transition-transform flex items-center justify-center">
+                            :class="{
+                                'border-red-500 border-4 shadow-lg': cartItemIds.includes(product.id),
+                                'ring-2 ring-red-500 ring-offset-1': index === selectedIndex
+                            }">
+
+                            <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-900 active:scale-90 transition-transform flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                             </button>
 
@@ -136,7 +140,7 @@
                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
                 <div class="flex items-center rounded-md shadow-sm">
                     <button type="button" @click="decrement()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
-                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <button type="button" @click="increment()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
                 </div>
                 <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
@@ -160,6 +164,7 @@
             searchQuery: '',
             categoryId: '',
             isLoading: true,
+            selectedIndex: -1, // -1 means no selection
 
             // Cart State
             cartItemIds: [],
@@ -170,65 +175,147 @@
             quantity: 1,
             isQuantityValid: true,
             errorMessage: '',
-            
+
             // Init
             init() {
                 this.fetchCategories();
                 this.fetchProducts();
-                this.initBarcodeScanner();
+                this.initKeyboardListeners();
 
                 this.$watch('searchQuery', (newValue, oldValue) => {
                     if (newValue !== oldValue) {
+                        this.selectedIndex = -1; // Reset selection on new search
                         this.fetchProducts();
                     }
                 });
-                this.$watch('categoryId', () => this.fetchProducts());
+                this.$watch('categoryId', () => {
+                    this.selectedIndex = -1; // Reset selection on new category
+                    this.fetchProducts();
+                });
             },
 
-            // Barcode Scanner
-            initBarcodeScanner() {
+            resetSearchAndFocus() {
+                this.searchQuery = '';
+                this.selectedIndex = -1;
+                if (window.innerWidth > 768) {
+                    this.$refs.searchInput.focus();
+                }
+            },
+
+            // Keyboard Listeners
+            initKeyboardListeners() {
                 let barcode = '';
                 let lastKeystrokeTime = 0;
                 let processingBarcode = false;
+                let lastSpaceTime = 0; // For double space shortcut
 
                 window.addEventListener('keydown', (e) => {
-                    if (processingBarcode) {
-                        e.preventDefault();
+                    // If modal is open, let it handle its own keyboard events
+                    if (this.isModalOpen) {
                         return;
                     }
 
-                    const targetIsInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+                    // Universal Reset Shortcuts
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        this.resetSearchAndFocus();
+                        return;
+                    }
+
+                    const targetIsSomeInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+                    if (e.key === ' ' && !targetIsSomeInput) {
+                        e.preventDefault();
+                        const now = Date.now();
+                        if (now - lastSpaceTime < 300) { // Double space pressed
+                            this.resetSearchAndFocus();
+                            lastSpaceTime = 0; // Reset timer
+                        } else {
+                            lastSpaceTime = now; // Record first space press
+                        }
+                        return;
+                    }
+
+                    // If in navigation mode, handle navigation
+                    if (this.selectedIndex > -1) {
+                        e.preventDefault();
+                        switch (e.key) {
+                            case 'ArrowDown':
+                            case 'ArrowRight':
+                                this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1);
+                                this.scrollIntoView();
+                                break;
+                            case 'ArrowUp':
+                            case 'ArrowLeft':
+                                this.selectedIndex = Math.max(0, this.selectedIndex - 1);
+                                this.scrollIntoView();
+                                break;
+                            case 'Enter':
+                                if (this.products[this.selectedIndex]) {
+                                    this.openModal(this.products[this.selectedIndex]);
+                                }
+                                break;
+                        }
+                        return; // Stop further processing
+                    }
+
+                    // If not in navigation mode, check for entry points
+                    // 1. Enter navigation from search input
+                    if (e.target === this.$refs.searchInput && e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (this.products.length > 0) {
+                            this.selectedIndex = 0;
+                            this.scrollIntoView();
+                        }
+                        return;
+                    }
+
+                    // 2. Handle barcode scanning
+                    const targetIsOurSearch = e.target === this.$refs.searchInput;
+
+                    if (targetIsSomeInput && !targetIsOurSearch) {
+                        return; // Ignore if other inputs are focused
+                    }
 
                     if (e.key === 'Enter') {
-                        if (barcode.length > 3 && !targetIsInput) {
+                        const codeToProcess = targetIsOurSearch ? this.searchQuery : barcode;
+                        if (codeToProcess.length > 2) {
                             e.preventDefault();
+                            if(processingBarcode) return;
                             processingBarcode = true;
-                            this.fetchProductsByBarcode(barcode).finally(() => {
+                            this.fetchProductsByBarcode(codeToProcess).finally(() => {
                                 processingBarcode = false;
                                 barcode = '';
                             });
                         }
-                        barcode = '';
                         return;
                     }
 
                     if (e.key.length > 1) return;
-                    if (targetIsInput) return;
 
-                    const now = Date.now();
-                    if (now - lastKeystrokeTime > 100) {
-                        barcode = '';
+                    if (!targetIsSomeInput) {
+                        const now = Date.now();
+                        if (now - lastKeystrokeTime > 100) {
+                            barcode = '';
+                        }
+                        barcode += e.key;
+                        lastKeystrokeTime = now;
                     }
+                });
+            },
 
-                    barcode += e.key;
-                    lastKeystrokeTime = now;
+            scrollIntoView() {
+                this.$nextTick(() => {
+                    const el = document.getElementById('product-' + this.selectedIndex);
+                    if (el) {
+                        el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                    }
                 });
             },
 
             async fetchProductsByBarcode(barcode) {
                 this.isLoading = true;
                 this.searchQuery = barcode;
-                
+
                 try {
                     const params = new URLSearchParams({ q: barcode, category_id: '' });
                     const response = await fetch(`/api/products?${params}`);
@@ -236,7 +323,7 @@
 
                     if (data.length === 1) {
                         this.quickAddToCart(data[0]);
-                        this.searchQuery = ''; 
+                        this.searchQuery = '';
                         await this.fetchProducts();
                     } else {
                         this.products = data;
@@ -245,6 +332,9 @@
                     console.error('Error fetching products by barcode:', error);
                 } finally {
                     this.isLoading = false;
+                    if (window.innerWidth > 768) {
+                        this.$refs.searchInput.focus();
+                    }
                 }
             },
 
@@ -296,14 +386,21 @@
                 this.isQuantityValid = true;
                 this.errorMessage = '';
                 this.isModalOpen = true;
-                this.$nextTick(() => { 
+                this.$nextTick(() => {
                     this.$refs.quantityInput.focus();
                     this.$refs.quantityInput.select();
                 });
             },
             closeModal() {
+                document.activeElement.blur();
                 this.isModalOpen = false;
                 this.productForModal = null;
+                this.selectedIndex = -1; // Exit navigation mode
+                this.searchQuery = ''; // Clear search query
+
+                if (window.innerWidth > 768) {
+                    this.$nextTick(() => this.$refs.searchInput.focus());
+                }
             },
             increment() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
@@ -354,4 +451,3 @@
         }
     }
 </script>
-
