@@ -55,7 +55,7 @@ class Invoice extends Component
             'changeAmount' => number_format($this->transaction->change_amount, 0, ',', '.'),
         ];
 
-        $printServerUrl = 'http://192.168.18.101:8000/print';
+        $printServerUrl = 'http://192.168.1.13:8000/print';
 
         try {
             Http::timeout(5)->post($printServerUrl, $printData);

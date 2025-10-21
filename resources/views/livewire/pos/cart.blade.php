@@ -18,32 +18,27 @@
             </div>
         @else
             <div x-data="customerSearch()" class="relative">
-                <input type="text"
-                       x-model.debounce.300ms="searchQuery"
-                       @focus="handleFocus()"
-                       @click.away="isOpen = false"
-                       placeholder="Cari pelanggan (nama/telp)..."
-                       class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
+                    @click.away="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
+                    class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
-                <div x-show="isOpen && (results.length > 0 || isLoading)"
-                     x-transition
-                     class="absolute z-50 w-full bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div x-show="isOpen && (results.length > 0 || isLoading)" x-transition
+                    class="absolute z-50 w-full bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     <template x-if="isLoading">
                         <div class="px-4 py-2 text-gray-500">Mencari...</div>
                     </template>
                     <template x-for="customer in results" :key="customer.id">
-                        <div @click="selectCustomer(customer)"
-                             class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                        <div @click="selectCustomer(customer)" class="px-4 py-2 cursor-pointer hover:bg-gray-100">
                             <p class="font-semibold" x-text="customer.name"></p>
                             <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                         </div>
                     </template>
                     <template x-if="!isLoading && results.length === 0 && searchQuery.length > 0">
-                         <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
+                        <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
                     </template>
 
                     <div @click="$wire.set('showCustomerCreateModal', true)"
-                         class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
+                        class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
                         + Buat Pelanggan Baru
                     </div>
                 </div>
@@ -52,12 +47,12 @@
     </div>
 
     {{-- Komponen utama keranjang dengan AlpineJS --}}
-    <div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))" x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
+    <div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
+        x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
         x-on:customer:selected.window="setCustomer($event.detail.customer)"
         x-on:customer:cleared.window="clearCustomer()"
         x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
-        x-on:cart:reset.window="resetCart()"
-        class="flex flex-col h-full bg-white">
+        x-on:cart:reset.window="resetCart()" class="flex flex-col h-full bg-white">
 
         <!-- Tombol Eceran/Grosir -->
         <div class="p-2 bg-gray-100">
@@ -118,8 +113,8 @@
 
         <!-- Footer Keranjang -->
         <div class="p-3 border-t bg-gray-50 space-y-3">
-            <div class="flex justify-between items-center font-semibold"><span
-                    class="text-gray-600">Total Item</span><span class="text-lg" x-text="items.length + ' item'"></span>
+            <div class="flex justify-between items-center font-semibold"><span class="text-gray-600">Total
+                    Item</span><span class="text-lg" x-text="items.length + ' item'"></span>
             </div>
 
             <!-- Fitur Hutang Baru -->
@@ -152,20 +147,15 @@
         <!-- Modal Pembayaran -->
         <div x-show="showPaymentModal" x-cloak
             class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-hidden"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0">
+            x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
             <!-- Wrapper Modal -->
             <div @click.away="showPaymentModal = false"
                 class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24"
-                x-show="showPaymentModal"
-                x-transition:enter="ease-out duration-300"
+                x-show="showPaymentModal" x-transition:enter="ease-out duration-300"
                 x-transition:enter-start="translate-y-full sm:translate-y-0 sm:scale-95"
-                x-transition:enter-end="translate-y-0 sm:scale-100"
-                x-transition:leave="ease-in duration-200"
+                x-transition:enter-end="translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="translate-y-0 sm:scale-100"
                 x-transition:leave-end="translate-y-full sm:translate-y-0 sm:scale-95">
                 <!-- Header -->
@@ -246,8 +236,8 @@
                     <div>
                         <label class="block text-sm font-semibold mb-2">Kembalian</label>
                         <div class="text-xl md:text-2xl font-bold"
-                             :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
-                             x-text="formatCurrency(change)">
+                            :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
+                            x-text="formatCurrency(change)">
                         </div>
                     </div>
 
@@ -398,7 +388,7 @@
                             subtotal: product.retail_price * newQuantity
                         });
                     } else {
-                         window.Livewire.dispatch('show-alert', {
+                        window.Livewire.dispatch('show-alert', {
                             type: 'error',
                             message: 'Stok tidak cukup.'
                         });
@@ -460,7 +450,9 @@
                 });
                 this.subtotal = currentSubtotal;
                 this.calculateFinalTotal();
-                this.$dispatch('cart-updated', { items: this.items });
+                this.$dispatch('cart-updated', {
+                    items: this.items
+                });
             },
 
             setCustomer(customer) {
@@ -556,7 +548,13 @@
             },
 
             loadCart(items, customer, type, pending_id = null) { // Terima pending_id
-                this.items = items;
+
+                this.items = items.map(item => {
+                    // parseFloat akan menghilangkan angka nol yang tidak perlu di belakang koma
+                    // Contoh: "1.500" menjadi 1.5, "2.00" menjadi 2
+                    item.quantity = parseFloat(item.quantity);
+                    return item;
+                });
                 this.transaction_type = type;
                 if (customer) {
                     this.setCustomer(customer);
@@ -574,4 +572,3 @@
         }
     }
 </script>
-

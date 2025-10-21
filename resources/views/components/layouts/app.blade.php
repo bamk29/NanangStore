@@ -150,6 +150,14 @@
                                 </a>
                             </div>
                         </div>
+
+                        @if(auth()->user()->isAdmin())
+                        <a class="flex items-center px-4 py-2 {{ request()->routeIs('users.index') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg"
+                            href="{{ route('users.index') }}" wire:navigate>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.28-1.25-1.44-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.28-1.25 1.44-1.857M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                            <span class="mx-4">Manajemen User</span>
+                        </a>
+                        @endif
                     </div>
 
                     <div class="mt-auto pt-4 border-t">

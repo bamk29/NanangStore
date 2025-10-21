@@ -109,6 +109,9 @@ Route::middleware('auth')->group(function () {
     // Supplier Routes
     Route::get('/suppliers', SupplierList::class)->name('suppliers.index');
 
+    // User Management Route
+    Route::get('/users', App\Livewire\UserManagement::class)->name('users.index');
+
     // Purchase Order Routes
     Route::prefix('purchase-orders')->group(function () {
         Route::get('/', PurchaseOrderList::class)->name('purchase-orders.index');
