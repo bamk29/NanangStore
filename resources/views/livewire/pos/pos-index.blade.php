@@ -16,6 +16,12 @@
                                 :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                                 Semua
                             </button>
+                              <button @click="categoryId = '1'"
+                                class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+                                :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '1' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '1' }">
+                                Ayam dan Bakso
+                            </button>
+
                             <template x-for="category in categories.slice(0, 5)" :key="category.id">
                                 <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
                                 :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
@@ -23,7 +29,8 @@
                                 </button>
                             </template>
                         </div>
-                        <template x-if="categories.length > 5">
+                        <template x-if="categories.length > 5
+                            ">
                             <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">
                                 <span>Lainnya</span>
                                 <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showAll }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -32,7 +39,7 @@
                     </div>
                     <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
                         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                            <template x-for="category in categories.slice(5)" :key="category.id">
+                            <template x-for="category in categories.slice(0)" :key="category.id">
                                 <button @click="categoryId = category.id" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                                 :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
                                     <span x-text="category.name"></span>
