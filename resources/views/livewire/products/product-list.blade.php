@@ -6,7 +6,13 @@
                 <h1 class="text-xl font-semibold text-gray-900">Manajemen Produk</h1>
                 <p class="mt-2 text-sm text-gray-700">Kelola semua produk, stok, dan harga di seluruh toko Anda.</p>
             </div>
-            <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex space-x-2">
+                <a href="{{ route('products.import') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Import Excel
+                </a>
+                <button wire:click="export" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Export Excel
+                </button>
                 <a href="{{ route('products.create') }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
                     + Tambah Produk
                 </a>

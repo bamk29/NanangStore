@@ -96,6 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/', App\Livewire\Products\ProductList::class)->name('products.index');
         Route::get('/create', App\Livewire\Products\CreateProduct::class)->name('products.create');
+        Route::get('/import', App\Livewire\Products\ProductImport::class)->name('products.import'); // New route
         Route::get('/{product}/edit', App\Livewire\Products\EditProduct::class)->name('products.edit');
     });
 

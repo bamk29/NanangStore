@@ -56,7 +56,7 @@
                     <input type="number" id="unit_price" wire:model="retail_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
-                    <label for="box_price" class="block text-sm font-medium text-gray-700">Harga Jual Grosir</label>
+                    <label for="box_price" class="block text-sm font-medium text-gray-700">Harga Jual Grosir (per box)</label>
                     <input type="number" id="box_price" wire:model="wholesale_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
@@ -80,8 +80,13 @@
                     <p class="mt-1 text-xs text-gray-500">Sistem menghitung: <span class="font-semibold">{{ $calculatedBoxStock }}</span> boks.</p>
                 </div>
                 <div>
+                    <label for="box_cost" class="block text-sm font-medium text-gray-700">Modal per Box dari Supplier</label>
+                    <input type="number" id="box_cost" wire:model="box_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
                     <label for="unit_cost" class="block text-sm font-medium text-gray-700">Modal per Satuan Dasar</label>
                     <input type="number" id="unit_cost" wire:model="cost_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <p class="mt-1 text-xs text-gray-500">Rekomendasi Modal: <span class="font-semibold">Rp {{ number_format($this->recommendedCostPrice, 0, ',', '.') }}</span> (dari Modal per Box / Isi Satuan Besar)</p>
                 </div>
             </div>
         </div>

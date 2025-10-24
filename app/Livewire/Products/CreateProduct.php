@@ -30,6 +30,14 @@ class CreateProduct extends Component
     public $box_cost = 0;
     public $calculatedBoxStock = 0;
 
+    public function getRecommendedCostPriceProperty()
+    {
+        if ($this->box_cost > 0 && $this->units_in_box > 0) {
+            return $this->box_cost / $this->units_in_box;
+        }
+        return 0;
+    }
+
     protected function rules()
     {
         return [

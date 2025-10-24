@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\Category;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Exports\ProductsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductList extends Component
 {
@@ -45,6 +47,11 @@ class ProductList extends Component
         }
         $this->productToDelete = null;
         $this->dispatch('productDeleted'); // To close modal
+    }
+
+    public function export()
+    {
+        return Excel::download(new ProductsExport, 'products.xlsx');
     }
 
     public function render()

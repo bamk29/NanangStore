@@ -81,6 +81,14 @@ class EditProduct extends Component
 
     public $calculatedBoxStock = 0;
 
+    public function getRecommendedCostPriceProperty()
+    {
+        if ($this->box_cost > 0 && $this->units_in_box > 0) {
+            return $this->box_cost / $this->units_in_box;
+        }
+        return 0;
+    }
+
     public function updated($propertyName)
     {
         if (in_array($propertyName, ['stock', 'units_in_box'])) {
