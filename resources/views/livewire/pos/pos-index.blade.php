@@ -192,11 +192,13 @@
                 this.$watch('searchQuery', (newValue, oldValue) => {
                     if (newValue !== oldValue) {
                         this.selectedIndex = -1; // Reset selection on new search
+                        this.categoryId = ''; // Reset category filter
                         this.fetchProducts();
                     }
                 });
                 this.$watch('categoryId', () => {
                     this.selectedIndex = -1; // Reset selection on new category
+                    this.searchQuery = ''; // Reset search query
                     this.fetchProducts();
                 });
             },

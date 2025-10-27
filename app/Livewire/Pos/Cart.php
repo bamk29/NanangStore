@@ -216,6 +216,9 @@ class Cart extends Component
                         // Kurangi stok utama (satuan dasar)
                         $product->decrement('stock', $item['quantity']);
 
+                        // Update popularitas produk
+                        \App\Models\ProductUsage::incrementUsage($item['id']);
+
                         // Hitung ulang dan perbarui stok boks
                         if ($product->units_in_box > 0) {
                             $product->refresh(); // Ambil data stok terbaru setelah decrement

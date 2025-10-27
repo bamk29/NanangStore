@@ -52,7 +52,9 @@
         x-on:customer:selected.window="setCustomer($event.detail.customer)"
         x-on:customer:cleared.window="clearCustomer()"
         x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
-        x-on:cart:reset.window="resetCart()" class="flex flex-col h-full bg-white">
+        x-on:cart:reset.window="resetCart()"
+        x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
+        class="flex flex-col h-full bg-white">
 
         <!-- Tombol Eceran/Grosir -->
         <div class="p-2 bg-gray-100">
@@ -138,10 +140,86 @@
                 <span>Total</span><span x-text="formatCurrency(final_total)"></span>
             </div>
 
-            <button @click="showPaymentModal = true" :disabled="items.length === 0"
+            <button @click="initiatePayment()" :disabled="items.length === 0"
                 class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300">
                 Bayar
             </button>
+        </div>
+
+        <!-- Modal Pilih Pelanggan -->
+        <div x-show="showCustomerWarningModal" x-cloak
+            class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-20"
+            x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <div @click.away="showCustomerWarningModal = false"
+                class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all"
+                x-show="showCustomerWarningModal"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95">
+
+                <div class="p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih atau Buat Pelanggan</h3>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.001-1.742 3.001H4.42c-1.532 0-2.492-1.667-1.742-3.001l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Transaksi tanpa pelanggan tidak akan tercatat dalam riwayat hutang atau poin loyalitas.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Customer search component embedded here --}}
+                    <div x-data="customerSearch()" class="relative">
+                        <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
+                            @keydown.escape="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
+                            class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                        <div x-show="isOpen" x-transition
+                            class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            <template x-if="isLoading">
+                                <div class="px-4 py-2 text-gray-500">Mencari...</div>
+                            </template>
+                            <template x-for="customer in results" :key="customer.id">
+                                <div @click="selectCustomer(customer)" class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                                    <p class="font-semibold" x-text="customer.name"></p>
+                                    <p class="text-sm text-gray-600" x-text="customer.phone"></p>
+                                </div>
+                            </template>
+                            <template x-if="!isLoading && results.length === 0 && searchQuery.length > 0">
+                                <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
+                            </template>
+
+                            <div @click="$wire.set('showCustomerCreateModal', true); showCustomerWarningModal = false"
+                                class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
+                                + Buat Pelanggan Baru
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 pb-4 space-y-2 border-t bg-gray-50 rounded-b-2xl pt-4">
+                    <button @click="showCustomerWarningModal = false; showPaymentModal = true"
+                        class="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none">
+                        Lanjutkan (Tanpa Pelanggan)
+                    </button>
+                    <button @click="showCustomerWarningModal = false"
+                        class="w-full px-4 py-2.5 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none">
+                        Batal
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Modal Pembayaran -->
@@ -257,9 +335,19 @@
                     <button @click="holdSale()"
                         class="px-4 py-2 rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 w-full md:w-auto">Simpan
                         & Tunda</button>
-                    <button @click="completePayment()" :disabled="(payment_method === 'debt' && !customer)"
-                        class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 w-full md:w-auto">Selesaikan
-                        Pembayaran</button>
+                    <button @click="completePayment()" :disabled="(payment_method === 'debt' && !customer) || isProcessingPayment"
+                        class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-wait w-full md:w-auto flex items-center justify-center">
+                        <template x-if="isProcessingPayment">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Memproses...</span>
+                        </template>
+                        <template x-if="!isProcessingPayment">
+                            <span>Selesaikan Pembayaran</span>
+                        </template>
+                    </button>
                 </div>
             </div>
         </div>
@@ -331,6 +419,7 @@
                 this.searchQuery = '';
                 this.results = [];
                 this.isOpen = false;
+                this.$dispatch('customer-selected-in-modal');
             }
         }
     }
@@ -344,6 +433,7 @@
             customer: null,
             include_old_debt: false,
             showPaymentModal: false,
+            showCustomerWarningModal: false,
             payment_method: 'cash',
             paid_amount: 0,
             paid_amount_display: '0',
@@ -351,11 +441,26 @@
             change: 0,
             underpaymentError: false,
             pending_transaction_id: null, // Lacak ID transaksi pending
+            isProcessingPayment: false,
 
             init() {
                 this.$watch('paid_amount', () => this.calculateChange());
                 this.$watch('final_total', () => this.calculateChange());
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
+                this.$watch('showPaymentModal', (value) => {
+                    if (!value) {
+                        // Reset state when modal is closed
+                        this.isProcessingPayment = false;
+                    }
+                });
+            },
+
+            initiatePayment() {
+                if (!this.customer) {
+                    this.showCustomerWarningModal = true;
+                } else {
+                    this.showPaymentModal = true;
+                }
             },
 
             addToCart(product, quantity = 1) {
@@ -503,6 +608,8 @@
             },
 
             completePayment() {
+                if (this.isProcessingPayment) return;
+
                 // Hanya error jika uang kurang DAN tidak ada pelanggan valid yang dipilih
                 if (this.payment_method !== 'debt' && this.paid_amount < this.final_total && (!this.customer || !this
                         .customer.id)) {
@@ -511,6 +618,7 @@
                     return;
                 }
                 this.underpaymentError = false;
+                this.isProcessingPayment = true;
 
                 let paymentDetails = {
                     customer: this.customer,

@@ -47,6 +47,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{{ route('pos.invoice', $transaction->id) }}" wire:navigate="true" class="text-indigo-600 hover:text-indigo-900">Cetak Ulang</a>
+                                @if ($transaction->status == 'completed')
+                                <span class="text-gray-300 mx-1">|</span>
+                                <button wire:click="cancelTransaction({{ $transaction->id }})" wire:confirm="Apakah Anda yakin ingin membatalkan transaksi ini? Stok, hutang, dan data keuangan terkait akan dikembalikan ke kondisi semula."
+                                    class="text-red-600 hover:text-red-900">Batalkan</button>
+                                @endif
                             </td>
                         </tr>
                     @empty

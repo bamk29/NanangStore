@@ -23,9 +23,6 @@ class PurchaseOrderForm extends Component
     public $items = [];
     public $suppliers = [];
 
-    public $product_search = '';
-    public $search_results = [];
-
     public $po;
 
     protected function rules()
@@ -77,75 +74,53 @@ class PurchaseOrderForm extends Component
         $this->suppliers = Supplier::orderBy('name')->get();
     }
 
-    public function updatedProductSearch($value)
-    {
-        if (empty($value)) {
-            $this->search_results = [];
-            return;
-        }
-        $this->search_results = Product::where('name', 'like', '%'.$value.'%')
-            ->whereNotIn('id', array_column($this->items, 'product_id'))
-            ->limit(5)
-            ->get();
-    }
+    // public function mount($orderId = null)
+    // {
+    //     $product = Product::find($productId);
+    //     if (!$product) return;
 
-    public function addProduct($productId)
-    {
-        $product = Product::find($productId);
-        if (!$product) return;
+    //     $itemsPerBox = $product->units_in_box > 0 ? $product->units_in_box : 1;
+    //     $unitCost = $product->unit_cost ?? 0;
+    //     $boxCost = $product->box_cost ?? 0;
 
-        $this->items[] = [
-            'id' => null,
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'purchase_by_box' => true,
-            'quantity' => 1,
-            'items_per_box' => $product->units_in_box ?? 1,
-            'box_cost' => $product->box_price ?? 0, // Menggunakan harga acuan supplier
-            'cost' => $product->unit_price ?? 0,   // Menggunakan harga acuan supplier
-            'unit_cost' => $product->unit_price ?? 0,
-            'total_cost' => $product->box_price ?? 0,
-            'received_quantity' => 0,
-            'quantity_to_receive' => 0,
-        ];
+    //     $finalUnitCost = 0;
+    //     $finalBoxCost = 0;
 
-        $this->product_search = '';
-        $this->search_results = [];
-        $this->calculateGrandTotal();
-    }
+    //     // Prioritize box_cost as the source of truth
+    //     if ($boxCost > 0) {
+    //         $finalBoxCost = $boxCost;
+    //         $finalUnitCost = round($boxCost / $itemsPerBox);
+    //     }
+    //     // Fallback to unit_cost if box_cost is not available
+    //     else if ($unitCost > 0) {
+    //         $finalUnitCost = $unitCost;
+    //         $finalBoxCost = $unitCost * $itemsPerBox;
+    //     }
+
+    //     $this->items[] = [
+    //         'id' => null,
+    //         'product_id' => $product->id,
+    //         'product_name' => $product->name,
+    //         'purchase_by_box' => true, // Default to purchasing by box
+    //         'quantity' => 1,
+    //         'items_per_box' => $itemsPerBox,
+    //         'box_cost' => $finalBoxCost,
+    //         'cost' => $finalUnitCost, // Represents the cost per single unit
+    //         'unit_cost' => $finalUnitCost,
+    //         'total_cost' => $finalBoxCost, // Initial total is for 1 box
+    //         'received_quantity' => 0,
+    //         'quantity_to_receive' => 0,
+    //     ];
+
+    //     $this->product_search = '';
+    //     $this->search_results = [];
+    //     $this->calculateGrandTotal();
+    // }
 
     public function removeItem($index)
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
-        $this->calculateGrandTotal();
-    }
-
-    public function updatedItems($value, $key)
-    {
-        $parts = explode('.', $key);
-        $index = $parts[0];
-        $field = $parts[1];
-        $item = &$this->items[$index];
-
-        $quantity = (int)($item['quantity'] ?? 1);
-        $items_per_box = (int)($item['items_per_box'] ?? 1);
-        if ($items_per_box <= 0) $items_per_box = 1;
-
-        // Two-way calculation
-        if ($field === 'box_cost') {
-            $item['cost'] = round((float)$item['box_cost'] / $items_per_box);
-        } elseif ($field === 'cost') {
-            $item['box_cost'] = (float)$item['cost'] * $items_per_box;
-        }
-
-        // Recalculate total cost for the line item
-        if ($item['purchase_by_box']) {
-            $item['total_cost'] = $quantity * (float)$item['box_cost'];
-        } else {
-            $item['total_cost'] = $quantity * (float)$item['cost'];
-        }
-
         $this->calculateGrandTotal();
     }
 

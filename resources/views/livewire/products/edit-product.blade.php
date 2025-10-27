@@ -49,7 +49,7 @@
                 </div>
                 <div>
                     <label for="units_in_box" class="block text-sm font-medium text-gray-700">Isi Satuan Besar</label>
-                    <input type="number" id="units_in_box" wire:model="units_in_box" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 12">
+                    <input type="number" id="units_in_box" wire:model.live="units_in_box" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 12">
                 </div>
                 <div>
                     <label for="unit_price" class="block text-sm font-medium text-gray-700">Harga Jual Eceran</label>
@@ -81,7 +81,7 @@
                 </div>
                 <div>
                     <label for="box_cost" class="block text-sm font-medium text-gray-700">Modal per Box dari Supplier</label>
-                    <input type="number" id="box_cost" wire:model="box_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="number" id="box_cost" wire:model.live="box_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label for="unit_cost" class="block text-sm font-medium text-gray-700">Modal per Satuan Dasar</label>

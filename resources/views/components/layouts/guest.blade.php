@@ -22,38 +22,5 @@
             </div>
         </div>
         @livewireScripts
-        <script>
-            document.addEventListener('livewire:init', () => {
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.addEventListener('mouseenter', Swal.stopTimer)
-                        toast.addEventListener('mouseleave', Swal.resumeTimer)
-                    }
-                });
-
-                @if (session('status') || session('message'))
-                    Toast.fire({
-                        icon: @js(session('alert-type', 'success')),
-                        title: @js(session('status') ?? session('message'))
-                    });
-                @endif
-
-                window.addEventListener('show-alert', event => {
-                    const detail = event.detail;
-                    const message = detail.message || (detail[0] ? detail[0].message : 'Pesan tidak ditemukan.');
-                    const type = detail.type || (detail[0] ? detail[0].type : 'success');
-
-                    Toast.fire({
-                        icon: type,
-                        title: message
-                    });
-                });
-            });
-        </script>
     </body>
 </html>

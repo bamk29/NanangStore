@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Products;
 
+use Livewire\Attributes\Validate;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
@@ -10,6 +11,7 @@ use App\Models\Unit;
 
 class CreateProduct extends Component
 {
+    #[Validate]
     public $name = '';
     public $code = '';
     public $description = '';
@@ -72,12 +74,11 @@ class CreateProduct extends Component
 
     public function save()
     {
-        $validatedData = $this->validate();
+        $validated = $this->validate();
 
-        Product::create($validatedData);
+        Product::create($validated);
 
-        session()->flash('message', 'Produk berhasil dibuat.');
-
+       $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil ditambahkan.']);
         return redirect()->route('products.index');
     }
 

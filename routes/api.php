@@ -34,9 +34,10 @@ Route::get('/products', function (Request $request) {
         // Pilih kolom spesifik dari tabel products
         ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price')
 
-        // Urutkan berdasarkan produk paling populer (usage_count), lalu berdasarkan nama
-        ->orderBy('product_usages.usage_count', 'desc')
-        ->orderBy('products.name', 'asc')
+        // Logika pengurutan: populer jika tidak ada pencarian, relevan jika ada pencarian
+        ->when(empty($search), function ($q) {
+            $q->orderBy('product_usages.usage_count', 'desc')->orderBy('products.name', 'asc');
+        })
 
         ->limit(50)
         ->get();
@@ -96,4 +97,25 @@ Route::get('/products/by-code/{code}', function ($code) {
     }
 
     return response()->json(['message' => 'Produk tidak ditemukan'], 404);
+});
+
+/*
+|--------------------------------------------------------------------------
+| API: Products for Purchase Order
+|--------------------------------------------------------------------------
+| Endpoint ini khusus untuk form Purchase Order, menyertakan data harga modal.
+*/
+Route::get('/purchase-order-products', function (Request $request) {
+    $search = $request->query('q', '');
+
+    $products = \App\Models\Product::query()
+        ->when($search, function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('code', 'like', "%{$search}%");
+        })
+        ->select('id', 'name', 'code', 'stock', 'units_in_box', 'unit_cost', 'box_cost')
+        ->limit(10)
+        ->get();
+
+    return response()->json($products);
 });
