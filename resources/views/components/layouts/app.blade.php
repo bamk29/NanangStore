@@ -174,13 +174,20 @@
             </div>
 
             <!-- Main Content -->
-            <div class="flex-1 flex flex-col overflow-hidden pt-14 pb-24 print:overflow-visible"> <!-- Added pb-24 for bottom navigation space -->
+            <div class="flex-1 flex flex-col overflow-hidden pt-14 print:overflow-visible" :class="$store.ui.isBottomNavVisible ? 'pb-24' : 'pb-4'"> <!-- Added pb-24 for bottom navigation space -->
                 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 print:overflow-visible">
                     {{ $slot }}
                 </main>
 
                 <!-- Android-style Bottom Navigation -->
-                <div class="fixed bottom-0 left-0 right-0 z-50 android-nav-bar bg-white bg-opacity-95 no-print">
+                <div x-show="$store.ui.isBottomNavVisible"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="transform translate-y-full"
+                     x-transition:enter-end="transform translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="transform translate-y-0"
+                     x-transition:leave-end="transform translate-y-full"
+                     class="fixed bottom-0 left-0 right-0 z-50 android-nav-bar bg-white bg-opacity-95 no-print">
                     <div class="flex justify-around items-center px-2 py-2 shadow-[0_-8px_16px_-6px_rgba(0,0,0,0.1)] rounded-t-2xl border-t border-gray-200">
                         <a href="{{ route('dashboard') }}"
                             class="flex flex-col items-center p-2 relative group">
@@ -241,6 +248,10 @@
 
                     @livewireScripts    <script>
         document.addEventListener('alpine:init', () => {
+            Alpine.store('ui', {
+                isBottomNavVisible: true,
+            });
+
             Alpine.data('barcodeScanner', () => ({
                 buffer: [],
                 lastKeystroke: Date.now(),
