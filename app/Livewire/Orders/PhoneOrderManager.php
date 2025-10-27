@@ -260,7 +260,7 @@ class PhoneOrderManager extends Component
 
             // --- Kirim ke Print Server ---
             try {
-                Http::timeout(5)->post('http://192.168.18.101:8000/print', $printData);
+                Http::timeout(5)->post('http://192.168.1.12:8000/print', $printData);
 
                 // Update status setelah berhasil mengirim
                 $order->update(['status' => 'diproses']);
