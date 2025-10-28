@@ -32,7 +32,7 @@
                 <div class="p-2 flex items-center space-x-1 my-4">
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-sm text-gray-800 truncate" x-text="item.name"></p>
-                        <p class="text-xs text-gray-500" x-text="item.price"></p>
+                        <p class="text-xs text-gray-500" x-text="formatCurrency(item.price)"></p>
                     </div>
                     <div class="flex items-center">
                         <button @click="decrement(item.id)"
@@ -133,10 +133,16 @@
         </div>
 
         <!-- Bayar Button -->
-        <div class="p-3 bg-gray-50 border-t">
+        <div class="p-3 bg-gray-50 border-t grid grid-cols-2 gap-2">
+            <button @click="showHoldConfirmation = true" :disabled="items.length === 0"
+                class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Tunda</span>
+            </button>
             <button @click="initiatePayment()" :disabled="items.length === 0"
-                class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300">
-                Bayar
+                class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <span>Bayar</span>
             </button>
         </div>
     </div>
@@ -284,6 +290,83 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Kekurangan Bayar -->
+    <div x-show="showUnderpaymentConfirmation" x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4"
+        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div @click.away="showUnderpaymentConfirmation = false"
+             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
+             x-show="showUnderpaymentConfirmation"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+
+            <div class="p-6 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-semibold text-gray-900">Pembayaran Kurang!</h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    Uang yang dibayarkan lebih kecil dari total tagihan. Kekurangan sebesar <strong x-text="formatCurrency(final_total - paid_amount)"></strong> akan ditambahkan ke hutang pelanggan.
+                </p>
+                <p class="mt-1 text-sm text-gray-600">
+                    Lanjutkan transaksi?
+                </p>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
+                <button @click="showUnderpaymentConfirmation = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+                    Batal
+                </button>
+                <button @click="proceedWithUnderpayment()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                    Ya, Lanjutkan (Jadi Hutang)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Tunda Transaksi -->
+    <div x-show="showHoldConfirmation" x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4"
+        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div @click.away="showHoldConfirmation = false"
+             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
+             x-show="showHoldConfirmation"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+
+            <div class="p-6 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="mt-4 text-lg font-semibold text-gray-900">Tunda Transaksi Ini?</h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    Keranjang saat ini akan disimpan di daftar "Transaksi Tertunda" dan keranjang akan dikosongkan.
+                </p>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
+                <button @click="showHoldConfirmation = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+                    Batal
+                </button>
+                <button @click="holdSale(); showHoldConfirmation = false;" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-500 text-base font-medium text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:w-auto sm:text-sm">
+                    Ya, Tunda Transaksi
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal Buat Pelanggan (dikontrol oleh Livewire) --}}
     @if ($showCustomerCreateModal)
         <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -350,6 +433,8 @@
             include_old_debt: false,
             showPaymentModal: false,
             showCustomerWarningModal: false,
+            showUnderpaymentConfirmation: false,
+            showHoldConfirmation: false,
             payment_method: 'cash',
             paid_amount: 0,
             paid_amount_display: '0',
@@ -526,13 +611,29 @@
             completePayment() {
                 if (this.isProcessingPayment) return;
 
-                // Hanya error jika uang kurang DAN tidak ada pelanggan valid yang dipilih
-                if (this.payment_method !== 'debt' && this.paid_amount < this.final_total && (!this.customer || !this
-                        .customer.id)) {
+                // Underpayment without a customer is a hard error
+                if (this.paid_amount < this.final_total && (!this.customer || !this.customer.id)) {
                     this.underpaymentError = true;
                     setTimeout(() => this.underpaymentError = false, 3000);
                     return;
                 }
+
+                // Underpayment with a customer prompts confirmation
+                if (this.paid_amount < this.final_total && this.customer && this.customer.id) {
+                    this.showUnderpaymentConfirmation = true;
+                    return;
+                }
+
+                // If payment is sufficient, proceed directly
+                this.executePayment();
+            },
+
+            proceedWithUnderpayment() {
+                this.showUnderpaymentConfirmation = false;
+                this.executePayment();
+            },
+
+            executePayment() {
                 this.underpaymentError = false;
                 this.isProcessingPayment = true;
 
@@ -559,7 +660,6 @@
                     notes: this.notes,
                 };
                 this.$wire.holdTransaction(this.items, paymentDetails);
-                this.showPaymentModal = false;
             },
 
             resetCart() {

@@ -67,11 +67,8 @@ class Cart extends Component
                 $this->initialType = $transaction->transaction_type;
                 $this->initialPendingId = $transaction->id;
 
-                // Set Livewire properties for customer display
                 if ($transaction->customer) {
-                    $this->selected_customer_id = $transaction->customer->id;
-                    $this->selected_customer_name = $transaction->customer->name;
-                    $this->selectedCustomerModel = $transaction->customer;
+                    $this->selectCustomer($transaction->customer->id, $transaction->customer->name);
                 }
             }
         } elseif (request()->has('load_phone_order')) {
@@ -108,6 +105,46 @@ class Cart extends Component
                 // Update status pesanan telepon
                 $phoneOrder->update(['status' => 'diproses']);
             }
+        } elseif (request()->has('correct')) {
+            $transactionId = request()->query('correct');
+            $transaction = Transaction::with('details.product', 'customer')->find($transactionId);
+
+            if ($transaction) { // Status can be 'cancelled', which is fine
+                $items = [];
+                foreach ($transaction->details as $detail) {
+                    if ($detail->product) {
+                        $items[] = [
+                            'id' => $detail->product->id,
+                            'name' => $detail->product->name,
+                            'code' => $detail->product->code,
+                            'stock' => $detail->product->stock, // Stock will be current, which is correct
+                            'retail_price' => $detail->product->retail_price,
+                            'wholesale_price' => $detail->product->wholesale_price,
+                            'wholesale_min_qty' => $detail->product->wholesale_min_qty,
+                            'quantity' => $detail->quantity,
+                            'price' => $detail->price,
+                            'subtotal' => $detail->subtotal
+                        ];
+                    }
+                }
+
+                $this->initialItems = $items;
+                $this->initialCustomer = $transaction->customer;
+                $this->initialType = $transaction->transaction_type;
+                $this->initialPendingId = null; // This is a new transaction, not resuming a pending one
+
+                if ($transaction->customer) {
+                    $this->selectCustomer($transaction->customer->id, $transaction->customer->name);
+                }
+            }
+        if ($cartData['customer']) {
+                $this->selectCustomer($cartData['customer']['id'], $cartData['customer']['name']);
+            } 
+        } elseif (request()->has('customer_id')) {
+            $customer = Customer::find(request()->query('customer_id'));
+            if ($customer) {
+                $this->selectCustomer($customer->id, $customer->name);
+            }
         }
 
     }
@@ -138,7 +175,7 @@ class Cart extends Component
     public function createNewCustomer()
     {
         $validatedData = $this->validate([
-            'new_customer_name' => 'required|string|min:3',
+            'new_customer_name' => 'required|string|min:3|unique:customers,name',
             'new_customer_phone' => 'nullable|string|unique:customers,phone',
         ]);
 

@@ -1,11 +1,28 @@
 <div>
     <main class="py-4 main-content">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Welcome Card -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 landscape-card">
-                <div class="p-4 sm:p-6">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Selamat datang kembali, {{ auth()->user()->name }}!</h2>
-                    <p class="mt-1 text-lg text-gray-600">Total Transaksi hari ini: <span class="font-bold text-gray-800">Rp {{ number_format($todayTotalTransactions, 0, ',', '.') }}</span></p>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+                <!-- Penjualan Toko -->
+                <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg">
+                    <div class="p-4 sm:p-5">
+                        <h3 class="text-sm font-medium text-gray-500 truncate">Penjualan Toko Hari Ini</h3>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">Rp {{ number_format($nanangStoreTodaySales, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <!-- Penjualan Bakso -->
+                <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg">
+                    <div class="p-4 sm:p-5">
+                        <h3 class="text-sm font-medium text-gray-500 truncate">Penjualan Bakso Hari Ini</h3>
+                        <p class="mt-1 text-2xl font-semibold text-gray-900">Rp {{ number_format($baksoStoreTodaySales, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <!-- Uang Tunai di Laci -->
+                <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg">
+                    <div class="p-4 sm:p-5">
+                        <h3 class="text-sm font-medium text-gray-500 truncate">Uang Tunai di Laci</h3>
+                        <p class="mt-1 text-2xl font-semibold text-green-600">Rp {{ number_format($todayTotalCash, 0, ',', '.') }}</p>
+                    </div>
                 </div>
             </div>
 
@@ -35,7 +52,12 @@
                 </a>
 
                 <!-- Transaksi Tertunda (BARU) -->
-                <a href="{{ route('transactions.pending') }}" wire:navigate class="bg-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 group">
+                <a href="{{ route('transactions.pending') }}" wire:navigate class="relative bg-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 group">
+                    @if($pendingTransactionCount > 0)
+                    <span class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                      {{ $pendingTransactionCount }}
+                    </span>
+                    @endif
                     <div class="flex flex-col items-center text-center space-y-2">
                         <div class="w-14 h-14 landscape-icon bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform duration-200">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>

@@ -1,7 +1,8 @@
 <div x-data="posManager()" 
      x-init="init()" 
      @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id)"
-     @cart-was-reset.window="if (!isDesktop) isCartVisible = false"
+     @cart:reset.window="if (!isDesktop) isCartVisible = false"
+     @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
      class="h-screen flex flex-col bg-gray-50">
     <!-- Top Bar -->
     <div class="flex-shrink-0 bg-white p-2 sm:p-4 rounded-b-lg shadow space-y-4 z-10">
@@ -116,11 +117,33 @@
         </div>
     </div>
 
-    <!-- Mobile Cart -->
-    <div x-show="!isDesktop" x-cloak>
+        <!-- Mobile Cart -->
 
+        <div x-show="!isDesktop" x-cloak>
 
-        <!-- Floating Action Button (FAB) -->
+            <!-- Backdrop -->
+
+            <div x-show="isCartVisible" @click="isCartVisible = false" 
+
+                 x-transition:enter="ease-out duration-300" 
+
+                 x-transition:enter-start="opacity-0" 
+
+                 x-transition:enter-end="opacity-100" 
+
+                 x-transition:leave="ease-in duration-200" 
+
+                 x-transition:leave-start="opacity-100" 
+
+                 x-transition:leave-end="opacity-0" 
+
+                 class="fixed inset-0 bg-black/40 z-30" x-cloak>
+
+            </div>
+
+    
+
+            <!-- Floating Action Button (FAB) -->
         <div x-show="!isCartVisible" class="fixed bottom-6 right-6 z-20">
             <button @click="isCartVisible = true" class="relative bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -233,22 +256,29 @@
                 };
                 window.addEventListener('resize', handleResize);
 
-                this.$watch('searchQuery', (newValue, oldValue) => {
-                    if (newValue !== oldValue) {
-                        this.selectedIndex = -1; // Reset selection on new search
-                        this.categoryId = ''; // Reset category filter
-                        this.fetchProducts();
-                    }
+                // Check URL on init to auto-open cart for resume/correction on mobile
+                const urlParams = new URLSearchParams(window.location.search);
+                if ((urlParams.has('resume') || urlParams.has('correct')) && !this.isDesktop) {
+                    // Use a small timeout to ensure cart items are rendered before animation
+                    setTimeout(() => {
+                        this.isCartVisible = true;
+                    }, 100);
+                }
+
+                // When leaving the page, restore the bottom nav
+                window.addEventListener('beforeunload', () => {
+                    this.$store.ui.isBottomNavVisible = true;
+                });
+
+                this.$watch('searchQuery', () => {
+                    this.selectedIndex = -1; // Reset selection on new search
+                    this.categoryId = ''; // Reset category filter
+                    this.fetchProducts();
                 });
                 this.$watch('categoryId', () => {
                     this.selectedIndex = -1; // Reset selection on new category
                     this.searchQuery = ''; // Reset search query
                     this.fetchProducts();
-                });
-
-                // When leaving the page, restore the bottom nav
-                window.addEventListener('beforeunload', () => {
-                    this.$store.ui.isBottomNavVisible = true;
                 });
             },
 

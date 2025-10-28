@@ -4,6 +4,8 @@ namespace App\Livewire\Customers;
 
 use App\Models\Customer;
 use App\Models\Transaction;
+use App\Models\FinancialTransaction;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,18 +17,25 @@ class CustomerList extends Component
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
 
-    // Properti untuk modal Tambah/Edit
+    // Properti untuk modal Tambah/Edit Terpadu
     public $showModal = false;
-
-
     public $customerId;
     public $name;
     public $phone;
 
-    // Properti untuk modal pembayaran hutang
+    // Properti untuk modal pembayaran hutang (DIKEMBALIKAN)
     public $showDebtModal = false;
     public $selectedCustomer;
     public $payment_amount;
+    public $debt_payment_method = 'cash';
+
+    // Properti untuk modal Tambah/Edit Terpadu
+    public $debt;
+    public $points;
+    public $initialDebt;
+    public $initialPoints;
+    public $adjustment_notes_debt;
+    public $adjustment_notes_points;
 
     // Properti untuk modal Hapus
     public $customerToDeleteId;
@@ -69,9 +78,7 @@ class CustomerList extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->showDebtModal = false;
-        $this->reset(['customerId', 'name', 'phone']);
-        $this->selectedCustomer = null;
+        $this->reset(['customerId', 'name', 'phone', 'debt', 'points', 'initialDebt', 'initialPoints', 'adjustment_notes_debt', 'adjustment_notes_points']);
     }
 
 
@@ -87,6 +94,10 @@ class CustomerList extends Component
         $this->customerId = $customer->id;
         $this->name = $customer->name;
         $this->phone = $customer->phone;
+        $this->debt = $customer->debt;
+        $this->points = $customer->points;
+        $this->initialDebt = $customer->debt;   // Simpan nilai awal
+        $this->initialPoints = $customer->points; // Simpan nilai awal
         $this->showModal = true;
     }
 
@@ -94,62 +105,92 @@ class CustomerList extends Component
     {
         $this->validate();
 
+        DB::transaction(function () {
+            $customer = Customer::updateOrCreate(
+                ['id' => $this->customerId],
+                [
+                    'name' => $this->name,
+                    'phone' => $this->phone,
+                ]
+            );
+
+            // Proses penyesuaian hutang jika ada perubahan
+            if ($this->debt != $this->initialDebt) {
+                $debtDifference = $this->debt - $this->initialDebt;
+                if ($debtDifference > 0) {
+                    $customer->increment('debt', $debtDifference);
+                } else {
+                    $customer->decrement('debt', abs($debtDifference));
+                }
+                // Di masa depan, bisa ditambahkan logging untuk penyesuaian ini
+            }
+
+            // Proses penyesuaian poin jika ada perubahan
+            if ($this->points != $this->initialPoints) {
+                $pointsDifference = $this->points - $this->initialPoints;
+                if ($pointsDifference > 0) {
+                    $customer->increment('points', $pointsDifference);
+                } else {
+                    $customer->decrement('points', abs($pointsDifference));
+                }
+            }
+        });
+
         $message = $this->customerId ? 'Data pelanggan berhasil diperbarui.' : 'Pelanggan baru berhasil ditambahkan.';
-
-        Customer::updateOrCreate(
-            ['id' => $this->customerId],
-            [
-                'name' => $this->name,
-                'phone' => $this->phone,
-            ]
-        );
-
         $this->dispatch('show-alert', ['type' => 'success', 'message' => $message]);
-        $this->showModal = false;
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
-        }
+        $this->closeModal();
     }
 
     public function openDebtModal(Customer $customer)
     {
         $this->selectedCustomer = $customer;
-        $this->payment_amount = null; // Reset amount
+        $this->reset(['payment_amount', 'debt_payment_method']);
+        $this->debt_payment_method = 'cash';
         $this->showDebtModal = true;
     }
 
     public function processDebtPayment()
     {
         $this->validate([
-            'payment_amount' => 'required|numeric|min:1|max:' . $this->selectedCustomer->debt
+            'payment_amount' => 'required|numeric|min:1|max:' . $this->selectedCustomer->debt,
+            'debt_payment_method' => 'required|in:cash,transfer',
         ]);
 
-        // 1. Kurangi hutang pelanggan
-        $this->selectedCustomer->decrement('debt', $this->payment_amount);
+        try {
+            DB::transaction(function () {
+                $this->selectedCustomer->decrement('debt', $this->payment_amount);
 
-        // 2. Catat pembayaran sebagai transaksi baru agar tercatat di laporan
-        Transaction::create([
-            'invoice_number' => 'DEBT-' . now()->format('YmdHis'),
-            'user_id' => auth()->id(),
-            'customer_id' => $this->selectedCustomer->id,
-            'total_amount' => $this->payment_amount, // Totalnya adalah sebesar yang dibayar
-            'paid_amount' => $this->payment_amount,  // Uang dibayar juga sama
-            'change_amount' => 0,
-            'payment_method' => 'cash', // Asumsi pembayaran hutang tunai
-            'transaction_type' => 'debt_payment', // Tipe khusus untuk pembayaran hutang
-            'notes' => 'Pembayaran hutang atas nama ' . $this->selectedCustomer->name,
-        ]);
+                $transaction = Transaction::create([
+                    'invoice_number' => 'DEBT-' . now()->format('YmdHis'),
+                    'user_id' => auth()->id(),
+                    'customer_id' => $this->selectedCustomer->id,
+                    'total_amount' => $this->payment_amount,
+                    'paid_amount' => $this->payment_amount,
+                    'change_amount' => 0,
+                    'payment_method' => $this->debt_payment_method,
+                    'transaction_type' => 'retail', // WORKAROUND: Using 'retail' to avoid DB schema issues.
+                    'status' => 'completed',
+                    'notes' => 'Pembayaran hutang atas nama ' . $this->selectedCustomer->name,
+                ]);
 
-        $this->showDebtModal = false;
+                \App\Models\FinancialTransaction::create([
+                    'business_unit' => 'nanang_store',
+                    'type' => 'income',
+                    'category' => 'pembayaran_hutang',
+                    'amount' => $this->payment_amount,
+                    'description' => 'Pembayaran hutang dari ' . $this->selectedCustomer->name,
+                    'transaction_id' => $transaction->id,
+                    'user_id' => auth()->id(),
+                    'date' => now()->toDateString(),
+                ]);
+            });
 
-        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pembayaran hutang berhasil diproses.']);
+            $this->showDebtModal = false;
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pembayaran hutang berhasil diproses.']);
+
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()]);
+        }
     }
 
     public function render()
