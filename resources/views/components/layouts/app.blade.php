@@ -138,6 +138,13 @@
                                     </svg>
                                     <span class="mx-4">Inventory Report</span>
                                 </a>
+                                <a href="{{ route('reports.transaction') }}"
+                                    class="flex items-center px-4 py-2 {{ request()->routeIs('reports.transaction') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <span class="mx-4">Transaction Report</span>
+                                </a>
                                 <a href="{{ route('financials.nanang-store') }}"
                                     class="flex items-center px-4 py-2 {{ request()->routeIs('financials.nanang-store') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>

@@ -137,13 +137,15 @@ class Cart extends Component
                     $this->selectCustomer($transaction->customer->id, $transaction->customer->name);
                 }
             }
-        if ($cartData['customer']) {
-                $this->selectCustomer($cartData['customer']['id'], $cartData['customer']['name']);
-            } 
         } elseif (request()->has('customer_id')) {
             $customer = Customer::find(request()->query('customer_id'));
             if ($customer) {
-                $this->selectCustomer($customer->id, $customer->name);
+                // Set the initial customer for AlpineJS, similar to the resume flow
+                $this->initialCustomer = $customer;
+                // Also set the Livewire properties for the UI to update correctly
+                $this->selected_customer_id = $customer->id;
+                $this->selected_customer_name = $customer->name;
+                $this->selectedCustomerModel = $customer;
             }
         }
 
@@ -155,9 +157,20 @@ class Cart extends Component
         $this->selected_customer_id = $customerId;
         $this->selected_customer_name = $customerName;
         $this->selectedCustomerModel = Customer::find($customerId);
-        $this->customer_search = '';
-        $this->customers = [];
+
         // Kirim data pelanggan ke AlpineJS
+        $this->dispatch('customer:selected', customer: $this->selectedCustomerModel->toArray());
+        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pelanggan berhasil dipilih.']);
+    }
+
+    public function selectCustomerFromSearch($customer)
+    {
+        $this->selected_customer_id = $customer['id'];
+        $this->selected_customer_name = $customer['name'];
+        // Convert array to a Customer model instance for consistency, if needed elsewhere
+        $this->selectedCustomerModel = new Customer($customer);
+
+        // Dispatch the event to AlpineJS with the full customer data
         $this->dispatch('customer:selected', customer: $this->selectedCustomerModel->toArray());
         $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pelanggan berhasil dipilih.']);
     }

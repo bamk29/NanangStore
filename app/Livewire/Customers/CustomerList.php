@@ -8,11 +8,13 @@ use App\Models\FinancialTransaction;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Url;
 
 class CustomerList extends Component
 {
     use WithPagination;
 
+    #[Url(except: '')]
     public $search = '';
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
@@ -39,6 +41,11 @@ class CustomerList extends Component
 
     // Properti untuk modal Hapus
     public $customerToDeleteId;
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
 
     protected function rules()
     {

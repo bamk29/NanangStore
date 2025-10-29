@@ -21,6 +21,7 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Suppliers\SupplierList;
 use App\Livewire\Reports\InventoryReport;
 use App\Livewire\Dashboard;
+use App\Livewire\Reports\TransactionReport;
 
 /*
 |--------------------------------------------------------------------------
@@ -131,6 +132,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/transaction-history', TransactionHistory::class)->name('reports.transaction-history');
         Route::get('/reports/daily-profit', \App\Livewire\Reports\DailyProfitReport::class)->name('reports.daily-profit');
         Route::get('/reports/today-transaction', \App\Livewire\Reports\TodayTransaction::class)->name('reports.today-transaction');
+        Route::get('/transaction', TransactionReport::class)->name('reports.transaction');
     });
 
     Route::prefix('laporan')->middleware('auth')->group(function () {
@@ -146,11 +148,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/phone/{order}/print', [PhoneOrderController::class, 'print'])->name('phone-orders.print');
 });
 
-//Kasir Bersama
-Route::prefix('kasir')->group(function () {
-    Route::get('/', App\Livewire\Kasir\PosTransaksi::class)->name('kasir-bersama.index');
-    Route::get('/invoice/{transaction}', App\Livewire\Kasir\PosInvoice::class)->name('kasir-bersama.invoice');
-});
 
 Route::post('/logout', function () {
     Auth::logout();

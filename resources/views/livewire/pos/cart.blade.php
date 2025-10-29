@@ -414,7 +414,7 @@
                 this.isOpen = true;
             },
             selectCustomer(customer) {
-                this.$wire.selectCustomer(customer.id, customer.name);
+                this.$wire.selectCustomerFromSearch(customer);
                 this.searchQuery = '';
                 this.results = [];
                 this.isOpen = false;
