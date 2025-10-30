@@ -22,7 +22,7 @@
         }
     </style>
 </head>
-<body class="antialiased bg-gray-100" x-data="barcodeScanner()" @keydown.window="handleKeydown($event)">
+<body class="antialiased bg-gray-100">
 
     <div class="min-h-screen bg-gray-100" x-data="{ mobileMenu: false }">
         <!-- Android-style Top Navigation -->
@@ -258,38 +258,6 @@
             Alpine.store('ui', {
                 isBottomNavVisible: true,
             });
-
-            Alpine.data('barcodeScanner', () => ({
-                buffer: [],
-                lastKeystroke: Date.now(),
-
-                handleKeydown(event) {
-                    // Abaikan jika sedang mengetik di input, textarea, dll.
-                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
-
-                    const now = Date.now();
-                    // Jika jeda antar ketukan lebih dari 100ms, reset buffer (kemungkinan ketikan manual)
-                    if (now - this.lastKeystroke > 100) {
-                        this.buffer = [];
-                    }
-                    this.lastKeystroke = now;
-
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        if (this.buffer.length > 3) { // Barcode biasanya lebih dari 3 karakter
-                            const barcode = this.buffer.join('');
-                            // Kirim barcode ke komponen Livewire
-                            window.Livewire.dispatch('barcodeDetected', { barcode: barcode });
-                        }
-                        this.buffer = [];
-                    } else {
-                        // Hanya rekam karakter tunggal (bukan Shift, Ctrl, dll)
-                        if (event.key.length === 1) {
-                            this.buffer.push(event.key);
-                        }
-                    }
-                }
-            }))
         });
 
         document.addEventListener('livewire:initialized', () => {

@@ -1,4 +1,4 @@
-<div>
+<div x-data="productListScanner()" x-init="init()">
     <div class="p-4 sm:p-6 lg:p-8">
         <!-- Header -->
         <div class="sm:flex sm:items-center">
@@ -28,7 +28,7 @@
 
         <!-- Filter -->
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari produk (nama atau kode)..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <input x-ref="searchInput" wire:model.live.debounce.300ms="search" type="text" placeholder="Cari produk (nama atau kode)..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             <select wire:model.live="categoryFilter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 <option value="">Semua Kategori</option>
                 @foreach($categories as $category)
@@ -95,3 +95,48 @@
     </div>
     @endif
 </div>
+
+<script>
+function productListScanner() {
+    return {
+        init() {
+            let barcode = '';
+            let lastKeystrokeTime = 0;
+
+            window.addEventListener('keydown', (e) => {
+                // If the user is typing in an input, let them type normally.
+                // The time-based buffer reset will prevent slow typing from being treated as a scan.
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    // unless it's our search input, in which case we let the scanner logic proceed
+                    if (e.target !== this.$refs.searchInput) {
+                        return;
+                    }
+                }
+
+                const now = Date.now();
+                // Reset buffer if keystrokes are too slow (manual typing)
+                if (now - lastKeystrokeTime > 100) {
+                    barcode = '';
+                }
+
+                if (e.key === 'Enter') {
+                    if (barcode.length > 3) {
+                        e.preventDefault(); // Prevent any form submission
+                        this.$wire.set('search', barcode);
+                        this.$nextTick(() => {
+                            this.$refs.searchInput.focus();
+                        });
+                    }
+                    barcode = '';
+                    return;
+                }
+
+                if (e.key.length > 1) return; // Ignore keys like Shift, Ctrl, etc.
+
+                barcode += e.key;
+                lastKeystrokeTime = now;
+            });
+        }
+    }
+}
+</script>

@@ -228,6 +228,7 @@
             categoryId: '',
             isLoading: true,
             selectedIndex: -1, // -1 means no selection
+            ignoreNextSearchQueryWatch: false,
 
             // Cart State
             cartItemIds: [],
@@ -271,6 +272,10 @@
                 });
 
                 this.$watch('searchQuery', () => {
+                    if (this.ignoreNextSearchQueryWatch) {
+                        this.ignoreNextSearchQueryWatch = false;
+                        return;
+                    }
                     this.selectedIndex = -1; // Reset selection on new search
                     this.categoryId = ''; // Reset category filter
                     this.fetchProducts();
@@ -280,6 +285,12 @@
                     this.searchQuery = ''; // Reset search query
                     this.fetchProducts();
                 });
+            },
+
+            clearSearchAndExit() {
+                this.searchQuery = '';
+                this.selectedIndex = -1;
+                this.$refs.searchInput.blur();
             },
 
             resetSearchAndFocus() {
@@ -292,6 +303,10 @@
 
             // Keyboard Listeners
             initKeyboardListeners() {
+                if (window.posKeyboardListenerAttached) {
+                    return;
+                }
+
                 let barcode = '';
                 let lastKeystrokeTime = 0;
                 let processingBarcode = false;
@@ -306,7 +321,7 @@
                     // Universal Reset Shortcuts
                     if (e.key === 'Escape') {
                         e.preventDefault();
-                        this.resetSearchAndFocus();
+                        this.clearSearchAndExit(); // Use the new function that blurs
                         return;
                     }
 
@@ -315,7 +330,7 @@
                         e.preventDefault();
                         const now = Date.now();
                         if (now - lastSpaceTime < 300) { // Double space pressed
-                            this.resetSearchAndFocus();
+                            this.resetSearchAndFocus(); // This one still focuses
                             lastSpaceTime = 0; // Reset timer
                         } else {
                             lastSpaceTime = now; // Record first space press
@@ -389,6 +404,8 @@
                         lastKeystrokeTime = now;
                     }
                 });
+
+                window.posKeyboardListenerAttached = true;
             },
 
             scrollIntoView() {
@@ -401,28 +418,26 @@
             },
 
             async fetchProductsByBarcode(barcode) {
+                // This function no longer interacts with the main search query or product list.
+                // It directly finds a product and adds it to the cart.
                 this.isLoading = true;
-                this.searchQuery = barcode;
-
                 try {
-                    const params = new URLSearchParams({ q: barcode, category_id: '' });
-                    const response = await fetch(`/api/products?${params}`);
-                    const data = await response.json();
+                    const response = await fetch(`/api/products/by-code/${barcode}`);
+                    const product = await response.json();
 
-                    if (data.length === 1) {
-                        this.quickAddToCart(data[0]);
-                        this.searchQuery = '';
-                        await this.fetchProducts();
+                    if (response.ok) {
+                        this.quickAddToCart(product);
+                        // Clear search and remove focus from the input
+                        this.ignoreNextSearchQueryWatch = true;
+                        this.clearSearchAndExit();
                     } else {
-                        this.products = data;
+                        window.Livewire.dispatch('show-alert', { type: 'error', message: product.message || 'Produk tidak ditemukan.' });
                     }
                 } catch (error) {
-                    console.error('Error fetching products by barcode:', error);
+                    console.error('Error fetching product by barcode:', error);
+                    window.Livewire.dispatch('show-alert', { type: 'error', message: 'Gagal mengambil data produk.' });
                 } finally {
                     this.isLoading = false;
-                    if (this.isDesktop) {
-                        this.$refs.searchInput.focus();
-                    }
                 }
             },
 

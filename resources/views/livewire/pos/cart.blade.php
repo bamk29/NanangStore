@@ -12,11 +12,17 @@
     <div class="p-2 bg-gray-100 flex-shrink-0">
         <div class="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-lg">
             <button @click="transaction_type = 'retail'; recalculate()"
-                :class="{ 'bg-white shadow': transaction_type === 'retail' }"
-                class="px-4 py-2 text-sm font-bold rounded-md focus:outline-none">Eceran</button>
+                :class="{
+                    'bg-blue-600 text-white shadow': transaction_type === 'retail',
+                    'bg-white text-gray-700': transaction_type !== 'retail'
+                }"
+                class="px-4 py-2 text-sm font-bold rounded-md focus:outline-none transition-colors duration-200">Eceran</button>
             <button @click="transaction_type = 'wholesale'; recalculate()"
-                :class="{ 'bg-white shadow': transaction_type === 'wholesale' }"
-                class="px-4 py-2 text-sm font-bold rounded-md focus:outline-none">Grosir</button>
+                :class="{
+                    'bg-green-600 text-white shadow': transaction_type === 'wholesale',
+                    'bg-white text-gray-700': transaction_type !== 'wholesale'
+                }"
+                class="px-4 py-2 text-sm font-bold rounded-md focus:outline-none transition-colors duration-200">Grosir</button>
         </div>
     </div>
 
@@ -548,8 +554,17 @@
             recalculate() {
                 let currentSubtotal = 0;
                 this.items.forEach(item => {
-                    let useWholesale = this.transaction_type === 'wholesale' && item.quantity >= item
-                        .wholesale_min_qty;
+                    const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
+                    let useWholesale = false;
+
+                    if (this.customer && isEligibleForWholesale) {
+                        // Automatic wholesale if a customer is selected and quantity is met
+                        useWholesale = true;
+                    } else if (!this.customer && this.transaction_type === 'wholesale' && isEligibleForWholesale) {
+                        // Manual wholesale for non-customers if toggled and quantity is met
+                        useWholesale = true;
+                    }
+
                     item.price = useWholesale ? item.wholesale_price : item.retail_price;
                     item.subtotal = item.price * item.quantity;
                     currentSubtotal += item.subtotal;

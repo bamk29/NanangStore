@@ -16,7 +16,12 @@
                 </div>
                 <div>
                     <label for="code" class="block text-sm font-medium text-gray-700">Kode Produk</label>
-                    <input type="text" id="code" wire:model="code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" readonly>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <input type="text" id="code" wire:model="code" class="block w-full rounded-none rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <span class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-gray-500">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </span>
+                    </div>
                     @error('code') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div>
@@ -109,12 +114,24 @@ function productFormScanner() {
             let lastKeystrokeTime = 0;
 
             window.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                // Don't interfere with regular typing in inputs
+                if (e.target.id === 'code') {
                     return;
+                }
+
+                // If the user is typing in another input, let them type normally
+                // but still allow the barcode scanner to work based on speed.
+                const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
+                const now = Date.now();
+                // Reset buffer if keystrokes are too slow (manual typing)
+                if (now - lastKeystrokeTime > 100) {
+                    barcode = '';
                 }
 
                 if (e.key === 'Enter') {
                     if (barcode.length > 3) {
+                        e.preventDefault(); // Prevent form submission
                         this.$wire.set('code', barcode);
                         this.$nextTick(() => {
                             document.getElementById('code').focus();
@@ -124,12 +141,8 @@ function productFormScanner() {
                     return;
                 }
 
-                if (e.key.length > 1) return;
+                if (e.key.length > 1) return; // Ignore keys like Shift, Ctrl, etc.
 
-                const now = Date.now();
-                if (now - lastKeystrokeTime > 100) {
-                    barcode = '';
-                }
                 barcode += e.key;
                 lastKeystrokeTime = now;
             });
