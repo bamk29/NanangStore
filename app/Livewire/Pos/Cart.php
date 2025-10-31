@@ -171,7 +171,7 @@ class Cart extends Component
         $this->selectedCustomerModel = new Customer($customer);
 
         // Dispatch the event to AlpineJS with the full customer data
-        $this->dispatch('customer:selected', customer: $this->selectedCustomerModel->toArray());
+        $this->dispatch('customer:selected', customer: $customer);
         $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pelanggan berhasil dipilih.']);
     }
 
@@ -373,13 +373,17 @@ class Cart extends Component
             return $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Keranjang kosong.']);
         }
 
+     
         // Untuk transaksi pending, pelanggan tidak wajib, tapi dianjurkan
-        $customer = isset($paymentDetails['customer']['id']) ? Customer::find($paymentDetails['customer']['id']) : null;
+        $customerId = null;
+        if (isset($paymentDetails['customer']) && is_array($paymentDetails['customer']) && isset($paymentDetails['customer']['id'])) {
+            $customerId = $paymentDetails['customer']['id'];
+        }
 
         $transaction = Transaction::create([
             'invoice_number' => 'PEND-' . now()->format('YmdHis'),
             'user_id' => auth()->id(),
-            'customer_id' => $customer->id ?? null,
+            'customer_id' => $customerId,
             'total_amount' => $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
             'paid_amount' => 0,
             'change_amount' => 0,
