@@ -365,49 +365,115 @@ class Cart extends Component
         }
     }
 
-    public function holdTransaction($cart, $paymentDetails)
-    {
+        public function holdTransaction($cart, $paymentDetails)
 
+        {
 
-        if (empty($cart)) {
-            return $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Keranjang kosong.']);
-        }
+    
 
-     
-        // Untuk transaksi pending, pelanggan tidak wajib, tapi dianjurkan
-        $customerId = null;
-        if (isset($paymentDetails['customer']) && is_array($paymentDetails['customer']) && isset($paymentDetails['customer']['id'])) {
-            $customerId = $paymentDetails['customer']['id'];
-        }
+    
 
-        $transaction = Transaction::create([
-            'invoice_number' => 'PEND-' . now()->format('YmdHis'),
-            'user_id' => auth()->id(),
-            'customer_id' => $customerId,
-            'total_amount' => $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
-            'paid_amount' => 0,
-            'change_amount' => 0,
-            'payment_method' => 'cash', // Default, bisa diubah nanti
-            'transaction_type' => $paymentDetails['transaction_type'],
-            'status' => 'pending', // Status PENTING
-            'notes' => $paymentDetails['notes'],
-        ]);
+            if (empty($cart)) {
 
-        foreach ($cart as $item) {
-            // Stok tidak dikurangi saat transaksi ditunda, hanya saat penjualan selesai.
-            TransactionDetail::create([
-                'transaction_id' => $transaction->id,
-                'product_id' => $item['id'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'subtotal' => $item['subtotal'],
+                return $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Keranjang kosong.']);
+
+            }
+
+    
+
+            // Untuk transaksi pending, pelanggan tidak wajib, tapi dianjurkan
+
+            $customerId = null;
+
+            if (isset($paymentDetails['customer']) && is_array($paymentDetails['customer']) && isset($paymentDetails['customer']['id'])) {
+
+                $customerId = $paymentDetails['customer']['id'];
+
+            }
+
+    
+
+            // Validasi: Pelanggan tidak boleh punya > 1 transaksi pending di hari yang sama
+
+            if ($customerId) {
+
+                $existingPending = Transaction::where('customer_id', $customerId)
+
+                    ->where('status', 'pending')
+
+                    ->whereDate('created_at', today())
+
+                    ->exists();
+
+    
+
+                if ($existingPending) {
+
+                    $customerName = $paymentDetails['customer']['name'] ?? 'Pelanggan';
+
+                    return $this->dispatch('show-alert', ['type' => 'error', 'message' => "{$customerName} sudah memiliki transaksi tunda untuk hari ini."]);
+
+                }
+
+            }
+
+    
+
+            $transaction = Transaction::create([
+
+                'invoice_number' => 'PEND-' . now()->format('YmdHis'),
+
+                'user_id' => auth()->id(),
+
+                'customer_id' => $customerId,
+
+                'total_amount' => $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
+
+                'paid_amount' => 0,
+
+                'change_amount' => 0,
+
+                'payment_method' => 'cash', // Default, bisa diubah nanti
+
+                'transaction_type' => $paymentDetails['transaction_type'],
+
+                'status' => 'pending', // Status PENTING
+
+                'notes' => $paymentDetails['notes'],
+
             ]);
-        }
 
-        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Transaksi berhasil disimpan sebagai Tertunda.']);
-        $this->dispatch('cart:reset'); // Kirim event ke Alpine untuk reset
-        $this->clearCart();
-    }
+    
+
+            foreach ($cart as $item) {
+
+                // Stok tidak dikurangi saat transaksi ditunda, hanya saat penjualan selesai.
+
+                TransactionDetail::create([
+
+                    'transaction_id' => $transaction->id,
+
+                    'product_id' => $item['id'],
+
+                    'quantity' => $item['quantity'],
+
+                    'price' => $item['price'],
+
+                    'subtotal' => $item['subtotal'],
+
+                ]);
+
+            }
+
+    
+
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Transaksi berhasil disimpan sebagai Tertunda.']);
+
+            $this->dispatch('cart:reset'); // Kirim event ke Alpine untuk reset
+
+            $this->clearCart();
+
+        }
 
     public function render()
     {
