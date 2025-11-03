@@ -434,7 +434,7 @@
             items: [],
             subtotal: 0,
             final_total: 0,
-            transaction_type: 'retail',
+            transaction_type: 'wholesale',
             customer: null,
             include_old_debt: false,
             showPaymentModal: false,
@@ -551,30 +551,81 @@
                 }
             },
 
-            recalculate() {
-                let currentSubtotal = 0;
-                this.items.forEach(item => {
-                    const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
-                    let useWholesale = false;
+                        recalculate() {
 
-                    if (this.customer && isEligibleForWholesale) {
-                        // Automatic wholesale if a customer is selected and quantity is met
-                        useWholesale = true;
-                    } else if (!this.customer && this.transaction_type === 'wholesale' && isEligibleForWholesale) {
-                        // Manual wholesale for non-customers if toggled and quantity is met
-                        useWholesale = true;
-                    }
+                            let currentSubtotal = 0;
 
-                    item.price = useWholesale ? item.wholesale_price : item.retail_price;
-                    item.subtotal = item.price * item.quantity;
-                    currentSubtotal += item.subtotal;
-                });
-                this.subtotal = currentSubtotal;
-                this.calculateFinalTotal();
-                this.$dispatch('cart-updated', {
-                    items: this.items
-                });
-            },
+            
+
+                            const anyItemEligible = this.items.some(item => item.quantity >= item.wholesale_min_qty);
+
+            
+
+                            // Aturan untuk tombol Eceran/Grosir
+
+                            if (this.customer) {
+
+                                // Jika ada pelanggan, mode tergantung sepenuhnya pada kuantitas
+
+                                this.transaction_type = anyItemEligible ? 'wholesale' : 'retail';
+
+                            } else {
+
+                                // Jika tidak ada pelanggan, dan ada item di keranjang,
+
+                                // tapi tidak ada yang eligible, paksa kembali ke retail.
+
+                                if (this.items.length > 0 && !anyItemEligible) {
+
+                                    this.transaction_type = 'retail';
+
+                                }
+
+                            }
+
+            
+
+                            this.items.forEach(item => {
+
+                                const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
+
+                                let useWholesale = false;
+
+            
+
+                                // Aturan untuk harga
+
+                                // Harga grosir jika item eligible DAN (mode grosir aktif ATAU ada pelanggan)
+
+                                if (isEligibleForWholesale && (this.transaction_type === 'wholesale' || this.customer)) {
+
+                                    useWholesale = true;
+
+                                }
+
+            
+
+                                item.price = useWholesale ? item.wholesale_price : item.retail_price;
+
+                                item.subtotal = item.price * item.quantity;
+
+                                currentSubtotal += item.subtotal;
+
+                            });
+
+            
+
+                            this.subtotal = currentSubtotal;
+
+                            this.calculateFinalTotal();
+
+                            this.$dispatch('cart-updated', {
+
+                                items: this.items
+
+                            });
+
+                        },
 
             setCustomer(customer) {
                 this.customer = customer;

@@ -22,7 +22,7 @@ class Cart extends Component
 
     public $initialItems = [];
     public $initialCustomer = null;
-    public $initialType = 'retail';
+    public $initialType = 'wholesale';
     public $initialPendingId = null;
 
     public function clearCart()
