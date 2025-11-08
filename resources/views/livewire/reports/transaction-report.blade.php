@@ -84,7 +84,7 @@
                                 <li class="py-3 flex justify-between items-center">
                                     <div class="flex-1">
                                         <p class="text-sm font-medium text-gray-900">{{ $detail->product->name ?? 'Produk Dihapus' }}</p>
-                                        <p class="text-sm text-gray-500">{{ $detail->quantity }} x Rp {{ number_format($detail->price, 0, ',', '.') }}</p>
+                                        <p class="text-sm text-gray-500">{{ number_format($detail->quantity )}} x Rp {{ number_format($detail->price, 0, ',', '.') }}</p>
                                     </div>
                                     <p class="text-sm font-medium text-gray-800">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</p>
                                 </li>
@@ -98,7 +98,7 @@
                                 <div class="col-span-1">
                                     <dt class="text-gray-500">Metode Bayar</dt>
                                     <dd class="font-medium text-gray-900">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             {{ $transaction->payment_method == 'debt' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
                                             {{ ucfirst($transaction->payment_method) }}
                                         </span>

@@ -47,8 +47,8 @@
                         </button>
                         <div class="relative w-auto mx-1">
 
-                            <input type="text" inputmode="decimal" x-model.lazy="item.quantity"
-                                @change="validateAndRecalculate(item.id)"
+                            <input type="text" inputmode="decimal" x-model="item.quantity"
+                                @input="validateAndRecalculate(item.id)"
                                 class="w-16 h-7 text-center  bg-transparent text-sm font-semibold text-gray-800 focus:outline-none focus:ring-0">
                         </div>
                         <button @click="increment(item.id)"
@@ -257,7 +257,7 @@
                         <label class="block text-sm font-semibold mb-2">Uang Dibayarkan</label>
                         <input type="text" x-model="paid_amount_display" @input="formatPaidAmount($event)" placeholder="0" class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         <div class="mt-3 grid grid-cols-4 gap-2 text-sm">
-                            <template x-for="val in [10000, 20000, 50000, 100000]" :key="val">
+                            <template x-for="val in [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]" :key="val">
                                 <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold" @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
                             </template>
                             <button class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold" @click="setPaidAmount(final_total)">Uang Pas</button>
@@ -463,6 +463,7 @@
             },
 
             initiatePayment() {
+                this.recalculate();
                 if (!this.customer) {
                     this.showCustomerWarningModal = true;
                 } else {
@@ -555,11 +556,11 @@
 
                             let currentSubtotal = 0;
 
-            
+
 
                             const anyItemEligible = this.items.some(item => item.quantity >= item.wholesale_min_qty);
 
-            
+
 
                             // Aturan untuk tombol Eceran/Grosir
 
@@ -583,7 +584,7 @@
 
                             }
 
-            
+
 
                             this.items.forEach(item => {
 
@@ -591,7 +592,7 @@
 
                                 let useWholesale = false;
 
-            
+
 
                                 // Aturan untuk harga
 
@@ -603,7 +604,7 @@
 
                                 }
 
-            
+
 
                                 item.price = useWholesale ? item.wholesale_price : item.retail_price;
 
@@ -613,7 +614,7 @@
 
                             });
 
-            
+
 
                             this.subtotal = currentSubtotal;
 

@@ -54,19 +54,31 @@
                 </div>
                 <div>
                     <label for="units_in_box" class="block text-sm font-medium text-gray-700">Isi Satuan Besar</label>
-                    <input type="number" id="units_in_box" wire:model.live="units_in_box" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 12">
+                    <input type="text" inputmode="decimal" id="units_in_box"
+                           :value="$wire.get('units_in_box')"
+                           @input="$wire.set('units_in_box', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 12">
                 </div>
                 <div>
                     <label for="unit_price" class="block text-sm font-medium text-gray-700">Harga Jual Eceran</label>
-                    <input type="number" id="unit_price" wire:model="retail_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="unit_price"
+                           :value="$wire.get('retail_price')"
+                           @input.debounce.150ms="$wire.set('retail_price', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label for="box_price" class="block text-sm font-medium text-gray-700">Harga Jual Grosir (per box)</label>
-                    <input type="number" id="box_price" wire:model="wholesale_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="box_price"
+                           :value="$wire.get('wholesale_price')"
+                           @input.debounce.150ms="$wire.set('wholesale_price', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label for="wholesale_min_qty" class="block text-sm font-medium text-gray-700">Min. Kuantitas Grosir</label>
-                    <input type="number" id="wholesale_min_qty" wire:model="wholesale_min_qty" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="wholesale_min_qty"
+                           :value="$wire.get('wholesale_min_qty')"
+                           @input.debounce.150ms="$wire.set('wholesale_min_qty', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
             </div>
         </div>
@@ -77,20 +89,32 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                     <label for="stock" class="block text-sm font-medium text-gray-700">Total Stok (Satuan Dasar)</label>
-                    <input type="number" id="stock" wire:model="stock" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="stock"
+                           :value="$wire.get('stock')"
+                           @input.debounce.150ms="$wire.set('stock', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label for="box_stock" class="block text-sm font-medium text-gray-700">Stok Boks</label>
-                    <input type="number" id="box_stock" wire:model="box_stock" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="box_stock"
+                           :value="$wire.get('box_stock')"
+                           @input.debounce.150ms="$wire.set('box_stock', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <p class="mt-1 text-xs text-gray-500">Sistem menghitung: <span class="font-semibold">{{ $calculatedBoxStock }}</span> boks.</p>
                 </div>
                 <div>
                     <label for="box_cost" class="block text-sm font-medium text-gray-700">Modal per Box dari Supplier</label>
-                    <input type="number" id="box_cost" wire:model.live="box_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="box_cost"
+                           :value="$wire.get('box_cost')"
+                           @input="$wire.set('box_cost', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label for="unit_cost" class="block text-sm font-medium text-gray-700">Modal per Satuan Dasar</label>
-                    <input type="number" id="unit_cost" wire:model="cost_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="text" inputmode="decimal" id="unit_cost"
+                           :value="$wire.get('cost_price')"
+                           @input.debounce.150ms="$wire.set('cost_price', $event.target.value.replace(/\./g, '').replace(',', '.'))"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <p class="mt-1 text-xs text-gray-500">Rekomendasi Modal: <span class="font-semibold">Rp {{ number_format($this->recommendedCostPrice, 0, ',', '.') }}</span> (dari Modal per Box / Isi Satuan Besar)</p>
                 </div>
             </div>
