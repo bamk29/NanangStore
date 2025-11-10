@@ -420,7 +420,11 @@
                 });
                 // Listen for the global focus event
                 window.addEventListener('focus-customer-search', () => {
-                    this.$nextTick(() => this.$refs.customerSearchInput.focus());
+                    this.$nextTick(() => {
+                        if (this.$refs.customerSearchInput) {
+                            this.$refs.customerSearchInput.focus();
+                        }
+                    });
                 });
             },
             fetchCustomers() {
