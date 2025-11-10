@@ -421,7 +421,7 @@ class Cart extends Component
 
             $transaction = Transaction::create([
 
-                'invoice_number' => 'PEND-' . now()->format('YmdHis'),
+                'invoice_number' => 'PEND-' . now()->format('YmdHisu'),
 
                 'user_id' => auth()->id(),
 
