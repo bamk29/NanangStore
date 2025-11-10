@@ -1,16 +1,10 @@
-<div x-data="cartManager()"
-     x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
-     x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
-     x-on:customer:selected.window="setCustomer($event.detail.customer)"
-     x-on:customer:cleared.window="clearCustomer()"
-     x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
-     x-on:cart:reset.window="resetCart()"
-     x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
-     @shortcut:pay.window="initiatePayment()"
-     @shortcut:hold.window="holdSale()"
-     @keydown.escape.window="handleEscape()"
-     class="flex flex-col h-full bg-white">
-
+<div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
+    x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
+    x-on:customer:selected.window="setCustomer($event.detail.customer)" x-on:customer:cleared.window="clearCustomer()"
+    x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
+    x-on:cart:reset.window="resetCart()" x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
+    @shortcut:pay.window="initiatePayment()" @shortcut:hold.window="initiateHold()"
+    @keydown.escape.window="handleEscape()" class="flex flex-col h-full bg-white">
     <!-- Tombol Eceran/Grosir -->
     <div class="p-2 bg-gray-100 flex-shrink-0">
         <div class="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-lg">
@@ -46,7 +40,10 @@
                     <div class="flex items-center">
                         <button @click="decrement(item.id)"
                             class="w-7 h-7 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4">
+                                </path>
+                            </svg>
                         </button>
                         <div class="relative w-auto mx-1">
 
@@ -56,7 +53,10 @@
                         </div>
                         <button @click="increment(item.id)"
                             class="w-7 h-7 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
                         </button>
                     </div>
                     <div class="w-20 text-right font-semibold text-sm" x-text="formatCurrency(item.subtotal)"></div>
@@ -107,14 +107,17 @@
                     </div>
                     <button wire:click="clearCustomer"
                         class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
             @else
                 <div x-data="customerSearch()" class="relative">
                     <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
-                        @keydown="handleKeydown($event)"
-                        @click.away="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
+                        @keydown="handleKeydown($event)" @click.away="isOpen = false"
+                        placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
                     <div x-show="isOpen && (results.length > 0 || isLoading)" x-transition
@@ -123,10 +126,9 @@
                             <div class="px-4 py-2 text-gray-500">Mencari...</div>
                         </template>
                         <template x-for="(customer, index) in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)"
-                                 @mouseenter="selectedIndex = index"
-                                 :class="{'bg-blue-100': index === selectedIndex}"
-                                 class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                            <div @click="selectCustomer(customer)" @mouseenter="selectedIndex = index"
+                                :class="{ 'bg-blue-100': index === selectedIndex }"
+                                class="px-4 py-2 cursor-pointer hover:bg-gray-100">
                                 <p class="font-semibold" x-text="customer.name"></p>
                                 <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                             </div>
@@ -146,15 +148,26 @@
 
         <!-- Bayar Button -->
         <div class="p-2 bg-gray-50 border-t grid grid-cols-2 gap-2">
-            <button @click="showHoldConfirmation = true" :disabled="items.length === 0"
+            <button @click="initiateHold()" :disabled="items.length === 0"
                 class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
                 <span>Tunda</span>
+                <kbd
+                    class="ml-2 px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-200 border border-yellow-300 rounded">F4</kbd>
             </button>
             <button @click="initiatePayment()" :disabled="items.length === 0"
                 class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
+                    </path>
+                </svg>
                 <span>Bayar</span>
+                <kbd
+                    class="ml-2 px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-200 border border-blue-300 rounded">F2</kbd>
             </button>
         </div>
     </div>
@@ -162,46 +175,43 @@
     <!-- Modals -->
     <!-- Modal Pilih Pelanggan -->
     <div x-show="showCustomerWarningModal" x-cloak
-        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-20"
-        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-20">
         <div @click.away="showCustomerWarningModal = false"
-            @keydown.F2.prevent="showCustomerWarningModal = false; showPaymentModal = true"
-            class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all"
-            x-show="showCustomerWarningModal"
-            x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 scale-95"
-            x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95">
+            @keydown.F2.prevent="skipToPay()"
+            @keydown.F4.prevent="skipToHold()"
+            class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
 
             <div class="p-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih atau Buat Pelanggan</h3>
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg mb-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.001-1.742 3.001H4.42c-1.532 0-2.492-1.667-1.742-3.001l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.001-1.742 3.001H4.42c-1.532 0-2.492-1.667-1.742-3.001l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-yellow-700">Transaksi tanpa pelanggan tidak akan tercatat dalam riwayat hutang atau poin loyalitas.</p>
+                            <p class="text-sm text-yellow-700">Transaksi tanpa pelanggan tidak akan tercatat dalam
+                                riwayat hutang atau poin loyalitas.</p>
                         </div>
                     </div>
                 </div>
                 <div x-data="customerSearch()" class="relative">
-                    <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
-                        @keydown="handleKeydown($event)"
-                        @keydown.escape="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
+                    <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery"
+                        @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape="isOpen = false"
+                        placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <div x-show="isOpen" x-transition
                         class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        <template x-if="isLoading"><div class="px-4 py-2 text-gray-500">Mencari...</div></template>
+                        <template x-if="isLoading">
+                            <div class="px-4 py-2 text-gray-500">Mencari...</div>
+                        </template>
                         <template x-for="(customer, index) in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)"
-                                 @mouseenter="selectedIndex = index"
-                                 :class="{'bg-blue-100': index === selectedIndex}"
-                                 class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                            <div @click="selectCustomer(customer)" @mouseenter="selectedIndex = index"
+                                :class="{ 'bg-blue-100': index === selectedIndex }"
+                                class="px-4 py-2 cursor-pointer hover:bg-gray-100">
                                 <p class="font-semibold" x-text="customer.name"></p>
                                 <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                             </div>
@@ -216,14 +226,15 @@
                     </div>
                 </div>
             </div>
-            <div class="px-6 pb-4 space-y-2 border-t bg-gray-50 rounded-b-2xl pt-4">
-                <button @click="showCustomerWarningModal = false; showPaymentModal = true"
-                    class="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none">
-                    Lanjutkan (Tanpa Pelanggan)
-                </button>
+            <div class="px-6 pb-4 space-y-3 border-t bg-gray-50 rounded-b-2xl pt-4">
+                <p class="text-center text-xs text-gray-500">Atau, tekan <kbd
+                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">F2</kbd>
+                    untuk Bayar / <kbd
+                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">F4</kbd>
+                    untuk Tunda tanpa pelanggan.</p>
                 <button @click="showCustomerWarningModal = false"
                     class="w-full px-4 py-2.5 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none">
-                    Batal
+                    Tutup
                 </button>
             </div>
         </div>
@@ -235,17 +246,13 @@
         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div @click.away="showPaymentModal = false"
-            @keydown.enter.prevent="completePayment()"
-            class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24"
-            x-show="showPaymentModal" x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="translate-y-full sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="translate-y-0 sm:scale-100"
-            x-transition:leave-end="translate-y-full sm:translate-y-0 sm:scale-95">
+                <div @click.away="showPaymentModal = false"
+                    @keydown.enter.prevent="completePayment()"
+                    class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24">
             <div class="p-4 md:p-5 border-b bg-gray-50 flex justify-between items-center">
                 <h3 class="text-lg md:text-xl font-bold text-gray-800">💰 Detail Pembayaran</h3>
-                <button @click="showPaymentModal = false" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+                <button @click="showPaymentModal = false"
+                    class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
             </div>
             <div class="p-4 md:p-6 space-y-5 overflow-y-auto flex-1">
                 <div class="text-center">
@@ -257,9 +264,12 @@
                     <div class="grid grid-cols-3 gap-2">
                         <template x-for="method in ['cash', 'transfer', 'debt']" :key="method">
                             <label class="p-3 border rounded-lg text-center cursor-pointer select-none transition"
-                                :class="{ 'bg-blue-600 text-white border-blue-600': payment_method === method, 'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method }">
-                                <input type="radio" class="hidden" x-model="payment_method" :value="method">
-                                <span x-text="method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : 'Hutang'"></span>
+                                :class="{ 'bg-blue-600 text-white border-blue-600': payment_method ===
+                                    method, 'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method }">
+                                <input type="radio" class="hidden" x-model="payment_method"
+                                    :value="method">
+                                <span
+                                    x-text="method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : 'Hutang'"></span>
                             </label>
                         </template>
                     </div>
@@ -267,42 +277,75 @@
                 <template x-if="payment_method !== 'debt'">
                     <div>
                         <label class="block text-sm font-semibold mb-2">Uang Dibayarkan</label>
-                        <input type="text" x-ref="paidAmountInput" x-model="paid_amount_display" @input="formatPaidAmount($event)" placeholder="0" class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                        <input type="text" x-ref="paidAmountInput" x-model="paid_amount_display"
+                            @input="formatPaidAmount($event)" placeholder="0"
+                            class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         <div class="mt-3 grid grid-cols-4 gap-2 text-sm">
-                            <template x-for="val in [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]" :key="val">
-                                <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold" @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
+                            <template x-for="val in [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]"
+                                :key="val">
+                                <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold"
+                                    @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
                             </template>
-                            <button class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold" @click="setPaidAmount(final_total)">Uang Pas</button>
-                            <button class="px-2 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 col-span-2 font-semibold" @click="resetAmount()">Reset</button>
+                            <button
+                                class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold"
+                                @click="setPaidAmount(final_total)">Uang Pas</button>
+                            <button
+                                class="px-2 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 col-span-2 font-semibold"
+                                @click="resetAmount()">Reset</button>
                         </div>
                         <template x-if="paid_amount < final_total && customer">
-                            <div class="text-orange-700 bg-orange-50 border-l-4 border-orange-500 p-2 text-xs mt-3 rounded">
-                                Kekurangan <strong x-text="formatCurrency(final_total - paid_amount)"></strong> akan otomatis ditambahkan sebagai hutang pelanggan.
+                            <div
+                                class="text-orange-700 bg-orange-50 border-l-4 border-orange-500 p-2 text-xs mt-3 rounded">
+                                Kekurangan <strong x-text="formatCurrency(final_total - paid_amount)"></strong> akan
+                                otomatis ditambahkan sebagai hutang pelanggan.
                             </div>
                         </template>
                         <template x-if="underpaymentError">
-                            <div class="text-red-500 text-sm mt-2">Uang kurang & tidak ada pelanggan terpilih untuk mencatat hutang!</div>
+                            <div class="text-red-500 text-sm mt-2">Uang kurang & tidak ada pelanggan terpilih untuk
+                                mencatat hutang!</div>
                         </template>
                     </div>
                 </template>
                 <div>
                     <label class="block text-sm font-semibold mb-2">Kembalian</label>
-                    <div class="text-xl md:text-2xl font-bold" :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }" x-text="formatCurrency(change)"></div>
+                    <div class="text-xl md:text-2xl font-bold"
+                        :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
+                        x-text="formatCurrency(change)"></div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-2">Catatan</label>
-                    <textarea x-model="notes" rows="2" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" placeholder="Catatan tambahan..."></textarea>
+                    <textarea x-model="notes" rows="2"
+                        class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                        placeholder="Catatan tambahan..."></textarea>
                 </div>
             </div>
             <div class="p-4 md:p-5 border-t bg-gray-50 flex flex-col md:flex-row gap-2 md:justify-end">
-                <button @click="showPaymentModal=false" class="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 w-full md:w-auto">Batal</button>
-                <button @click="holdSale()" class="px-4 py-2 rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 w-full md:w-auto">Simpan & Tunda</button>
-                <button @click="completePayment()" :disabled="(payment_method === 'debt' && !customer) || isProcessingPayment" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-wait w-full md:w-auto flex items-center justify-center">
+                <button @click="showPaymentModal=false"
+                    class="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 w-full md:w-auto">Batal</button>
+                <button @click="holdSale()"
+                    class="px-4 py-2 rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 w-full md:w-auto">Simpan &
+                    Tunda</button>
+                <button @click="completePayment()"
+                    :disabled="(payment_method === 'debt' && !customer) || isProcessingPayment"
+                    class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-wait w-full md:w-auto flex items-center justify-center">
                     <template x-if="isProcessingPayment">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
                         <span>Memproses...</span>
                     </template>
-                    <template x-if="!isProcessingPayment"><span>Selesaikan Pembayaran</span></template>
+                    <template x-if="!isProcessingPayment">
+                        <span class="flex items-center justify-center gap-2">
+                            <span>Selesaikan Pembayaran</span>
+                            <kbd
+                                class="px-2 py-0.5 text-xs font-sans font-semibold text-blue-800 bg-blue-200 border border-blue-300 rounded">Enter</kbd>
+                        </span>
+                    </template>
                 </button>
             </div>
         </div>
@@ -314,36 +357,38 @@
         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div @click.away="showUnderpaymentConfirmation = false"
-             @keydown.enter.prevent="proceedWithUnderpayment()"
-             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
-             x-show="showUnderpaymentConfirmation"
-             x-transition:enter="ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="ease-in duration-200"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
+        <div @click.away="showUnderpaymentConfirmation = false" @keydown.enter.prevent="proceedWithUnderpayment()"
+            class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
+            x-show="showUnderpaymentConfirmation" x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95">
 
             <div class="p-6 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                     <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
                 <h3 class="mt-4 text-lg font-semibold text-gray-900">Pembayaran Kurang!</h3>
                 <p class="mt-2 text-sm text-gray-600">
-                    Uang yang dibayarkan lebih kecil dari total tagihan. Kekurangan sebesar <strong x-text="formatCurrency(final_total - paid_amount)"></strong> akan ditambahkan ke hutang pelanggan.
+                    Uang yang dibayarkan lebih kecil dari total tagihan. Kekurangan sebesar <strong
+                        x-text="formatCurrency(final_total - paid_amount)"></strong> akan ditambahkan ke hutang
+                    pelanggan.
                 </p>
                 <p class="mt-1 text-sm text-gray-600">
                     Lanjutkan transaksi?
                 </p>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
-                <button @click="showUnderpaymentConfirmation = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+            <div
+                class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
+                <button @click="showUnderpaymentConfirmation = false" type="button"
+                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                     Batal
                 </button>
-                <button @click="proceedWithUnderpayment()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                <button @click="proceedWithUnderpayment()" type="button"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                     Ya, Lanjutkan (Jadi Hutang)
                 </button>
             </div>
@@ -353,34 +398,41 @@
     <!-- Modal Konfirmasi Tunda Transaksi -->
     <div x-show="showHoldConfirmation" x-cloak
         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4"
-        x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
         <div @click.away="showHoldConfirmation = false"
-             @keydown.enter.prevent="holdSale(); showHoldConfirmation = false;"
-             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
-             x-show="showHoldConfirmation"
-             x-transition:enter="ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="ease-in duration-200"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
+             @keydown.enter.window.prevent="if(showHoldConfirmation) { holdSale(); showHoldConfirmation = false; }"
+             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all">
 
             <div class="p-6 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </div>
                 <h3 class="mt-4 text-lg font-semibold text-gray-900">Tunda Transaksi Ini?</h3>
                 <p class="mt-2 text-sm text-gray-600">
                     Keranjang saat ini akan disimpan di daftar "Transaksi Tertunda" dan keranjang akan dikosongkan.
                 </p>
+                <p class="text-xs text-gray-500 mt-4">Tekan <kbd
+                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">Enter</kbd>
+                    untuk konfirmasi atau <kbd
+                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">Esc</kbd>
+                    untuk batal.</p>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
-                <button @click="showHoldConfirmation = false" type="button" class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+            <div
+                class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
+                <button @click="showHoldConfirmation = false" type="button"
+                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                     Batal
                 </button>
-                <button @click="holdSale(); showHoldConfirmation = false;" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-500 text-base font-medium text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:w-auto sm:text-sm">
+                <button x-ref="confirmHoldButton" @click="holdSale(); showHoldConfirmation = false;" type="button"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-500 text-base font-medium text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:w-auto sm:text-sm">
                     Ya, Tunda Transaksi
                 </button>
             </div>
@@ -389,16 +441,30 @@
 
     {{-- Modal Buat Pelanggan (dikontrol oleh Livewire) --}}
     @if ($showCustomerCreateModal)
-        <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" @keydown.escape.window="$wire.set('showCustomerCreateModal', false)">
-            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md" @click.away="$wire.set('showCustomerCreateModal', false)">
+        <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+            @keydown.escape.window="$wire.set('showCustomerCreateModal', false)">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+                @click.away="$wire.set('showCustomerCreateModal', false)">
                 <h3 class="text-lg font-bold mb-4">Buat Pelanggan Baru</h3>
                 <div class="space-y-4">
-                    <div><label for="new_name">Nama Pelanggan</label><input id="new_name" type="text" wire:model="new_customer_name" class="w-full border rounded-lg p-2 mt-1">@error('new_customer_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror</div>
-                    <div><label for="new_phone">No. Telepon (Opsional)</label><input id="new_phone" type="text" wire:model="new_customer_phone" class="w-full border rounded-lg p-2 mt-1">@error('new_customer_phone') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror</div>
+                    <div><label for="new_name">Nama Pelanggan</label><input id="new_name" type="text"
+                            wire:model="new_customer_name" class="w-full border rounded-lg p-2 mt-1">
+                        @error('new_customer_name')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div><label for="new_phone">No. Telepon (Opsional)</label><input id="new_phone" type="text"
+                            wire:model="new_customer_phone" class="w-full border rounded-lg p-2 mt-1">
+                        @error('new_customer_phone')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-4">
-                    <button @click="$wire.set('showCustomerCreateModal', false)" class="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
-                    <button wire:click="createNewCustomer" class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Simpan</button>
+                    <button @click="$wire.set('showCustomerCreateModal', false)"
+                        class="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
+                    <button wire:click="createNewCustomer"
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Simpan</button>
                 </div>
             </div>
         </div>
@@ -492,9 +558,10 @@
                 this.$watch('paid_amount', () => this.calculateChange());
                 this.$watch('final_total', () => this.calculateChange());
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
+
                 this.$watch('showPaymentModal', (value) => {
                     if (value) {
-                        // Add a small delay to ensure the previous modal (customer warning) has fully closed
+                        this.showCustomerWarningModal = false; // Force close
                         setTimeout(() => {
                             this.$nextTick(() => {
                                 if (this.$refs.paidAmountInput) {
@@ -502,14 +569,25 @@
                                     this.$refs.paidAmountInput.select();
                                 }
                             });
-                        }, 100); // 100ms delay
+                        }, 100);
                     } else {
                         this.isProcessingPayment = false;
                     }
                 });
+
+                this.$watch('showHoldConfirmation', (value) => {
+                    if (value) {
+                        this.showCustomerWarningModal = false; // Force close
+                        this.$nextTick(() => {
+                            if (this.$refs.confirmHoldButton) {
+                                this.$refs.confirmHoldButton.focus();
+                            }
+                        });
+                    }
+                });
+
                 this.$watch('showCustomerWarningModal', (value) => {
                     if (value) {
-                        // Dispatch a global event for the nested component to catch
                         window.dispatchEvent(new CustomEvent('focus-customer-search'));
                     }
                 });
@@ -530,12 +608,34 @@
             initiatePayment() {
                 if (this.items.length === 0) return;
                 this.recalculate();
-
                 if (!this.customer) {
                     this.showCustomerWarningModal = true;
                 } else {
                     this.showPaymentModal = true;
                 }
+            },
+
+            initiateHold() {
+                if (this.items.length === 0) return;
+                if (!this.customer) {
+                    this.showCustomerWarningModal = true;
+                } else {
+                    this.showHoldConfirmation = true;
+                }
+            },
+
+            skipToPay() {
+                this.showCustomerWarningModal = false;
+                this.$nextTick(() => {
+                    this.showPaymentModal = true;
+                });
+            },
+
+            skipToHold() {
+                this.showCustomerWarningModal = false;
+                this.$nextTick(() => {
+                    this.showHoldConfirmation = true;
+                });
             },
 
             addToCart(product, quantity = 1) {
@@ -619,81 +719,35 @@
                 }
             },
 
-                        recalculate() {
+            recalculate() {
+                let currentSubtotal = 0;
+                const anyItemEligible = this.items.some(item => item.quantity >= item.wholesale_min_qty);
 
-                            let currentSubtotal = 0;
+                if (this.customer) {
+                    this.transaction_type = anyItemEligible ? 'wholesale' : 'retail';
+                } else {
+                    if (this.items.length > 0 && !anyItemEligible) {
+                        this.transaction_type = 'wholesale';
+                    }
+                }
 
+                this.items.forEach(item => {
+                    const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
+                    let useWholesale = false;
+                    if (isEligibleForWholesale && (this.transaction_type === 'wholesale' || this.customer)) {
+                        useWholesale = true;
+                    }
+                    item.price = useWholesale ? item.wholesale_price : item.retail_price;
+                    item.subtotal = item.price * item.quantity;
+                    currentSubtotal += item.subtotal;
+                });
 
-
-                            const anyItemEligible = this.items.some(item => item.quantity >= item.wholesale_min_qty);
-
-
-
-                            // Aturan untuk tombol Eceran/Grosir
-
-                            if (this.customer) {
-
-                                // Jika ada pelanggan, mode tergantung sepenuhnya pada kuantitas
-
-                                this.transaction_type = anyItemEligible ? 'wholesale' : 'retail';
-
-                            } else {
-
-                                // Jika tidak ada pelanggan, dan ada item di keranjang,
-
-                                // tapi tidak ada yang eligible, paksa kembali ke retail.
-
-                                if (this.items.length > 0 && !anyItemEligible) {
-
-                                    this.transaction_type = 'wholesale';
-
-                                }
-
-                            }
-
-
-
-                            this.items.forEach(item => {
-
-                                const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
-
-                                let useWholesale = false;
-
-
-
-                                // Aturan untuk harga
-
-                                // Harga grosir jika item eligible DAN (mode grosir aktif ATAU ada pelanggan)
-
-                                if (isEligibleForWholesale && (this.transaction_type === 'wholesale' || this.customer)) {
-
-                                    useWholesale = true;
-
-                                }
-
-
-
-                                item.price = useWholesale ? item.wholesale_price : item.retail_price;
-
-                                item.subtotal = item.price * item.quantity;
-
-                                currentSubtotal += item.subtotal;
-
-                            });
-
-
-
-                            this.subtotal = currentSubtotal;
-
-                            this.calculateFinalTotal();
-
-                            this.$dispatch('cart-updated', {
-
-                                items: this.items
-
-                            });
-
-                        },
+                this.subtotal = currentSubtotal;
+                this.calculateFinalTotal();
+                this.$dispatch('cart-updated', {
+                    items: this.items
+                });
+            },
 
             setCustomer(customer) {
                 this.customer = customer;
@@ -704,6 +758,7 @@
                 }
                 this.calculateFinalTotal();
             },
+
             clearCustomer() {
                 this.customer = null;
                 this.include_old_debt = false;
@@ -749,21 +804,15 @@
 
             completePayment() {
                 if (this.isProcessingPayment) return;
-
-                // Underpayment without a customer is a hard error
                 if (this.paid_amount < this.final_total && (!this.customer || !this.customer.id)) {
                     this.underpaymentError = true;
                     setTimeout(() => this.underpaymentError = false, 3000);
                     return;
                 }
-
-                // Underpayment with a customer prompts confirmation
                 if (this.paid_amount < this.final_total && this.customer && this.customer.id) {
                     this.showUnderpaymentConfirmation = true;
                     return;
                 }
-
-                // If payment is sufficient, proceed directly
                 this.executePayment();
             },
 
@@ -775,18 +824,17 @@
             executePayment() {
                 this.underpaymentError = false;
                 this.isProcessingPayment = true;
-
                 let paymentDetails = {
                     customer: this.customer,
                     subtotal: this.subtotal,
                     final_total: this.final_total,
                     include_old_debt: this.include_old_debt,
                     payment_method: this.payment_method,
-                    paid_amount: this.paid_amount, // Kirim jumlah bayar aktual
+                    paid_amount: this.paid_amount,
                     change: this.change > 0 ? this.change : 0,
                     notes: this.notes,
                     transaction_type: this.transaction_type,
-                    pending_id: this.pending_transaction_id // Kirim ID kembali ke backend
+                    pending_id: this.pending_transaction_id
                 };
                 this.$wire.processPaymentFinal(this.items, paymentDetails);
             },
@@ -807,14 +855,12 @@
                 this.clearCustomer();
                 this.notes = '';
                 this.showPaymentModal = false;
-                this.pending_transaction_id = null; // Reset ID saat keranjang dibersihkan
+                this.showHoldConfirmation = false;
+                this.pending_transaction_id = null;
             },
 
-            loadCart(items, customer, type, pending_id = null) { // Terima pending_id
-
+            loadCart(items, customer, type, pending_id = null) {
                 this.items = items.map(item => {
-                    // parseFloat akan menghilangkan angka nol yang tidak perlu di belakang koma
-                    // Contoh: "1.500" menjadi 1.5, "2.00" menjadi 2
                     item.quantity = parseFloat(item.quantity);
                     return item;
                 });
@@ -822,9 +868,10 @@
                 if (customer) {
                     this.setCustomer(customer);
                 }
-                this.pending_transaction_id = pending_id; // Simpan ID
+                this.pending_transaction_id = pending_id;
                 this.recalculate();
             },
+
             formatCurrency(amount) {
                 return new Intl.NumberFormat('id-ID', {
                     style: 'currency',
@@ -834,4 +881,6 @@
             }
         }
     }
+
+
 </script>
