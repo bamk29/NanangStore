@@ -86,12 +86,12 @@ class TransactionHistory extends Component
                 if ($customer = $transaction->customer) {
                     // THE CORRECT REVERSAL LOGIC:
                     // Previous Debt = Current Debt - Goods Value + Amount Paid
-                    $goodsValue = $transaction->details->sum('subtotal');
-                    $customer->debt = $customer->debt - $goodsValue + $transaction->paid_amount;
+                    $goodsValue = (float) $transaction->details->sum('subtotal');
+                    $customer->debt = (float) $customer->debt - $goodsValue + (float) $transaction->paid_amount;
                     $customer->save();
 
                     // Revert points if they were earned on this transaction.
-                    $debtChangeOnSale = $goodsValue - $transaction->paid_amount;
+                    $debtChangeOnSale = $goodsValue - (float) $transaction->paid_amount;
                     if ($debtChangeOnSale <= 0 && $transaction->payment_method !== 'debt') {
                         $pointsEarned = floor($goodsValue / 10000);
                         if ($pointsEarned > 0) {

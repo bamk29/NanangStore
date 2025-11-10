@@ -222,7 +222,7 @@ class Cart extends Component
         // Logika baru: Cek kekurangan pembayaran
         $shortfall = 0;
         if ($paymentDetails['payment_method'] !== 'debt') {
-            $shortfall = $paymentDetails['final_total'] - $paymentDetails['paid_amount'];
+            $shortfall = (float) $paymentDetails['final_total'] - (float) $paymentDetails['paid_amount'];
         }
 
         if ($shortfall > 0 && !$customer) {
@@ -238,9 +238,9 @@ class Cart extends Component
                 $transactionData = [
                     'user_id' => auth()->id(),
                     'customer_id' => $customer->id ?? null,
-                    'total_amount' => $paymentDetails['final_total'],
-                    'paid_amount' => $paymentDetails['paid_amount'],
-                    'change_amount' => $shortfall > 0 ? 0 : $paymentDetails['change'], // Jika ada kekurangan, kembalian pasti 0
+                    'total_amount' => (float) $paymentDetails['final_total'],
+                    'paid_amount' => (float) $paymentDetails['paid_amount'],
+                    'change_amount' => $shortfall > 0 ? 0 : (float) $paymentDetails['change'], // Jika ada kekurangan, kembalian pasti 0
                     'payment_method' => $paymentDetails['payment_method'],
                     'transaction_type' => $paymentDetails['transaction_type'],
                     'status' => 'completed',
@@ -264,7 +264,7 @@ class Cart extends Component
                     $product = Product::find($item['id']);
                     if ($product) {
                         // Kurangi stok utama (satuan dasar)
-                        $product->decrement('stock', $item['quantity']);
+                        $product->decrement('stock', (float) $item['quantity']);
 
                         // Update popularitas produk
                         \App\Models\ProductUsage::incrementUsage($item['id']);
@@ -281,31 +281,31 @@ class Cart extends Component
                     TransactionDetail::create([
                         'transaction_id' => $transaction->id,
                         'product_id' => $item['id'],
-                        'quantity' => $item['quantity'],
-                        'price' => $item['price'],
-                        'subtotal' => $item['subtotal'],
+                        'quantity' => (float) $item['quantity'],
+                        'price' => (float) $item['price'],
+                        'subtotal' => (float) $item['subtotal'],
                     ]);
                 }
 
                 // Handle hutang & poin
                 if ($customer) {
-                    $initialDebt = $customer->debt;
+                    $initialDebt = (float) $customer->debt;
 
                     // Jika checkbox "Sertakan Hutang Lama" dicentang
                     if ($paymentDetails['include_old_debt']) {
                         // Hutang baru dihitung dari total tagihan gabungan dikurangi pembayaran.
                         // Ini mencakup semua skenario: bayar lunas, bayar sebagian, atau bayar lebih.
-                        $newDebt = $paymentDetails['final_total'] - $paymentDetails['paid_amount'];
+                        $newDebt = (float) $paymentDetails['final_total'] - (float) $paymentDetails['paid_amount'];
                     }
                     // Jika checkbox tidak dicentang
                     else {
                         // Jika metode bayar adalah "Hutang", tambahkan seluruh tagihan baru ke hutang lama.
                         if ($paymentDetails['payment_method'] === 'debt') {
-                            $newDebt = $initialDebt + $paymentDetails['subtotal'];
+                            $newDebt = $initialDebt + (float) $paymentDetails['subtotal'];
                         }
                         // Jika bayar cash/transfer tapi kurang
                         else {
-                            $shortfall = $paymentDetails['subtotal'] - $paymentDetails['paid_amount'];
+                            $shortfall = (float) $paymentDetails['subtotal'] - (float) $paymentDetails['paid_amount'];
                             if ($shortfall > 0) {
                                 $newDebt = $initialDebt + $shortfall;
                             } else {
@@ -320,7 +320,7 @@ class Cart extends Component
 
                     // Beri poin hanya jika hutang mereka tidak bertambah pada transaksi ini
                     if ($customer->debt <= $initialDebt && $paymentDetails['payment_method'] !== 'debt') {
-                        $points_earned = floor($paymentDetails['subtotal'] / 10000);
+                        $points_earned = floor((float) $paymentDetails['subtotal'] / 10000);
                         if ($points_earned > 0) {
                             $customer->increment('points', $points_earned);
                         }
@@ -335,7 +335,7 @@ class Cart extends Component
                     if (!isset($incomeByCategory[$businessUnit])) {
                         $incomeByCategory[$businessUnit] = 0;
                     }
-                    $incomeByCategory[$businessUnit] += $item['subtotal'];
+                    $incomeByCategory[$businessUnit] += (float) $item['subtotal'];
                 }
 
                 foreach ($incomeByCategory as $unit => $amount) {
@@ -427,7 +427,7 @@ class Cart extends Component
 
                 'customer_id' => $customerId,
 
-                'total_amount' => $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
+                'total_amount' => (float) $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
 
                 'paid_amount' => 0,
 
@@ -455,11 +455,11 @@ class Cart extends Component
 
                     'product_id' => $item['id'],
 
-                    'quantity' => $item['quantity'],
+                    'quantity' => (float) $item['quantity'],
 
-                    'price' => $item['price'],
+                    'price' => (float) $item['price'],
 
-                    'subtotal' => $item['subtotal'],
+                    'subtotal' => (float) $item['subtotal'],
 
                 ]);
 
