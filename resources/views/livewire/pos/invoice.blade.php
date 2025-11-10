@@ -1,9 +1,11 @@
 <div x-data x-on:keydown.window.prevent="
-    switch ($event.key) {
-        case '1': $wire.newTransaction(); break;
-        case '2': $wire.printInvoice('invoice'); break;
-        case '3': $wire.printInvoice('store'); break;
-    }
+    (() => {
+        switch ($event.key) {
+            case '1': $wire.newTransaction(); break;
+            case '2': $wire.printInvoice('invoice'); break;
+            case '3': $wire.printInvoice('store'); break;
+        }
+    })();
 " class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 md:p-10">
 
