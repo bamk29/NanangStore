@@ -50,16 +50,29 @@ class PurchaseOrderForm extends Component
 
             foreach ($po->items as $item) {
                 if ($item->product) {
+                    $product = $item->product;
+                    $purchaseByBox = false;
+                    $quantityInForm = $item->quantity;
+
+                    // Logic to determine if it was a box purchase
+                    if ($product->units_in_box > 1 && ($item->quantity % $product->units_in_box == 0)) {
+                        $purchaseByBox = true;
+                        $quantityInForm = $item->quantity / $product->units_in_box;
+                    }
+
                     $this->items[] = [
                         'id' => $item->id,
                         'product_id' => $item->product_id,
-                        'product_name' => $item->product->name,
-                        'purchase_by_box' => false, // Default ke satuan untuk edit
-                        'quantity' => $item->quantity,
-                        'items_per_box' => $item->product->units_in_box ?? 1,
-                        'box_cost' => $item->product->box_cost ?? $item->cost,
-                        'cost' => $item->cost, // purchase_price
-                        'unit_cost' => $item->product->unit_cost ?? $item->cost,
+                        'product_name' => $product->name,
+                        'purchase_by_box' => $purchaseByBox,
+                        'quantity' => $quantityInForm,
+                        'items_per_box' => $product->units_in_box ?? 1,
+                        
+                        // Refined Cost Logic: Prioritize historical cost from the PO item itself.
+                        'cost' => $item->cost, // The historical unit cost is the source of truth.
+                        'unit_cost' => $item->cost, // The unit cost for this line item IS the historical cost.
+                        'box_cost' => ($product->units_in_box > 1) ? ($item->cost * $product->units_in_box) : $item->cost, // Calculate historical box cost.
+
                         'total_cost' => $item->total_cost,
                         'received_quantity' => $item->received_quantity ?? 0,
                         'quantity_to_receive' => 0,

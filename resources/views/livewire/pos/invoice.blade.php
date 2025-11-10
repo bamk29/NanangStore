@@ -1,4 +1,10 @@
-<div class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<div x-data x-on:keydown.window.prevent="
+    switch ($event.key) {
+        case '1': $wire.newTransaction(); break;
+        case '2': $wire.printInvoice('invoice'); break;
+        case '3': $wire.printInvoice('store'); break;
+    }
+" class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 md:p-10">
 
         <div class="text-center mb-8">
@@ -60,16 +66,19 @@
 
         <!-- Tombol Aksi -->
         <div class="mt-10 flex flex-col md:flex-row gap-3 justify-center">
-            <button wire:click="newTransaction" class="w-full md:w-auto flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
-                Transaksi Baru
+            <button wire:click="newTransaction" class="w-full md:w-auto flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                <span>Transaksi Baru</span>
+                <kbd class="px-2 py-1 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">1</kbd>
             </button>
             <button wire:click="printInvoice('invoice')" wire:loading.attr="disabled" wire:target="printInvoice('invoice')" class="w-full md:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
                 <span wire:loading wire:target="printInvoice('invoice')" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
-                Print Struk (Kasir Bersama)
+                <span>Print (Kasir Bersama)</span>
+                <kbd class="ml-2 px-2 py-1 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">2</kbd>
             </button>
             <button wire:click="printInvoice('store')" wire:loading.attr="disabled" wire:target="printInvoice('store')" class="w-full md:w-auto flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
                 <span wire:loading wire:target="printInvoice('store')" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
-                Print Struk (Toko Nanang)
+                <span>Print (Toko Nanang)</span>
+                <kbd class="ml-2 px-2 py-1 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">3</kbd>
             </button>
             <a href="{{ route('print.direct', $transaction) }}" class="w-full md:w-auto flex-1 text-center px-6 py-3 bg-green-200 text-green-800 font-semibold rounded-lg hover:bg-green-300 transition-colors">
                 Print Struk Test

@@ -6,6 +6,9 @@
      x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
      x-on:cart:reset.window="resetCart()"
      x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
+     @shortcut:pay.window="initiatePayment()"
+     @shortcut:hold.window="holdSale()"
+     @keydown.escape.window="handleEscape()"
      class="flex flex-col h-full bg-white">
 
     <!-- Tombol Eceran/Grosir -->
@@ -35,7 +38,7 @@
         </template>
         <div class="divide-y">
             <template x-for="item in items" :key="item.id">
-                <div class="p-2 flex items-center space-x-1 my-4">
+                <div class="p-1 flex items-center space-x-1 my-1">
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-sm text-gray-800 truncate" x-text="item.name"></p>
                         <p class="text-xs text-gray-500" x-text="formatCurrency(item.price)"></p>
@@ -71,8 +74,11 @@
     <!-- Unified Footer -->
     <div class="flex-shrink-0 border-t">
         <!-- Totals -->
-        <div class="p-3 bg-gray-50 space-y-3">
-            <div class="flex justify-between items-center font-semibold"><span class="text-gray-600">Total Item</span><span class="text-lg" x-text="items.length + ' item'"></span></div>
+        <div class="p-2 bg-gray-50 space-y-2">
+            <div class="flex justify-between items-baseline font-bold text-blue-600">
+                <span class="text-sm text-gray-600" x-text="items.length + ' item'"></span>
+                <span class="text-2xl" x-text="formatCurrency(final_total)"></span>
+            </div>
 
             <template x-if="customer && customer.debt > 0">
                 <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 rounded-lg">
@@ -89,14 +95,10 @@
                     </div>
                 </div>
             </template>
-
-            <div class="flex justify-between items-center font-bold text-2xl text-blue-600 border-t pt-3 mt-3">
-                <span>Total</span><span x-text="formatCurrency(final_total)"></span>
-            </div>
         </div>
 
         <!-- Customer Search -->
-        <div class="p-4 bg-white shadow-inner border-t">
+        <div class="p-2 bg-white shadow-inner border-t">
             @if ($selected_customer_name)
                 <div class="flex items-center justify-between bg-blue-100 border border-blue-200 rounded-lg p-2">
                     <div>
@@ -111,6 +113,7 @@
             @else
                 <div x-data="customerSearch()" class="relative">
                     <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
+                        @keydown="handleKeydown($event)"
                         @click.away="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
@@ -119,13 +122,16 @@
                         <template x-if="isLoading">
                             <div class="px-4 py-2 text-gray-500">Mencari...</div>
                         </template>
-                        <template x-for="customer in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)" class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                        <template x-for="(customer, index) in results" :key="customer.id">
+                            <div @click="selectCustomer(customer)" 
+                                 @mouseenter="selectedIndex = index"
+                                 :class="{'bg-blue-100': index === selectedIndex}"
+                                 class="px-4 py-2 cursor-pointer hover:bg-gray-100">
                                 <p class="font-semibold" x-text="customer.name"></p>
                                 <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                             </div>
                         </template>
-                        <template x-if="!isLoading && results.length === 0 && searchQuery.length > 0">
+                        <template x-if="!isLoading && results.length > 0 && searchQuery.length > 0">
                             <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
                         </template>
 
@@ -139,7 +145,7 @@
         </div>
 
         <!-- Bayar Button -->
-        <div class="p-3 bg-gray-50 border-t grid grid-cols-2 gap-2">
+        <div class="p-2 bg-gray-50 border-t grid grid-cols-2 gap-2">
             <button @click="showHoldConfirmation = true" :disabled="items.length === 0"
                 class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -161,6 +167,7 @@
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
         <div @click.away="showCustomerWarningModal = false"
+            @keydown.F2.prevent="showCustomerWarningModal = false; showPaymentModal = true"
             class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all"
             x-show="showCustomerWarningModal"
             x-transition:enter="ease-out duration-300"
@@ -183,14 +190,18 @@
                     </div>
                 </div>
                 <div x-data="customerSearch()" class="relative">
-                    <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
+                    <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
+                        @keydown="handleKeydown($event)"
                         @keydown.escape="isOpen = false" placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <div x-show="isOpen" x-transition
                         class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         <template x-if="isLoading"><div class="px-4 py-2 text-gray-500">Mencari...</div></template>
-                        <template x-for="customer in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)" class="px-4 py-2 cursor-pointer hover:bg-gray-100">
+                        <template x-for="(customer, index) in results" :key="customer.id">
+                            <div @click="selectCustomer(customer)" 
+                                 @mouseenter="selectedIndex = index"
+                                 :class="{'bg-blue-100': index === selectedIndex}"
+                                 class="px-4 py-2 cursor-pointer hover:bg-gray-100">
                                 <p class="font-semibold" x-text="customer.name"></p>
                                 <p class="text-sm text-gray-600" x-text="customer.phone"></p>
                             </div>
@@ -225,6 +236,7 @@
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
         <div @click.away="showPaymentModal = false"
+            @keydown.enter.prevent="completePayment()"
             class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24"
             x-show="showPaymentModal" x-transition:enter="ease-out duration-300"
             x-transition:enter-start="translate-y-full sm:translate-y-0 sm:scale-95"
@@ -255,7 +267,7 @@
                 <template x-if="payment_method !== 'debt'">
                     <div>
                         <label class="block text-sm font-semibold mb-2">Uang Dibayarkan</label>
-                        <input type="text" x-model="paid_amount_display" @input="formatPaidAmount($event)" placeholder="0" class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                        <input type="text" x-ref="paidAmountInput" x-model="paid_amount_display" @input="formatPaidAmount($event)" placeholder="0" class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         <div class="mt-3 grid grid-cols-4 gap-2 text-sm">
                             <template x-for="val in [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]" :key="val">
                                 <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold" @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
@@ -303,6 +315,7 @@
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
         <div @click.away="showUnderpaymentConfirmation = false"
+             @keydown.enter.prevent="proceedWithUnderpayment()"
              class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
              x-show="showUnderpaymentConfirmation"
              x-transition:enter="ease-out duration-300"
@@ -344,6 +357,7 @@
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
         <div @click.away="showHoldConfirmation = false"
+             @keydown.enter.prevent="holdSale(); showHoldConfirmation = false;"
              class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
              x-show="showHoldConfirmation"
              x-transition:enter="ease-out duration-300"
@@ -375,7 +389,7 @@
 
     {{-- Modal Buat Pelanggan (dikontrol oleh Livewire) --}}
     @if ($showCustomerCreateModal)
-        <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" @keydown.escape.window="$wire.set('showCustomerCreateModal', false)">
             <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md" @click.away="$wire.set('showCustomerCreateModal', false)">
                 <h3 class="text-lg font-bold mb-4">Buat Pelanggan Baru</h3>
                 <div class="space-y-4">
@@ -398,9 +412,15 @@
             results: [],
             isOpen: false,
             isLoading: false,
+            selectedIndex: -1,
             init() {
                 this.$watch('searchQuery', (value) => {
+                    this.selectedIndex = -1;
                     this.fetchCustomers();
+                });
+                // Listen for the global focus event
+                window.addEventListener('focus-customer-search', () => {
+                    this.$nextTick(() => this.$refs.customerSearchInput.focus());
                 });
             },
             fetchCustomers() {
@@ -418,6 +438,20 @@
                     this.fetchCustomers();
                 }
                 this.isOpen = true;
+            },
+            handleKeydown(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.selectedIndex = (this.selectedIndex + 1) % this.results.length;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.selectedIndex = (this.selectedIndex - 1 + this.results.length) % this.results.length;
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.selectedIndex !== -1) {
+                        this.selectCustomer(this.results[this.selectedIndex]);
+                    }
+                }
             },
             selectCustomer(customer) {
                 this.$wire.selectCustomerFromSearch(customer);
@@ -455,15 +489,44 @@
                 this.$watch('final_total', () => this.calculateChange());
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
                 this.$watch('showPaymentModal', (value) => {
-                    if (!value) {
-                        // Reset state when modal is closed
+                    if (value) {
+                        // Add a small delay to ensure the previous modal (customer warning) has fully closed
+                        setTimeout(() => {
+                            this.$nextTick(() => {
+                                if (this.$refs.paidAmountInput) {
+                                    this.$refs.paidAmountInput.focus();
+                                    this.$refs.paidAmountInput.select();
+                                }
+                            });
+                        }, 100); // 100ms delay
+                    } else {
                         this.isProcessingPayment = false;
+                    }
+                });
+                this.$watch('showCustomerWarningModal', (value) => {
+                    if (value) {
+                        // Dispatch a global event for the nested component to catch
+                        window.dispatchEvent(new CustomEvent('focus-customer-search'));
                     }
                 });
             },
 
+            handleEscape() {
+                if (this.showUnderpaymentConfirmation) {
+                    this.showUnderpaymentConfirmation = false;
+                } else if (this.showHoldConfirmation) {
+                    this.showHoldConfirmation = false;
+                } else if (this.showPaymentModal) {
+                    this.showPaymentModal = false;
+                } else if (this.showCustomerWarningModal) {
+                    this.showCustomerWarningModal = false;
+                }
+            },
+
             initiatePayment() {
+                if (this.items.length === 0) return;
                 this.recalculate();
+
                 if (!this.customer) {
                     this.showCustomerWarningModal = true;
                 } else {
@@ -630,6 +693,11 @@
 
             setCustomer(customer) {
                 this.customer = customer;
+                if (this.customer && this.customer.debt > 0) {
+                    this.include_old_debt = true;
+                } else {
+                    this.include_old_debt = false;
+                }
                 this.calculateFinalTotal();
             },
             clearCustomer() {

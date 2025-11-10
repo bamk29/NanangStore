@@ -17,28 +17,22 @@ Route::get('/products', function (Request $request) {
     $search = $request->query('q', '');
     $categoryId = $request->query('category_id', '');
 
-    $products = Product::query()
+    $query = Product::query()
         // Gabungkan dengan tabel product_usages untuk mendapatkan data popularitas
         ->leftJoin('product_usages', 'products.id', '=', 'product_usages.product_id')
-
-        // Logika pencarian
-        ->when($search, function ($q) use ($search) {
-            $q->where(function ($sub) use ($search) {
-                // Tambahkan nama tabel untuk menghindari error kolom ambigu
-                $sub->where('products.name', 'like', "%{$search}%")
-                    ->orWhere('products.code', 'like', "%{$search}%");
-            });
-        })
-        ->when($categoryId, fn($q) => $q->where('products.category_id', $categoryId))
-
         // Pilih kolom spesifik dari tabel products
-        ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price')
+        ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price');
 
-        // Logika pengurutan: populer jika tidak ada pencarian, relevan jika ada pencarian
-        ->when(empty($search), function ($q) {
-            $q->orderBy('product_usages.usage_count', 'desc')->orderBy('products.name', 'asc');
-        })
+    if ($search) {
+        $query->where('products.name', 'like', "%{$search}%")
+              ->orWhere('products.code', 'like', "%{$search}%");
+    } else {
+        // Logika pengurutan: populer jika tidak ada pencarian
+        $query->orderBy('product_usages.usage_count', 'desc')->orderBy('products.name', 'asc');
+    }
 
+    $products = $query
+        ->when($categoryId, fn($q) => $q->where('products.category_id', $categoryId))
         ->limit(50)
         ->get();
 

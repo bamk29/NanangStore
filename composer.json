@@ -11,6 +11,7 @@
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
         "maatwebsite/excel": "^3.1",
+        "nicolaslopezj/searchable": "^1.13",
         "smalot/cups-ipp": "^0.5.0"
     },
     "require-dev": {

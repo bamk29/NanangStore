@@ -1,56 +1,58 @@
-<div x-data="posManager()" 
-     x-init="init()" 
+<div x-data="posManager()"
+     x-init="init()"
      @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id)"
      @cart:reset.window="if (!isDesktop) isCartVisible = false"
      @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
-     class="h-screen flex flex-col bg-gray-50">
-    <!-- Top Bar -->
-    <div class="flex-shrink-0 bg-white p-2 sm:p-4 rounded-b-lg shadow space-y-4 z-10">
-        <div class="flex items-center gap-2">
-            <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
-                class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk atau scan barcode...">
-            <button @click="$store.ui.isBottomNavVisible = !$store.ui.isBottomNavVisible" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-            </button>
-        </div>
+     @keydown.escape.window="handleEscape()"
+     class="h-screen flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
 
-        <div x-data="{ showAll: false }">
+    <!-- Left Column (Products & Search) -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Bar -->
+        <div class="flex-shrink-0 bg-white p-2 space-y-2 z-10 lg:shadow">
             <div class="flex items-center gap-2">
-                <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
-                    <button @click="categoryId = ''"
-                        class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-                        :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
-                        Semua
-                    </button>
-                    <template x-for="category in categories.slice(0, 4)" :key="category.id">
-                        <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-                        :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
-                            <span x-text="category.name"></span>
+                <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
+                    class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base" placeholder="Cari produk atau scan barcode...">
+                <button @click="$store.ui.isBottomNavVisible = !$store.ui.isBottomNavVisible" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+
+            <div x-data="{ showAll: false }">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
+                        <button @click="categoryId = ''"
+                            class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+                            :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
+                            Semua
+                        </button>
+                        <template x-for="category in categories.slice(0, 4)" :key="category.id">
+                            <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+                            :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
+                                <span x-text="category.name"></span>
+                            </button>
+                        </template>
+                    </div>
+                    <template x-if="categories.length > 4">
+                        <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">
+                            <span>Lainnya</span>
+                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showAll }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                     </template>
                 </div>
-                <template x-if="categories.length > 4">
-                    <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">
-                        <span>Lainnya</span>
-                        <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showAll }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                </template>
-            </div>
-            <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                    <template x-for="category in categories" :key="category.id">
-                        <button @click="categoryId = category.id; showAll = false;" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                        :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
-                            <span x-text="category.name"></span>
-                        </button>
-                    </template>
+                <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                        <template x-for="category in categories" :key="category.id">
+                            <button @click="categoryId = category.id; showAll = false;" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                            :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
+                                <span x-text="category.name"></span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <!-- Products Section -->
         <div class="flex-1 flex flex-col overflow-y-auto p-2 sm:p-4 relative">
             <!-- Loading Overlay -->
@@ -68,28 +70,28 @@
                 </svg>
             </div>
 
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 auto-rows-fr">
+            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
                 <template x-for="(product, index) in products" :key="product.id">
                     <div @click="openModal(product)"
                         :id="'product-' + index"
                         class="relative bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border"
                         :class="{
                             'border-blue-500 border-2': cartItemIds.includes(product.id),
-                            'ring-2 ring-blue-500 ring-offset-1': index === selectedIndex
+                            'ring-2 ring-red-500 ring-offset-1': index === selectedIndex
                         }">
 
                         <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-700 active:scale-90 transition-transform flex items-center justify-center shadow">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                         </button>
 
-                        <div class="p-2 flex flex-col h-full">
+                        <div class="p-1.5 flex flex-col h-full">
                             <div class="mb-1 flex-grow">
-                                <h3 class="text-sm font-semibold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
+                                <h3 class="text-xs font-semibold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
                                 <div class="text-xs text-gray-500" x-text="product.code"></div>
                             </div>
                             <div class="mt-auto">
                                 <div class="flex items-center justify-between">
-                                    <div class="text-base font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
+                                    <div class="text-sm font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
                                     <div class="px-1.5 py-0.5 text-xs font-medium rounded-lg"
                                         :class="{
                                             'bg-green-100 text-green-700': product.stock > 5,
@@ -110,40 +112,27 @@
                 </div>
             </template>
         </div>
-
-        <!-- Cart Section (Desktop) -->
-        <div class="hidden lg:flex lg:w-1/3 xl:w-1/4 flex-col border-l bg-white">
-            <livewire:pos.cart />
-        </div>
     </div>
 
-        <!-- Mobile Cart -->
+    <!-- Cart Section (Desktop) -->
+    <div class="hidden lg:flex lg:w-1/3 xl:w-1/4 flex-col border-l bg-white">
+        <livewire:pos.cart />
+    </div>
 
-        <div x-show="!isDesktop" x-cloak>
+    <!-- Mobile Cart -->
+    <div x-show="!isDesktop" x-cloak>
+        <!-- Backdrop -->
+        <div x-show="isCartVisible" @click="isCartVisible = false"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black/40 z-30" x-cloak>
+        </div>
 
-            <!-- Backdrop -->
-
-            <div x-show="isCartVisible" @click="isCartVisible = false" 
-
-                 x-transition:enter="ease-out duration-300" 
-
-                 x-transition:enter-start="opacity-0" 
-
-                 x-transition:enter-end="opacity-100" 
-
-                 x-transition:leave="ease-in duration-200" 
-
-                 x-transition:leave-start="opacity-100" 
-
-                 x-transition:leave-end="opacity-0" 
-
-                 class="fixed inset-0 bg-black/40 z-30" x-cloak>
-
-            </div>
-
-    
-
-            <!-- Floating Action Button (FAB) -->
+        <!-- Floating Action Button (FAB) -->
         <div x-show="!isCartVisible" class="fixed bottom-6 right-6 z-20">
             <button @click="isCartVisible = true" class="relative bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -154,7 +143,7 @@
         <!-- Cart Bottom Sheet -->
         <div x-show="isCartVisible"
              class="fixed bottom-0 left-0 right-0 z-40 flex flex-col bg-white rounded-t-2xl shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.1)]"
-             style="height: 85vh;"
+             :style="isLandscape ? 'height: 65vh;' : 'height: 85vh;'"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="transform translate-y-full"
              x-transition:enter-end="transform translate-y-0"
@@ -220,6 +209,7 @@
             // UI State
             isDesktop: window.innerWidth >= 1024,
             isCartVisible: window.innerWidth >= 1024,
+            isLandscape: window.matchMedia("(orientation: landscape)").matches,
 
             // Product Search State
             products: [],
@@ -251,6 +241,7 @@
 
                 const handleResize = () => {
                     this.isDesktop = window.innerWidth >= 1024;
+                    this.isLandscape = window.matchMedia("(orientation: landscape)").matches;
                     if(this.isDesktop) {
                         this.isCartVisible = true;
                     }
@@ -287,6 +278,14 @@
                 });
             },
 
+            handleEscape() {
+                if (this.isModalOpen) {
+                    this.closeModal();
+                } else {
+                    this.clearSearchAndExit();
+                }
+            },
+
             clearSearchAndExit() {
                 this.searchQuery = '';
                 this.selectedIndex = -1;
@@ -313,15 +312,22 @@
                 let lastSpaceTime = 0; // For double space shortcut
 
                 window.addEventListener('keydown', (e) => {
-                    // If a modal is open, or the cart is open on mobile, ignore product navigation
-                    if (this.isModalOpen || (!this.isDesktop && this.isCartVisible)) {
-                        return;
+                    // Shortcut global untuk Bayar (F2) dan Tunda (F4)
+                    if (e.key === 'F2') {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('shortcut:pay'));
+                    }
+                    if (e.key === 'F4') {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('shortcut:hold'));
                     }
 
-                    // Universal Reset Shortcuts
-                    if (e.key === 'Escape') {
-                        e.preventDefault();
-                        this.clearSearchAndExit(); // Use the new function that blurs
+                    // If a modal is open, or the cart is open on mobile, ignore product navigation
+                    if (this.isModalOpen || (!this.isDesktop && this.isCartVisible)) {
+                        // Exception for Escape key, which is handled globally now
+                        if (e.key === 'Escape') {
+                            this.handleEscape();
+                        }
                         return;
                     }
 
@@ -427,14 +433,17 @@
 
                     if (response.ok) {
                         this.quickAddToCart(product);
+                        this.playSound('success');
                         // Clear search and remove focus from the input
                         this.ignoreNextSearchQueryWatch = true;
                         this.clearSearchAndExit();
                     } else {
+                        this.playSound('error');
                         window.Livewire.dispatch('show-alert', { type: 'error', message: product.message || 'Produk tidak ditemukan.' });
                     }
                 } catch (error) {
                     console.error('Error fetching product by barcode:', error);
+                    this.playSound('error');
                     window.Livewire.dispatch('show-alert', { type: 'error', message: 'Gagal mengambil data produk.' });
                 } finally {
                     this.isLoading = false;
@@ -469,9 +478,11 @@
             // Cart Methods
             quickAddToCart(product) {
                 if (product.stock <= 0) {
+                    this.playSound('error');
                     window.Livewire.dispatch('show-alert', { type: 'error', message: 'Stok produk habis.' });
                     return;
                 }
+                this.playSound('success');
                 this.$dispatch('add-to-cart', {
                     product: product,
                     quantity: 1
@@ -499,7 +510,6 @@
                 this.isModalOpen = false;
                 this.productForModal = null;
                 this.selectedIndex = -1; // Exit navigation mode
-                this.searchQuery = ''; // Clear search query
 
                 if (this.isDesktop) {
                     this.$nextTick(() => this.$refs.searchInput.focus());
@@ -507,13 +517,19 @@
             },
             increment() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
-                this.quantity = currentQuantity + 1;
+                let newQuantity = currentQuantity + 0.1;
+                // Round to 2 decimal places to avoid floating point issues
+                this.quantity = Math.round((newQuantity + Number.EPSILON) * 100) / 100;
                 this.validate();
             },
             decrement() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
-                if (currentQuantity > 1) {
-                    this.quantity = currentQuantity - 1;
+                let newQuantity = currentQuantity - 0.1;
+                if (newQuantity < 0.01) { // Check against a small number to handle floating point inaccuracies
+                    this.quantity = 0;
+                } else {
+                    // Round to 2 decimal places
+                    this.quantity = Math.round((newQuantity + Number.EPSILON) * 100) / 100;
                 }
                 this.validate();
             },
@@ -536,6 +552,7 @@
                 this.validate();
                 if (!this.isQuantityValid) return;
 
+                this.playSound('success');
                 this.$dispatch('add-to-cart', {
                     product: this.productForModal,
                     quantity: this.quantity
@@ -550,6 +567,10 @@
                     currency: 'IDR',
                     minimumFractionDigits: 0
                 }).format(amount);
+            },
+            playSound(type) {
+                const audio = new Audio(`/sounds/${type}.mp3`);
+                audio.play().catch(e => console.error("Error playing sound:", e));
             }
         }
     }

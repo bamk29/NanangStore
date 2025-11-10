@@ -27,9 +27,9 @@
     <div class="min-h-screen bg-gray-100" x-data="{ mobileMenu: false }">
         <!-- Android-style Top Navigation -->
         <div class="fixed top-0 left-0 right-0 z-50 android-nav-bar bg-white bg-opacity-95 no-print">
-            <div class="flex items-center h-16 landscape-nav px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-b-xl">
+            <div class="flex items-center h-14 landscape-nav px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-b-xl">
                 <!-- Back Button -->
-                <button onclick="window.location.href = '{{ route('dashboard') }}'"
+                <button onclick="window.history.back()"
                     class="flex items-center p-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-150">
                     <div class="w-8 h-8 flex items-center justify-center">
                         <svg class="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@
                 </button>
 
                 <!-- Title with gradient background based on route -->
-                <div class="ml-4 py-1 px-4 rounded-xl
+                <div class="ml-4 py-1 px-4 rounded-xl text-sm
                     {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-blue-500 to-blue-600' : '' }}
                     {{ request()->routeIs('pos.*') ? 'bg-gradient-to-r from-green-500 to-green-600' : '' }}
                     {{ request()->routeIs('products.*') ? 'bg-gradient-to-r from-purple-500 to-purple-600' : '' }}

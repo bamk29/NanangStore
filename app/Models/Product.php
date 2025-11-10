@@ -3,18 +3,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Nicolaslopezj\Searchable\SearchableTrait;
 
 class Product extends Model
 {
+    use SearchableTrait;
+
+    protected $searchable = [
+        'columns' => [
+            'products.name' => 10,
+            'products.code' => 8,
+        ],
+    ];
+
     protected $fillable = [
         'name',
+        'abbr',
+        'promo_isactive',
+        'promo_type',
+        'promo_min_qty',
+        'promo_value',
+        'promo_note',
         'code',
         'description',
         'category_id',
         'supplier_id',
         'stock',
         'box_stock',
-        'min_stock',
         'retail_price',
         'wholesale_price',
         'wholesale_min_qty',

@@ -12,6 +12,8 @@ class Transaction extends Model
         'customer_id',
         'customer_name',
         'total_amount',
+        'discount',
+        'discount_note',
         'paid_amount',
         'change_amount',
         'payment_method',
