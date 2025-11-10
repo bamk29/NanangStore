@@ -123,7 +123,7 @@
                             <div class="px-4 py-2 text-gray-500">Mencari...</div>
                         </template>
                         <template x-for="(customer, index) in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)" 
+                            <div @click="selectCustomer(customer)"
                                  @mouseenter="selectedIndex = index"
                                  :class="{'bg-blue-100': index === selectedIndex}"
                                  class="px-4 py-2 cursor-pointer hover:bg-gray-100">
@@ -198,7 +198,7 @@
                         class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         <template x-if="isLoading"><div class="px-4 py-2 text-gray-500">Mencari...</div></template>
                         <template x-for="(customer, index) in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)" 
+                            <div @click="selectCustomer(customer)"
                                  @mouseenter="selectedIndex = index"
                                  :class="{'bg-blue-100': index === selectedIndex}"
                                  class="px-4 py-2 cursor-pointer hover:bg-gray-100">
@@ -641,7 +641,7 @@
 
                                 if (this.items.length > 0 && !anyItemEligible) {
 
-                                    this.transaction_type = 'retail';
+                                    this.transaction_type = 'wholesale';
 
                                 }
 
