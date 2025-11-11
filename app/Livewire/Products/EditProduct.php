@@ -42,7 +42,7 @@ class EditProduct extends Component
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'supplier_id' => 'nullable|exists:suppliers,id',
-            'stock' => 'required|integer|min:0',
+            'stock' => 'required|numeric|min:0',
             'retail_price' => 'required|numeric|min:0',
             'wholesale_price' => 'required|numeric|min:0',
             'wholesale_min_qty' => 'required|integer|min:1',
@@ -95,7 +95,7 @@ class EditProduct extends Component
     {
         if (in_array($propertyName, ['stock', 'units_in_box'])) {
             if ($this->units_in_box > 0) {
-                $this->calculatedBoxStock = floor((int)$this->stock / (int)$this->units_in_box);
+                $this->calculatedBoxStock = floor($this->stock / $this->units_in_box);
             } else {
                 $this->calculatedBoxStock = 0;
             }
