@@ -8,6 +8,8 @@ use App\Models\Supplier;
 use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 use App\Models\Unit;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class EditProduct extends Component
 {
@@ -102,11 +104,35 @@ class EditProduct extends Component
 
     public function save()
     {
-        $validatedData = $this->validate();
-        $this->product->update($validatedData);
+        try {
+            $validatedData = $this->validate();
+            $this->product->update($validatedData);
 
-        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil diperbarui.']);
-        return redirect()->route('products.index');
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil diperbarui.']);
+            return redirect()->route('products.index');
+
+        } catch (ValidationException $e) {
+            // Log validation errors for debugging
+            Log::error('Validation Errors on EditProduct: ', $e->errors());
+
+            // Dispatch a user-friendly alert
+            $this->dispatch('show-alert', [
+                'type' => 'error',
+                'message' => 'Gagal menyimpan. Periksa kembali data yang Anda masukkan.'
+            ]);
+            
+            // Let Livewire show validation messages next to fields
+            throw $e;
+
+        } catch (\Exception $e) {
+            // Catch other exceptions
+            Log::error('An unexpected error occurred in EditProduct: ' . $e->getMessage());
+
+            $this->dispatch('show-alert', [
+                'type' => 'error',
+                'message' => 'Terjadi kesalahan tak terduga: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function printLabel()

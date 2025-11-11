@@ -11,12 +11,6 @@ class Product extends Model
 
     protected $fillable = [
         'name',
-        'abbr',
-        'promo_isactive',
-        'promo_type',
-        'promo_min_qty',
-        'promo_value',
-        'promo_note',
         'code',
         'description',
         'category_id',

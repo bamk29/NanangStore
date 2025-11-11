@@ -34,13 +34,13 @@
             <template x-for="item in items" :key="item.id">
                 <div class="p-1 flex items-center space-x-1 my-1">
                     <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm text-gray-800 truncate" x-text="item.name"></p>
+                        <p class="font-bold text-xs text-gray-800 truncate" x-text="item.name"></p>
                         <p class="text-xs text-gray-500" x-text="formatCurrency(item.price)"></p>
                     </div>
                     <div class="flex items-center">
                         <button @click="decrement(item.id)"
-                            class="w-7 h-7 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-9 h-9 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4">
                                 </path>
                             </svg>
@@ -49,18 +49,18 @@
 
                             <input type="text" inputmode="decimal" x-model="item.quantity"
                                 @input="validateAndRecalculate(item.id)"
-                                class="w-16 h-7 text-center  bg-transparent text-sm font-semibold text-gray-800 focus:outline-none focus:ring-0">
+                                class="w-16 h-9 text-center bg-transparent text-base font-semibold text-gray-800 focus:outline-none focus:ring-0">
                         </div>
                         <button @click="increment(item.id)"
-                            class="w-7 h-7 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-9 h-9 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                     d="M12 4v16m8-8H4"></path>
                             </svg>
                         </button>
                     </div>
-                    <div class="w-20 text-right font-semibold text-sm" x-text="formatCurrency(item.subtotal)"></div>
-                    <button @click="remove(item.id)" class="flex-shrink-0 text-red-500 hover:text-red-700 p-1"><svg
+                    <div class="w-18 text-right font-semibold text-sm" x-text="formatCurrency(item.subtotal)"></div>
+                    <button @click="remove(item.id)" class="flex-shrink-0 text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50"><svg
                             class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -106,7 +106,7 @@
                         <p class="font-semibold text-blue-700">{{ $selected_customer_name }}</p>
                     </div>
                     <button wire:click="clearCustomer"
-                        class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100">
+                        class="p-2 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12"></path>
@@ -114,9 +114,9 @@
                     </button>
                 </div>
             @else
-                <div x-data="customerSearch()" class="relative">
+                <div x-data="customerSearch()" class="relative" @click.away="isOpen = false">
                     <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
-                        @keydown="handleKeydown($event)" @click.away="isOpen = false"
+                        @keydown="handleKeydown($event)"
                         placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
@@ -181,8 +181,11 @@
             @keydown.F4.prevent="skipToHold()"
             class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
 
-            <div class="p-6">
+            <div class="p-6 relative">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih atau Buat Pelanggan</h3>
+                <button @click="showCustomerWarningModal = false" class="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg mb-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
@@ -198,7 +201,7 @@
                         </div>
                     </div>
                 </div>
-                <div x-data="customerSearch()" class="relative">
+                <div x-data="customerSearch()" class="relative" @click.away="isOpen = false">
                     <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery"
                         @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape="isOpen = false"
                         placeholder="Cari pelanggan (nama/telp)..."
@@ -227,11 +230,20 @@
                 </div>
             </div>
             <div class="px-6 pb-4 space-y-3 border-t bg-gray-50 rounded-b-2xl pt-4">
-                <p class="text-center text-xs text-gray-500">Atau, tekan <kbd
-                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">F2</kbd>
-                    untuk Bayar / <kbd
-                        class="px-1.5 py-0.5 text-xs font-sans font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-md">F4</kbd>
-                    untuk Tunda tanpa pelanggan.</p>
+                <!-- New Buttons -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button @click="skipToHold()"
+                    class="w-full px-4 py-2.5 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 focus:outline-none flex items-center justify-center gap-2">
+                    <span>Tunda</span>
+                    <kbd class="px-1.5 py-0.5 text-xs font-sans font-semibold text-yellow-800 bg-yellow-200 border border-yellow-300 rounded-md">F4</kbd>
+                </button>
+                <button @click="skipToPay()"
+                    class="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none flex items-center justify-center gap-2">
+                    <span>Bayar</span>
+                    <kbd class="px-1.5 py-0.5 text-xs font-sans font-semibold text-blue-800 bg-blue-200 border border-blue-300 rounded-md">F2</kbd>
+                </button>
+                </div>
+                <!-- Existing Close Button -->
                 <button @click="showCustomerWarningModal = false"
                     class="w-full px-4 py-2.5 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none">
                     Tutup
@@ -252,7 +264,9 @@
             <div class="p-4 md:p-5 border-b bg-gray-50 flex justify-between items-center">
                 <h3 class="text-lg md:text-xl font-bold text-gray-800">💰 Detail Pembayaran</h3>
                 <button @click="showPaymentModal = false"
-                    class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+                    class="-mr-2 p-2 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
             <div class="p-4 md:p-6 space-y-5 overflow-y-auto flex-1">
                 <div class="text-center">
@@ -384,11 +398,11 @@
             <div
                 class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
                 <button @click="showUnderpaymentConfirmation = false" type="button"
-                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                     Batal
                 </button>
                 <button @click="proceedWithUnderpayment()" type="button"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
                     Ya, Lanjutkan (Jadi Hutang)
                 </button>
             </div>
@@ -428,11 +442,11 @@
             <div
                 class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 rounded-b-2xl">
                 <button @click="showHoldConfirmation = false" type="button"
-                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+                    class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                     Batal
                 </button>
                 <button x-ref="confirmHoldButton" @click="holdSale(); showHoldConfirmation = false;" type="button"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-500 text-base font-medium text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:w-auto sm:text-sm">
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-yellow-500 text-base font-medium text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:w-auto sm:text-sm">
                     Ya, Tunda Transaksi
                 </button>
             </div>
@@ -462,9 +476,9 @@
                 </div>
                 <div class="mt-6 flex justify-end space-x-4">
                     <button @click="$wire.set('showCustomerCreateModal', false)"
-                        class="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
+                        class="px-4 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
                     <button wire:click="createNewCustomer"
-                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Simpan</button>
+                        class="px-4 py-2.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Simpan</button>
                 </div>
             </div>
         </div>

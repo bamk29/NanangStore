@@ -4,7 +4,7 @@
      @cart:reset.window="if (!isDesktop) isCartVisible = false"
      @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
      @keydown.escape.window="handleEscape()"
-     class="h-screen flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
+     class="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
 
     <!-- Left Column (Products & Search) -->
     <div class="flex-1 flex flex-col">
@@ -13,11 +13,22 @@
             <div class="flex items-center gap-2">
                 <div class="relative flex-1">
                     <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
-                        class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base pr-24" placeholder="Cari produk atau scan barcode...">
+                        :readonly="isScannerMode"
+                        :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white': !isScannerMode }"
+                        class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base pr-32" placeholder="Cari produk atau scan barcode...">
 
-                    <div class="absolute inset-y-0 right-0 pr-3 hidden md:flex items-center text-xs text-gray-500 gap-1">
-                        <kbd class="px-1 py-0.5 bg-gray-100 border rounded">Spasi x2 (Masuk ke Input)</kbd>
-                        <kbd class="px-1 py-0.5 bg-gray-100 border rounded">Esc (Keluar/Batal/Refresh)</kbd>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2">
+                        <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-semibold mr-2">Mode Scanner</span>
+                        <button @click="isScannerMode = !isScannerMode"
+                                class="p-2 rounded-lg transition-colors"
+                                :class="isScannerMode ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                title="Toggle Mode Scanner (F3)">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
+                                <path stroke-linecap="round" d="M9 10v4M12 10v4M15 10v4"/>
+                                <path stroke-linecap="round" d="M7 18h10"/>
+                              </svg>
+                        </button>
                     </div>
                 </div>
                 <button @click="$store.ui.isBottomNavVisible = !$store.ui.isBottomNavVisible" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
@@ -33,7 +44,7 @@
                             :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                             Semua
                         </button>
-                        <template x-for="category in categories.slice(0, 4)" :key="category.id">
+                        <template x-for="category in categories.slice(0, 3)" :key="category.id">
                             <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
                             :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
                                 <span x-text="category.name"></span>
@@ -48,7 +59,7 @@
                     </template>
                 </div>
                 <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
-                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2">
                         <template x-for="category in categories" :key="category.id">
                             <button @click="categoryId = category.id; showAll = false;" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
@@ -77,36 +88,34 @@
                 </svg>
             </div>
 
-            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-2 auto-rows-fr">
+            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 xl:grid-cols-6 gap-2 auto-rows-fr">
                 <template x-for="(product, index) in products" :key="product.id">
                     <div @click="openModal(product)"
                         :id="'product-' + index"
-                        class="relative bg-white rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 cursor-pointer border"
+                        class="relative bg-white rounded-lg shadow-2xl hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-150 cursor-pointer border"
                         :class="{
                             'border-blue-500 border-2': cartItemIds.includes(product.id),
                             'ring-2 ring-red-500 ring-offset-1': index === selectedIndex
                         }">
 
-                        <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-700 active:scale-90 transition-transform flex items-center justify-center shadow">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1.5 right-1.5 z-10 w-10 h-10 bg-white/70 backdrop-blur-sm border-2 border-blue-500 text-blue-500 rounded-full hover:bg-blue-500 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                         </button>
 
                         <div class="p-1.5 flex flex-col h-full">
-                            <div class="mb-1 flex-grow">
-                                <h3 class="text-xs font-semibold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
+                            <div class="mb-1 flex-grow pr-8">
+                                <h3 class="text-sm font-bold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
                                 <div class="text-xs text-gray-500" x-text="product.code"></div>
                             </div>
                             <div class="mt-auto">
-                                <div class="flex items-center justify-between">
-                                    <div class="text-sm font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
-                                    <div class="px-1.5 py-0.5 text-xs font-medium rounded-lg"
-                                        :class="{
-                                            'bg-green-100 text-green-700': product.stock > 5,
-                                            'bg-yellow-100 text-yellow-700': product.stock > 0 && product.stock <= 5,
-                                            'bg-red-100 text-red-700': product.stock <= 0
-                                        }">
-                                        <span x-text="'Stok: ' + product.stock"></span>
-                                    </div>
+                                <div class="text-sm font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
+                                <div class="px-1.5 py-0.5 text-xs font-medium rounded-lg mt-1"
+                                    :class="{
+                                        'bg-green-100 text-green-700': product.stock > 5,
+                                        'bg-yellow-100 text-yellow-700': product.stock > 0 && product.stock <= 5,
+                                        'bg-red-100 text-red-700': product.stock <= 0
+                                    }">
+                                    <span x-text="'Stok: ' + product.stock"></span>
                                 </div>
                             </div>
                         </div>
@@ -122,7 +131,7 @@
     </div>
 
     <!-- Cart Section (Desktop) -->
-    <div class="hidden lg:flex lg:w-1/3 xl:w-1/4 flex-col border-l bg-white">
+    <div class="hidden md:flex md:w-1/2 lg:w-1/3 xl:w-1/3 flex flex-col h-full border-l bg-white">
         <livewire:pos.cart />
     </div>
 
@@ -185,26 +194,28 @@
 
     <!-- Quantity Modal -->
     <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
-        <div @click.away="closeModal()" class="bg-white rounded-lg shadow-xl p-5 md:p-6 w-full max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900" x-text="productForModal ? productForModal.name : ''"></h3>
-                <button @click="closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+        <div @click.away="closeModal()" class="bg-white rounded-2xl shadow-xl p-5 md:p-6 w-full max-w-sm mx-auto">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-bold text-gray-900 pr-4" x-text="productForModal ? productForModal.name : ''"></h3>
+                <button @click="closeModal()" class="-mt-2 -mr-2 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
 
-            <div class="mb-6">
+            <div class="mb-6 text-center">
                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
-                <div class="flex items-center rounded-md shadow-sm">
-                    <button type="button" @click="decrement()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
-                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-full text-center border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <button type="button" @click="increment()"  class="w-8 h-8 flex items-center justify-center mx-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
+                <div class="flex items-center justify-center rounded-md">
+                    <button type="button" @click="decrement()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
+                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-24 mx-4 text-center text-2xl font-bold border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                    <button type="button" @click="increment()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
                 </div>
                 <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
                 <p x-show="!isQuantityValid" class="text-sm text-red-600 mt-2" x-text="errorMessage"></p>
             </div>
 
-            <div class="flex justify-end space-x-3">
-                <button type="button" @click="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Batal</button>
-                <button type="button" @click="addToCartFromModal()" :disabled="!isQuantityValid" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">Masukan ke Keranjang</button>
+            <div class="grid grid-cols-2 gap-3 mt-8">
+                <button type="button" @click="closeModal()" class="w-full px-4 py-3 text-sm font-bold text-gray-700 bg-gray-200 rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Batal</button>
+                <button type="button" @click="addToCartFromModal()" :disabled="!isQuantityValid" class="w-full inline-flex justify-center px-4 py-3 text-sm font-bold text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">Tambah</button>
             </div>
         </div>
     </div>
@@ -214,9 +225,10 @@
     function posManager() {
         return {
             // UI State
-            isDesktop: window.innerWidth >= 1024,
-            isCartVisible: window.innerWidth >= 1024,
+            isDesktop: window.innerWidth >= 768,
+            isCartVisible: window.innerWidth >= 768,
             isLandscape: window.matchMedia("(orientation: landscape)").matches,
+            isScannerMode: false,
 
             // Product Search State
             products: [],
@@ -247,10 +259,12 @@
                 this.$store.ui.isBottomNavVisible = false;
 
                 const handleResize = () => {
-                    this.isDesktop = window.innerWidth >= 1024;
+                    this.isDesktop = window.innerWidth >= 768;
                     this.isLandscape = window.matchMedia("(orientation: landscape)").matches;
-                    if(this.isDesktop) {
+                    if (this.isDesktop) {
                         this.isCartVisible = true;
+                    } else {
+                        this.isCartVisible = false;
                     }
                 };
                 window.addEventListener('resize', handleResize);
@@ -274,6 +288,11 @@
                         this.ignoreNextSearchQueryWatch = false;
                         return;
                     }
+                    // If scanner mode is on, do nothing as the scanner "types"
+                    if (this.isScannerMode) {
+                        return;
+                    }
+                    // Otherwise, filter products as a normal user types
                     this.selectedIndex = -1; // Reset selection on new search
                     this.categoryId = ''; // Reset category filter
                     this.fetchProducts();
@@ -323,6 +342,10 @@
                     if (e.key === 'F2') {
                         e.preventDefault();
                         window.dispatchEvent(new CustomEvent('shortcut:pay'));
+                    }
+                    if (e.key === 'F3') {
+                        e.preventDefault();
+                        this.isScannerMode = !this.isScannerMode;
                     }
                     if (e.key === 'F4') {
                         e.preventDefault();
@@ -524,15 +547,15 @@
             },
             increment() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
-                let newQuantity = currentQuantity + 0.1;
+                let newQuantity = currentQuantity + 1;
                 // Round to 2 decimal places to avoid floating point issues
                 this.quantity = Math.round((newQuantity + Number.EPSILON) * 100) / 100;
                 this.validate();
             },
             decrement() {
                 let currentQuantity = parseFloat(this.quantity) || 0;
-                let newQuantity = currentQuantity - 0.1;
-                if (newQuantity < 0.01) { // Check against a small number to handle floating point inaccuracies
+                let newQuantity = currentQuantity - 1;
+                if (newQuantity < 1) { // Changed from 0.01 to 1
                     this.quantity = 0;
                 } else {
                     // Round to 2 decimal places
