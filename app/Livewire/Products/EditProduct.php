@@ -120,7 +120,7 @@ class EditProduct extends Component
                 'type' => 'error',
                 'message' => 'Gagal menyimpan. Periksa kembali data yang Anda masukkan.'
             ]);
-            
+
             // Let Livewire show validation messages next to fields
             throw $e;
 
@@ -149,7 +149,7 @@ class EditProduct extends Component
         ];
 
         try {
-            Http::timeout(5)->post('http://192.168.1.12:8000/print', $printData);
+            Http::timeout(5)->post('http://localhost:8000/print', $printData);
             $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Label harga untuk ' . $this->name . ' dikirim ke printer!']);
         } catch (\Exception $e) {
             $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
