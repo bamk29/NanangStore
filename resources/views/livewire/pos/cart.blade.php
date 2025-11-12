@@ -1,13 +1,13 @@
 <div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
     x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
-    x-on:customer:selected.window="setCustomer($event.detail.customer)" x-on:customer:cleared.window="clearCustomer()"
+    x-on:customer:selected.window="setCustomer($event.detail.customer)" x-on:customer:cleared.window="customer = null; include_old_debt = false; calculateFinalTotal();"
     x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
     x-on:cart:reset.window="resetCart()" x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
     @shortcut:pay.window="initiatePayment()" @shortcut:hold.window="initiateHold()"
     @keydown.escape.window="handleEscape()" class="flex flex-col h-full bg-white">
-    <!-- Tombol Eceran/Grosir -->
-    <div class="p-2 bg-gray-100 flex-shrink-0">
-        <div class="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-lg">
+    <!-- Tombol Eceran/Grosir & Pelanggan -->
+    <div class="p-2 bg-gray-100 flex-shrink-0 border-b">
+        <div class="grid grid-cols-2 gap-1 bg-gray-200 p-1 rounded-lg mb-2">
             <button @click="transaction_type = 'retail'; recalculate()"
                 :class="{
                     'bg-blue-600 text-white shadow': transaction_type === 'retail',
@@ -20,6 +20,32 @@
                     'bg-white text-gray-700': transaction_type !== 'wholesale'
                 }"
                 class="px-4 py-2 text-sm font-bold rounded-md focus:outline-none transition-colors duration-200">Grosir</button>
+        </div>
+        <!-- Customer Display -->
+        <div class="bg-white rounded-lg">
+            <template x-if="customer">
+                <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-2 py-1">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs text-blue-600 mr-2 flex-shrink-0">Pelanggan:</span>
+                        <p class="font-semibold text-sm text-blue-800 truncate" x-text="customer.name"></p>
+                    </div>
+                    <button @click="clearCustomer()" class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 ml-2 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+            <template x-if="!customer">
+                <button @click="showCustomerWarningModal = true"
+                    class="w-full text-left px-2 py-1.5 border border-dashed rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex items-center text-gray-500">
+                        <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        <span class="font-medium text-sm">Pilih Pelanggan</span>
+                    </div>
+                </button>
+            </template>
         </div>
     </div>
 
@@ -97,55 +123,6 @@
             </template>
         </div>
 
-        <!-- Customer Search -->
-        <div class="p-2 bg-white shadow-inner border-t">
-            @if ($selected_customer_name)
-                <div class="flex items-center justify-between bg-blue-100 border border-blue-200 rounded-lg p-2">
-                    <div>
-                        <span class="text-xs text-gray-500">Pelanggan</span>
-                        <p class="font-semibold text-blue-700">{{ $selected_customer_name }}</p>
-                    </div>
-                    <button wire:click="clearCustomer"
-                        class="p-2 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            @else
-                <div x-data="customerSearch()" class="relative" @click.away="isOpen = false">
-                    <input type="text" x-model.debounce.300ms="searchQuery" @focus="handleFocus()"
-                        @keydown="handleKeydown($event)"
-                        placeholder="Cari pelanggan (nama/telp)..."
-                        class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-
-                    <div x-show="isOpen && (results.length > 0 || isLoading)" x-transition
-                        class="absolute z-[9999] w-full bottom-full mb-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        <template x-if="isLoading">
-                            <div class="px-4 py-2 text-gray-500">Mencari...</div>
-                        </template>
-                        <template x-for="(customer, index) in results" :key="customer.id">
-                            <div @click="selectCustomer(customer)" @mouseenter="selectedIndex = index"
-                                :class="{ 'bg-blue-100': index === selectedIndex }"
-                                class="px-4 py-2 cursor-pointer hover:bg-gray-100">
-                                <p class="font-semibold" x-text="customer.name"></p>
-                                <p class="text-sm text-gray-600" x-text="customer.phone"></p>
-                            </div>
-                        </template>
-                        <template x-if="!isLoading && results.length > 0 && searchQuery.length > 0">
-                            <div class="px-4 py-2 text-gray-500">Pelanggan tidak ditemukan.</div>
-                        </template>
-
-                        <div @click="$wire.set('showCustomerCreateModal', true)"
-                            class="px-4 py-3 text-center text-blue-600 font-semibold cursor-pointer border-t hover:bg-gray-50 rounded-b-lg">
-                            + Buat Pelanggan Baru
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-
         <!-- Bayar Button -->
         <div class="p-2 bg-gray-50 border-t grid grid-cols-2 gap-2">
             <button @click="initiateHold()" :disabled="items.length === 0"
@@ -201,12 +178,12 @@
                         </div>
                     </div>
                 </div>
-                <div x-data="customerSearch()" class="relative" @click.away="isOpen = false">
+                <div x-data="customerSearch()" class="relative">
                     <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery"
-                        @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape="isOpen = false"
+                        @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape.stop="isOpen = false"
                         placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div x-show="isOpen" x-transition
+                    <div x-show="isOpen" x-transition @click.away="isOpen = false"
                         class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         <template x-if="isLoading">
                             <div class="px-4 py-2 text-gray-500">Mencari...</div>
@@ -371,7 +348,7 @@
         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div @click.away="showUnderpaymentConfirmation = false" @keydown.enter.prevent="proceedWithUnderpayment()"
+        <div @click.away="showUnderpaymentConfirmation = false" @keydown.enter.window.prevent="if(showUnderpaymentConfirmation) proceedWithUnderpayment()"
             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all"
             x-show="showUnderpaymentConfirmation" x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
@@ -401,9 +378,9 @@
                     class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
                     Batal
                 </button>
-                <button @click="proceedWithUnderpayment()" type="button"
+                <button x-ref="confirmDebtButton" @click="proceedWithUnderpayment()" type="button"
                     class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
-                    Ya, Lanjutkan (Jadi Hutang)
+                    Ya, Lanjutkan
                 </button>
             </div>
         </div>
@@ -495,8 +472,13 @@
             selectedIndex: -1,
             init() {
                 this.$watch('searchQuery', (value) => {
-                    this.selectedIndex = -1;
-                    this.fetchCustomers();
+                    if (value.length >= 0) {
+                        this.selectedIndex = -1;
+                        this.fetchCustomers();
+                    } else {
+                        this.results = [];
+                        this.isOpen = false;
+                    }
                 });
                 // Listen for the global focus event
                 window.addEventListener('focus-customer-search', () => {
@@ -595,6 +577,16 @@
                         this.$nextTick(() => {
                             if (this.$refs.confirmHoldButton) {
                                 this.$refs.confirmHoldButton.focus();
+                            }
+                        });
+                    }
+                });
+
+                this.$watch('showUnderpaymentConfirmation', (value) => {
+                    if (value) {
+                        this.$nextTick(() => {
+                            if (this.$refs.confirmDebtButton) {
+                                this.$refs.confirmDebtButton.focus();
                             }
                         });
                     }
@@ -735,22 +727,8 @@
 
             recalculate() {
                 let currentSubtotal = 0;
-                const anyItemEligible = this.items.some(item => item.quantity >= item.wholesale_min_qty);
-
-                if (this.customer) {
-                    this.transaction_type = anyItemEligible ? 'wholesale' : 'retail';
-                } else {
-                    if (this.items.length > 0 && !anyItemEligible) {
-                        this.transaction_type = 'wholesale';
-                    }
-                }
-
                 this.items.forEach(item => {
-                    const isEligibleForWholesale = item.quantity >= item.wholesale_min_qty;
-                    let useWholesale = false;
-                    if (isEligibleForWholesale && (this.transaction_type === 'wholesale' || this.customer)) {
-                        useWholesale = true;
-                    }
+                    const useWholesale = this.transaction_type === 'wholesale' && item.quantity >= item.wholesale_min_qty;
                     item.price = useWholesale ? item.wholesale_price : item.retail_price;
                     item.subtotal = item.price * item.quantity;
                     currentSubtotal += item.subtotal;
@@ -774,10 +752,10 @@
             },
 
             clearCustomer() {
-                this.customer = null;
-                this.include_old_debt = false;
-                this.calculateFinalTotal();
+                this.$wire.clearCustomer();
             },
+
+
 
             calculateFinalTotal() {
                 let total = this.subtotal;

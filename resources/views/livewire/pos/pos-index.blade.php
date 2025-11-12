@@ -88,7 +88,7 @@
                 </svg>
             </div>
 
-            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 xl:grid-cols-6 gap-2 auto-rows-fr">
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-6 gap-2 auto-rows-fr">
                 <template x-for="(product, index) in products" :key="product.id">
                     <div @click="openModal(product)"
                         :id="'product-' + index"
@@ -206,7 +206,7 @@
                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
                 <div class="flex items-center justify-center rounded-md">
                     <button type="button" @click="decrement()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
-                    <input type="number" step="0.01" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-24 mx-4 text-center text-2xl font-bold border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
+                    <input type="number" step="1" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-24 mx-4 text-center text-2xl font-bold border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
                     <button type="button" @click="increment()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
                 </div>
                 <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
@@ -454,9 +454,6 @@
             },
 
             async fetchProductsByBarcode(barcode) {
-                // This function no longer interacts with the main search query or product list.
-                // It directly finds a product and adds it to the cart.
-                this.isLoading = true;
                 try {
                     const response = await fetch(`/api/products/by-code/${barcode}`);
                     const product = await response.json();
@@ -476,7 +473,7 @@
                     this.playSound('error');
                     window.Livewire.dispatch('show-alert', { type: 'error', message: 'Gagal mengambil data produk.' });
                 } finally {
-                    this.isLoading = false;
+                    // Removed this.isLoading = false;
                 }
             },
 

@@ -29,7 +29,7 @@
         <div class="fixed top-0 left-0 right-0 z-50 android-nav-bar bg-white bg-opacity-95 no-print">
             <div class="flex items-center h-14 landscape-nav px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] rounded-b-xl">
                 <!-- Back Button -->
-                <button onclick="window.history.back()"
+                <button onclick="window.location.href = '{{ route('dashboard') }}'"
                     class="flex items-center p-2 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-150">
                     <div class="w-8 h-8 flex items-center justify-center">
                         <svg class="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

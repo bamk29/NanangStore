@@ -21,11 +21,14 @@ Route::get('/products', function (Request $request) {
         // Gabungkan dengan tabel product_usages untuk mendapatkan data popularitas
         ->leftJoin('product_usages', 'products.id', '=', 'product_usages.product_id')
         // Pilih kolom spesifik dari tabel products
-        ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price');
+        ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price', 'products.description');
 
     if ($search) {
-        $query->where('products.name', 'like', "%{$search}%")
-              ->orWhere('products.code', 'like', "%{$search}%");
+        $query->where(function ($q) use ($search) {
+            $q->where('products.name', 'like', "%{$search}%")
+              ->orWhere('products.code', 'like', "%{$search}%")
+              ->orWhere('products.description', 'like', "%{$search}%");
+        });
     } else {
         // Logika pengurutan: populer jika tidak ada pencarian
         $query->orderBy('product_usages.usage_count', 'desc')->orderBy('products.name', 'asc');
