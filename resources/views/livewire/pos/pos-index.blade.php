@@ -18,6 +18,18 @@
                         class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base pr-32" placeholder="Cari produk atau scan barcode...">
 
                     <div class="absolute inset-y-0 right-0 flex items-center pr-2">
+                        <button @click="searchQuery = ''"
+                                x-show="searchQuery.length > 0 && !isScannerMode"
+                                x-transition:enter="transition-opacity ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition-opacity ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="px-2 py-1 border border-zinc-800 bg-zinc-100 rounded-md text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-20 mr-2"
+                                style="display: none;">
+                            Clear
+                        </button>
                         <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-semibold mr-2">Mode Scanner</span>
                         <button @click="isScannerMode = !isScannerMode"
                                 class="p-2 rounded-lg transition-colors"
@@ -94,7 +106,7 @@
                         :id="'product-' + index"
                         class="relative bg-white rounded-lg shadow-2xl hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-150 cursor-pointer border"
                         :class="{
-                            'border-blue-500 border-2': cartItemIds.includes(product.id),
+                            'border-blue-500 border-4': cartItemIds.includes(product.id),
                             'ring-2 ring-red-500 ring-offset-1': index === selectedIndex
                         }">
 
@@ -490,7 +502,7 @@
                     fetch(`/api/products?${params}`)
                         .then(response => response.json())
                         .then(data => {
-                            this.products = data;
+                            this.products = data.slice(0, 40);
                             this.isLoading = false;
                             resolve();
                         })

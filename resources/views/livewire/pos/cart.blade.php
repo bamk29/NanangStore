@@ -178,12 +178,12 @@
                         </div>
                     </div>
                 </div>
-                <div x-data="customerSearch()" class="relative">
+                <div x-data="customerSearch()" class="relative" :class="{'mb-52': isOpen}">
                     <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery"
                         @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape.stop="isOpen = false"
                         placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div x-show="isOpen" x-transition @click.away="isOpen = false"
+                    <div x-show="isOpen" x-transition
                         class="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         <template x-if="isLoading">
                             <div class="px-4 py-2 text-gray-500">Mencari...</div>
@@ -520,11 +520,14 @@
                 }
             },
             selectCustomer(customer) {
-                this.$wire.selectCustomerFromSearch(customer);
-                this.searchQuery = '';
-                this.results = [];
                 this.isOpen = false;
                 this.$dispatch('customer-selected-in-modal');
+
+                setTimeout(() => {
+                    this.$wire.selectCustomerFromSearch(customer);
+                    this.searchQuery = '';
+                    this.results = [];
+                }, 150);
             }
         }
     }
