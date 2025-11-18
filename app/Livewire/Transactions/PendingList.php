@@ -4,6 +4,7 @@ namespace App\Livewire\Transactions;
 
 use App\Models\Transaction;
 use App\Models\Product;
+use App\Models\TransactionDetail;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
@@ -40,8 +41,25 @@ class PendingList extends Component
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $total_pending_transactions = $pending_transactions->count();
+        $total_pending_amount = $pending_transactions->sum('total_amount');
+
+        $pending_transaction_ids = $pending_transactions->pluck('id');
+
+        $product_2_quantity = TransactionDetail::whereIn('transaction_id', $pending_transaction_ids)
+            ->where('product_id', 2)
+            ->sum('quantity');
+
+        $product_2 = Product::find(2);
+        $product_2_name = $product_2 ? $product_2->name : 'Produk ID 2';
+
+
         return view('livewire.transactions.pending-list', [
-            'transactions' => $pending_transactions
+            'transactions' => $pending_transactions,
+            'total_pending_transactions' => $total_pending_transactions,
+            'total_pending_amount' => $total_pending_amount,
+            'product_2_quantity' => $product_2_quantity,
+            'product_2_name' => $product_2_name,
         ]);
     }
 }

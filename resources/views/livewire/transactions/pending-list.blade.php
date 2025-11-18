@@ -6,6 +6,19 @@
                 <p class="mt-2 text-sm text-gray-700">Pilih transaksi untuk dilanjutkan atau dibatalkan.</p>
             </div>
         </div>
+
+        <!-- Minimalist Summary -->
+        <div class="mt-6 text-sm text-gray-700 flex flex-wrap gap-x-6 gap-y-2">
+            <p>
+                <span class="font-semibold text-gray-900">{{ $total_pending_transactions }}</span> Transaksi Tertunda
+            </p>
+            <p>
+                Total Nilai: <span class="font-semibold text-gray-900">Rp {{ number_format($total_pending_amount, 0, ',', '.') }}</span>
+            </p>
+            <p>
+                Stok Tertunda ({{ $product_2_name }}): <span class="font-semibold text-gray-900">{{ number_format($product_2_quantity, 2, ',', '.') }} Kg</span>
+            </p>
+        </div>
     </div>
 
     <div class="flex-grow p-4 sm:p-6 lg:p-8 bg-gray-100 overflow-y-auto">
