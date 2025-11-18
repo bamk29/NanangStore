@@ -36,29 +36,33 @@ class PendingList extends Component
 
     public function render()
     {
+        // Get all pending transactions for the list
         $pending_transactions = Transaction::with('customer')
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Calculate summaries for all pending transactions
         $total_pending_transactions = $pending_transactions->count();
         $total_pending_amount = $pending_transactions->sum('total_amount');
 
-        $pending_transaction_ids = $pending_transactions->pluck('id');
-
-        $product_2_quantity = TransactionDetail::whereIn('transaction_id', $pending_transaction_ids)
-            ->where('product_id', 2)
-            ->sum('quantity');
+        // Specifically calculate pending stock for product 2 for TODAY
+        $product_2_quantity_today = TransactionDetail::whereHas('transaction', function ($query) {
+            $query->where('status', 'pending')
+                  ->whereDate('created_at', \Carbon\Carbon::today());
+        })
+        ->where('product_id', 2)
+        ->sum('quantity');
 
         $product_2 = Product::find(2);
-        $product_2_name = $product_2 ? $product_2->name : 'Produk ID 2';
+        $product_2_name = $product_2 ? $product_2->name : 'Ayam';
 
 
         return view('livewire.transactions.pending-list', [
             'transactions' => $pending_transactions,
             'total_pending_transactions' => $total_pending_transactions,
             'total_pending_amount' => $total_pending_amount,
-            'product_2_quantity' => $product_2_quantity,
+            'product_2_quantity' => $product_2_quantity_today,
             'product_2_name' => $product_2_name,
         ]);
     }
