@@ -43,6 +43,11 @@ class DailyReport extends Component
 
         // 3. Calculate summaries from the filtered details
         $totalSales = $filteredDetails->sum('subtotal');
+        $totalCost = $filteredDetails->reduce(function ($carry, $detail) {
+            if (!$detail->product) return $carry;
+            $cost = $detail->product->cost_price * $detail->quantity;
+            return $carry + $cost;
+        }, 0);
         $totalProfit = $filteredDetails->reduce(function ($carry, $detail) {
             if (!$detail->product) return $carry;
             $profit = ($detail->price - $detail->product->cost_price) * $detail->quantity;
@@ -77,6 +82,7 @@ class DailyReport extends Component
             $productId = $detail->product_id;
             $item = $productPerformance->get($productId, [
                 'product_name' => $detail->product->name,
+                'remaining_stock' => $detail->product->stock,
                 'total_quantity' => 0,
                 'total_sales' => 0,
                 'total_profit' => 0,
@@ -103,6 +109,7 @@ class DailyReport extends Component
 
         $this->summary = [
             'total_sales' => $totalSales,
+            'total_cost' => $totalCost,
             'total_profit' => $totalProfit,
             'total_transactions' => $transactions->count(), // Count of unique transactions
             'sales_by_payment' => $salesByPaymentMethod,

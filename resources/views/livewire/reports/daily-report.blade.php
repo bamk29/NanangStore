@@ -45,11 +45,17 @@
             </div>
 
             <!-- Summary -->
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">
                     <div class="p-5">
                         <h3 class="text-sm font-medium text-gray-500 truncate">Total Penjualan</h3>
                         <p class="mt-1 text-2xl font-semibold text-gray-900">Rp {{ number_format($summary['total_sales'] ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">
+                    <div class="p-5">
+                        <h3 class="text-sm font-medium text-gray-500 truncate">Total Modal</h3>
+                        <p class="mt-1 text-2xl font-semibold text-orange-600">Rp {{ number_format($summary['total_cost'] ?? 0, 0, ',', '.') }}</p>
                     </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">
@@ -94,6 +100,7 @@
                             <tr>
                                 <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nama Produk</th>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jml Terjual</th>
+                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Sisa Stok</th>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Harga Modal</th>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Harga Jual (Rata-rata)</th>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Penjualan</th>
@@ -105,6 +112,7 @@
                                 <tr>
                                     <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ $data['product_name'] }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['total_quantity']) }}</td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['remaining_stock']) }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['cost_price'], 0, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['avg_selling_price'], 0, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>
@@ -112,7 +120,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada produk yang terjual pada tanggal ini.</td>
+                                    <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada produk yang terjual pada tanggal ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>
