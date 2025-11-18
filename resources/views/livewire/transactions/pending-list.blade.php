@@ -41,7 +41,7 @@
                             <p class="mt-2 font-semibold text-gray-800 truncate">{{ $transaction->customer->name ?? 'Pelanggan Umum' }}</p>
                             <p class="mt-1 text-lg font-bold text-blue-600">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</p>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-gray-100 flex space-x-2">
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
                             <a href="{{ route('pos.index', ['resume' => $transaction->id]) }}"
                                class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors duration-200">
                                 Lanjutkan
