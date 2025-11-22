@@ -121,6 +121,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/{orderId}/edit', PurchaseOrderForm::class)->name('purchase-orders.edit');
     });
 
+    // Goods Receipt Routes
+    Route::prefix('goods-receipts')->group(function () {
+        Route::get('/', \App\Livewire\GoodsReceipts\GoodsReceiptList::class)->name('goods-receipts.index');
+        Route::get('/create', \App\Livewire\GoodsReceipts\GoodsReceiptForm::class)->name('goods-receipts.create');
+        Route::get('/{receiptId}/edit', \App\Livewire\GoodsReceipts\GoodsReceiptForm::class)->name('goods-receipts.edit');
+    });
+
+    // Goods Return Routes
+    Route::prefix('goods-returns')->group(function () {
+        Route::get('/', \App\Livewire\GoodsReturns\GoodsReturnList::class)->name('goods-returns.index');
+        Route::get('/create', \App\Livewire\GoodsReturns\GoodsReturnForm::class)->name('goods-returns.create');
+        Route::get('/{returnId}/edit', \App\Livewire\GoodsReturns\GoodsReturnForm::class)->name('goods-returns.edit');
+    });
+
     // Report Routes
     Route::prefix('reports')->group(function () {
         Route::get('/sales', App\Livewire\Reports\SalesReport::class)->name('reports.sales');

@@ -652,7 +652,7 @@
                 const newQuantity = parseFloat(quantity) || 1;
 
                 if (existingItem) {
-                    const totalQuantity = existingItem.quantity + newQuantity;
+                    const totalQuantity = parseFloat(String(existingItem.quantity).replace(',', '.')) + newQuantity;
                     if (totalQuantity <= product.stock) {
                         existingItem.quantity = totalQuantity;
                     } else {

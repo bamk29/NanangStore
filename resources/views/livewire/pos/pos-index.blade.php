@@ -56,7 +56,7 @@
                             :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                             Semua
                         </button>
-                        <template x-for="category in categories.slice(0, 3)" :key="category.id">
+                        <template x-for="category in categories.slice(0, 2)" :key="category.id">
                             <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
                             :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
                                 <span x-text="category.name"></span>
@@ -100,7 +100,7 @@
                 </svg>
             </div>
 
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-6 gap-2 auto-rows-fr">
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-2 auto-rows-fr">
                 <template x-for="(product, index) in products" :key="product.id">
                     <div @click="openModal(product)"
                         :id="'product-' + index"
@@ -143,7 +143,7 @@
     </div>
 
     <!-- Cart Section (Desktop) -->
-    <div class="hidden md:flex md:w-1/2 lg:w-1/3 xl:w-1/3 flex flex-col h-full border-l bg-white">
+    <div class="hidden  lg:w-1/3 xl:w-1/3  flex-col h-full border-l bg-white">
         <livewire:pos.cart />
     </div>
 
@@ -573,6 +573,10 @@
                 this.validate();
             },
             validate() {
+                if (!this.productForModal) {
+                    this.isQuantityValid = false;
+                    return;
+                }
                 let qty = parseFloat(this.quantity);
                 if (isNaN(qty) || qty <= 0) {
                     this.isQuantityValid = false;

@@ -109,6 +109,38 @@
                             <span class="mx-4">Kategori</span>
                         </a>
 
+                        <!-- Stock Management Section -->
+                        <div x-data="{ open: {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*')) ? 'true' : 'false' }} }" class="space-y-1">
+                            <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-2 {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*')) ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H21"/></svg>
+                                    <span class="mx-4">Manajemen Stok</span>
+                                </div>
+                                <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="open" class="pl-10 space-y-1">
+                                <a href="{{ route('purchase-orders.index') }}"
+                                    class="flex items-center px-4 py-2 {{ request()->routeIs('purchase-orders.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                    <span class="mx-4">Purchase Order</span>
+                                </a>
+                                <a href="{{ route('goods-receipts.index') }}"
+                                    class="flex items-center px-4 py-2 {{ request()->routeIs('goods-receipts.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                                    <span class="mx-4">Penerimaan Barang</span>
+                                </a>
+                                <a href="{{ route('goods-returns.index') }}"
+                                    class="flex items-center px-4 py-2 {{ request()->routeIs('goods-returns.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+                                    <span class="mx-4">Retur Barang</span>
+                                </a>
+                            </div>
+                        </div>
+
+
                         <!-- Reports Section -->
                         <div x-data="{ open: {{ request()->routeIs('reports.*') ? 'true' : 'false' }} }" class="space-y-1">
                             <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-2 {{ request()->routeIs('reports.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">

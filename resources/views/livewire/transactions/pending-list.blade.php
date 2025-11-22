@@ -1,23 +1,24 @@
 <div class="h-screen flex flex-col">
-    <div class="p-4 sm:p-6 lg:p-8 flex-shrink-0">
+    <div class="p-2 sm:p-2 lg:p-2 flex-shrink-0 mx-4">
         <div class="sm:flex sm:items-center">
             <div class="sm:flex-auto">
                 <h1 class="text-xl font-semibold text-gray-900">Transaksi Tertunda</h1>
-                <p class="mt-2 text-sm text-gray-700">Pilih transaksi untuk dilanjutkan atau dibatalkan.</p>
             </div>
         </div>
 
         <!-- Minimalist Summary -->
-        <div class="mt-6 text-sm text-gray-700 flex flex-wrap gap-x-6 gap-y-2">
-            <p>
-                <span class="font-semibold text-gray-900">{{ $total_pending_transactions }}</span> Transaksi Tertunda
-            </p>
-            <p>
-                Total Nilai: <span class="font-semibold text-gray-900">Rp {{ number_format($total_pending_amount, 0, ',', '.') }}</span>
-            </p>
-            <p>
-                Stok Tertunda ({{ $product_2_name }}): <span class="font-semibold text-gray-900">{{ number_format($product_2_quantity, 2, ',', '.') }} Kg</span>
-            </p>
+        <div class="mt-1 p-4 bg-blue-50 rounded-lg shadow-sm">
+            <div class="text-sm text-gray-700 flex flex-wrap gap-x-6 gap-y-2">
+                <p>
+                    <span class="font-semibold text-gray-900">{{ $total_pending_transactions }}</span> Transaksi Tertunda
+                </p>
+                <p>
+                    Total Nilai: <span class="font-semibold text-gray-900">Rp {{ number_format($total_pending_amount, 0, ',', '.') }}</span>
+                </p>
+                <p>
+                    Stok Tertunda ({{ $product_2_name }}): <span class="font-semibold text-gray-900">{{ number_format($product_2_quantity, 2, ',', '.') }} Kg</span>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -41,7 +42,7 @@
                             <p class="mt-2 font-semibold text-gray-800 truncate">{{ $transaction->customer->name ?? 'Pelanggan Umum' }}</p>
                             <p class="mt-1 text-lg font-bold text-blue-600">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</p>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
                             <a href="{{ route('pos.index', ['resume' => $transaction->id]) }}"
                                class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors duration-200">
                                 Lanjutkan
