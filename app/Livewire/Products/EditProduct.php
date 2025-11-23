@@ -166,3 +166,4 @@ class EditProduct extends Component
         ]);
     }
 }
+

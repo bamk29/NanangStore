@@ -23,8 +23,6 @@ class GoodsReturnForm extends Component
     // UI state
     public $items = [];
     public $suppliers = [];
-    public $product_search = '';
-    public $search_results = [];
 
     protected function rules()
     {
@@ -66,42 +64,27 @@ class GoodsReturnForm extends Component
         }
     }
 
-    public function updatedProductSearch()
+    public function addProduct($product)
     {
-        if (strlen($this->product_search) >= 2) {
-            $this->search_results = Product::where('name', 'like', '%' . $this->product_search . '%')
-                ->orWhere('code', 'like', '%' . $this->product_search . '%')
-                ->take(5)
-                ->get();
-        } else {
-            $this->search_results = [];
-        }
-    }
-
-    public function addProduct($productId)
-    {
-        $product = Product::find($productId);
-        if (!$product) return;
+        if (empty($product)) return;
 
         // Check if product is already in the list
         foreach ($this->items as $item) {
-            if ($item['product_id'] == $productId) {
-                $this->product_search = '';
-                $this->search_results = [];
+            if ($item['product_id'] == $product['id']) {
                 return; // Don't add duplicates
             }
         }
 
+        $cost = $product['cost_price'] ?? 0;
+
         $this->items[] = [
-            'product_id' => $product->id,
-            'product_name' => $product->name,
+            'product_id' => $product['id'],
+            'product_name' => $product['name'],
             'quantity' => 1,
-            'cost' => $product->cost_price, // Default to last cost price
-            'total_cost' => $product->cost_price,
+            'cost' => $cost,
+            'total_cost' => $cost,
         ];
 
-        $this->product_search = '';
-        $this->search_results = [];
         $this->calculateGrandTotal();
     }
 

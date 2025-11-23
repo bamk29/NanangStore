@@ -22,6 +22,7 @@ use App\Livewire\Suppliers\SupplierList;
 use App\Livewire\Reports\InventoryReport;
 use App\Livewire\Dashboard;
 use App\Livewire\Reports\TransactionReport;
+use App\Livewire\StockAdjustments\StockAdjustmentList;
 
 /*
 |--------------------------------------------------------------------------
@@ -133,6 +134,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/', \App\Livewire\GoodsReturns\GoodsReturnList::class)->name('goods-returns.index');
         Route::get('/create', \App\Livewire\GoodsReturns\GoodsReturnForm::class)->name('goods-returns.create');
         Route::get('/{returnId}/edit', \App\Livewire\GoodsReturns\GoodsReturnForm::class)->name('goods-returns.edit');
+    });
+
+    // Inventory Management
+    Route::prefix('inventory')->group(function () {
+        Route::get('/adjustments', StockAdjustmentList::class)->name('stock-adjustments.index');
     });
 
     // Report Routes

@@ -18,6 +18,8 @@ class Transaction extends Model
         'transaction_type',
         'notes',
         'status',
+        'total_reduction_amount',
+        'reduction_notes',
 
     ];
 

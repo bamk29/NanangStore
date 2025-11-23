@@ -110,8 +110,8 @@
                         </a>
 
                         <!-- Stock Management Section -->
-                        <div x-data="{ open: {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*')) ? 'true' : 'false' }} }" class="space-y-1">
-                            <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-2 {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*')) ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                        <div x-data="{ open: {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*') || request()->routeIs('goods-returns.*') || request()->routeIs('stock-adjustments.*')) ? 'true' : 'false' }} }" class="space-y-1">
+                            <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-2 {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('goods-receipts.*') || request()->routeIs('goods-returns.*') || request()->routeIs('stock-adjustments.*')) ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
                                 <div class="flex items-center">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H21"/></svg>
                                     <span class="mx-4">Manajemen Stok</span>
@@ -136,6 +136,11 @@
                                     class="flex items-center px-4 py-2 {{ request()->routeIs('goods-returns.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
                                     <span class="mx-4">Retur Barang</span>
+                                </a>
+                                <a href="{{ route('stock-adjustments.index') }}"
+                                    class="flex items-center px-4 py-2 {{ request()->routeIs('stock-adjustments.*') ? 'bg-gray-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100' }} rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4h12m-9-4a2 2 0 100 4m0-4a2 2 0 110 4M6 12a2 2 0 100-4m0 4a2 2 0 110-4m0 4h12"/></svg>
+                                    <span class="mx-4">Penyesuaian Stok</span>
                                 </a>
                             </div>
                         </div>

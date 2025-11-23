@@ -245,26 +245,72 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-4 md:p-6 space-y-5 overflow-y-auto flex-1">
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto flex-1">
+                <!-- Total Section -->
                 <div class="text-center">
-                    <p class="text-gray-500 text-sm md:text-base">Total Tagihan</p>
-                    <p class="text-3xl md:text-4xl font-bold text-gray-900" x-text="formatCurrency(final_total)"></p>
+                    <p class="text-gray-500 text-sm md:text-base">Total Awal</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-500 transition-all"
+                       :class="{'line-through': wholesaleDiscount > 0 || manualReductionAmount > 0}"
+                       x-text="formatCurrency(finalTotalBeforeReduction)"></p>
                 </div>
+
+                <!-- Automatic Wholesale Discount Display -->
+                <template x-if="wholesaleDiscount > 0">
+                    <div x-transition class="flex justify-between items-center bg-green-50 text-green-800 p-2 rounded-lg">
+                        <span class="text-sm font-semibold">Diskon Grosir Otomatis</span>
+                        <span class="text-sm font-bold" x-text="'- ' + formatCurrency(wholesaleDiscount)"></span>
+                    </div>
+                </template>
+
+                <!-- Manual Reduction Section -->
+                <div>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" x-model="showManualReductionFields" class="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Tambah Potongan Manual</span>
+                    </label>
+                </div>
+
+                <template x-if="showManualReductionFields">
+                    <div x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="p-4 bg-gray-50 rounded-lg space-y-4 border">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Jumlah Potongan Manual</label>
+                            <input type="text" x-model.number="manualReductionAmount"
+                                class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Keterangan Potongan Manual</label>
+                            <textarea x-model="manualReductionNotes" rows="2"
+                                class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                                placeholder="Contoh: Diskon spesial, Tukar tambah..."></textarea>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- New Final Total Section -->
+                <div class="text-center p-3 bg-blue-50 rounded-lg border-t-4 border-b-4 border-blue-200">
+                    <p class="text-blue-600 text-sm md:text-base font-semibold">TOTAL TAGIHAN AKHIR</p>
+                    <p class="text-3xl md:text-4xl font-bold text-blue-700" x-text="formatCurrency(final_total)"></p>
+                </div>
+                
+                <!-- Payment Method Section -->
                 <div>
                     <label class="block text-sm font-semibold mb-2">Metode Pembayaran</label>
                     <div class="grid grid-cols-3 gap-2">
                         <template x-for="method in ['cash', 'transfer', 'debt']" :key="method">
                             <label class="p-3 border rounded-lg text-center cursor-pointer select-none transition"
-                                :class="{ 'bg-blue-600 text-white border-blue-600': payment_method ===
-                                    method, 'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method }">
-                                <input type="radio" class="hidden" x-model="payment_method"
-                                    :value="method">
-                                <span
-                                    x-text="method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : 'Hutang'"></span>
+                                :class="{ 'bg-blue-600 text-white border-blue-600': payment_method === method, 'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method }">
+                                <input type="radio" class="hidden" x-model="payment_method" :value="method">
+                                <span x-text="method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : 'Hutang'"></span>
                             </label>
                         </template>
                     </div>
                 </div>
+
+                <!-- Paid Amount Section -->
                 <template x-if="payment_method !== 'debt'">
                     <div>
                         <label class="block text-sm font-semibold mb-2">Uang Dibayarkan</label>
@@ -277,16 +323,11 @@
                                 <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold"
                                     @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
                             </template>
-                            <button
-                                class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold"
-                                @click="setPaidAmount(final_total)">Uang Pas</button>
-                            <button
-                                class="px-2 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 col-span-2 font-semibold"
-                                @click="resetAmount()">Reset</button>
+                            <button class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold" @click="setPaidAmount(final_total)">Uang Pas</button>
+                            <button class="px-2 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 col-span-2 font-semibold" @click="resetAmount()">Reset</button>
                         </div>
                         <template x-if="paid_amount < final_total && customer">
-                            <div
-                                class="text-orange-700 bg-orange-50 border-l-4 border-orange-500 p-2 text-xs mt-3 rounded">
+                            <div class="text-orange-700 bg-orange-50 border-l-4 border-orange-500 p-2 text-xs mt-3 rounded">
                                 Kekurangan <strong x-text="formatCurrency(final_total - paid_amount)"></strong> akan
                                 otomatis ditambahkan sebagai hutang pelanggan.
                             </div>
@@ -297,17 +338,21 @@
                         </template>
                     </div>
                 </template>
+
+                <!-- Change Section -->
                 <div>
                     <label class="block text-sm font-semibold mb-2">Kembalian</label>
                     <div class="text-xl md:text-2xl font-bold"
                         :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
                         x-text="formatCurrency(change)"></div>
                 </div>
+
+                <!-- Notes Section -->
                 <div>
-                    <label class="block text-sm font-semibold mb-2">Catatan</label>
+                    <label class="block text-sm font-semibold mb-2">Catatan Transaksi Umum</label>
                     <textarea x-model="notes" rows="2"
                         class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-                        placeholder="Catatan tambahan..."></textarea>
+                        placeholder="Catatan untuk transaksi ini..."></textarea>
                 </div>
             </div>
             <div class="p-4 md:p-5 border-t bg-gray-50 flex flex-col md:flex-row gap-2 md:justify-end">
@@ -537,6 +582,7 @@
             items: [],
             subtotal: 0,
             final_total: 0,
+            finalTotalBeforeReduction: 0, // New property
             transaction_type: 'wholesale',
             customer: null,
             include_old_debt: false,
@@ -552,11 +598,28 @@
             underpaymentError: false,
             pending_transaction_id: null, // Lacak ID transaksi pending
             isProcessingPayment: false,
+            finalTotalBeforeReduction: 0,
+            wholesaleDiscount: 0,
+            manualReductionAmount: 0,
+            manualReductionNotes: '',
+            showManualReductionFields: false,
+            manualReductionAmount: 0,
+            manualReductionNotes: '',
+            showManualReductionFields: false,
+            wholesaleDiscount: 0, // New property for wholesale discount
 
             init() {
                 this.$watch('paid_amount', () => this.calculateChange());
                 this.$watch('final_total', () => this.calculateChange());
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
+                this.$watch('manualReductionAmount', () => this.calculateFinalTotal());
+                this.$watch('showManualReductionFields', (value) => {
+                    if (!value) {
+                        this.manualReductionAmount = 0;
+                        this.manualReductionNotes = '';
+                    }
+                    this.calculateFinalTotal();
+                });
 
                 this.$watch('showPaymentModal', (value) => {
                     if (value) {
@@ -616,7 +679,8 @@
 
             initiatePayment() {
                 if (this.items.length === 0) return;
-                this.recalculate();
+                this.recalculate(); // Recalculate everything first
+
                 if (!this.customer) {
                     this.showCustomerWarningModal = true;
                 } else {
@@ -730,14 +794,18 @@
 
             recalculate() {
                 let currentSubtotal = 0;
+                let subtotalAtRetail = 0;
                 this.items.forEach(item => {
                     const useWholesale = this.transaction_type === 'wholesale' && item.quantity >= item.wholesale_min_qty;
                     item.price = useWholesale ? item.wholesale_price : item.retail_price;
                     item.subtotal = item.price * item.quantity;
                     currentSubtotal += item.subtotal;
+                    subtotalAtRetail += item.retail_price * item.quantity;
                 });
 
                 this.subtotal = currentSubtotal;
+                this.wholesaleDiscount = subtotalAtRetail - currentSubtotal; // Set the new property
+
                 this.calculateFinalTotal();
                 this.$dispatch('cart-updated', {
                     items: this.items
@@ -761,11 +829,24 @@
 
 
             calculateFinalTotal() {
-                let total = this.subtotal;
+                // The subtotal already has wholesale discounts applied.
+                // We start with that, then add debt, then subtract any *manual* reduction.
+                let total = this.subtotal; 
+                
                 if (this.include_old_debt && this.customer && this.customer.debt > 0) {
                     total += parseFloat(this.customer.debt);
                 }
-                this.final_total = total;
+
+                // This is the total before any *manual* reduction is applied.
+                this.finalTotalBeforeReduction = total;
+                
+                // Apply manual reduction if enabled and valid
+                if (this.showManualReductionFields && this.manualReductionAmount > 0) {
+                    total -= parseFloat(this.manualReductionAmount);
+                }
+
+                // Ensure final_total doesn't go below 0 and set it
+                this.final_total = Math.max(0, total);
             },
 
             formatPaidAmount(event) {
@@ -829,7 +910,12 @@
                     change: this.change > 0 ? this.change : 0,
                     notes: this.notes,
                     transaction_type: this.transaction_type,
-                    pending_id: this.pending_transaction_id
+                    pending_id: this.pending_transaction_id,
+                    total_reduction_amount: (this.wholesaleDiscount || 0) + (this.manualReductionAmount || 0),
+                    reduction_notes: [
+                        (this.wholesaleDiscount > 0 ? 'Diskon grosir' : ''),
+                        this.manualReductionNotes
+                    ].filter(Boolean).join('; '),
                 };
                 this.$wire.processPaymentFinal(this.items, paymentDetails);
             },
@@ -840,6 +926,11 @@
                     subtotal: this.subtotal,
                     transaction_type: this.transaction_type,
                     notes: this.notes,
+                    total_reduction_amount: (this.wholesaleDiscount || 0) + (this.manualReductionAmount || 0),
+                    reduction_notes: [
+                        (this.wholesaleDiscount > 0 ? 'Diskon grosir' : ''),
+                        this.manualReductionNotes
+                    ].filter(Boolean).join('; '),
                 };
                 this.$wire.holdTransaction(this.items, paymentDetails);
             },
@@ -852,6 +943,10 @@
                 this.showPaymentModal = false;
                 this.showHoldConfirmation = false;
                 this.pending_transaction_id = null;
+                this.wholesaleDiscount = 0;
+                this.manualReductionAmount = 0;
+                this.manualReductionNotes = '';
+                this.showManualReductionFields = false;
             },
 
             loadCart(items, customer, type, pending_id = null) {

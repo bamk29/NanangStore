@@ -143,7 +143,7 @@
     </div>
 
     <!-- Cart Section (Desktop) -->
-    <div class="hidden  lg:w-1/3 xl:w-1/3  flex-col h-full border-l bg-white">
+    <div class="hidden lg:flex lg:w-1/3 xl:w-1/3 flex-col h-full border-l bg-white">
         <livewire:pos.cart />
     </div>
 

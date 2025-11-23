@@ -31,10 +31,26 @@
         <!-- Ringkasan Pembayaran -->
         <div class="border-t border-gray-200 pt-6 mb-6">
             <div class="space-y-2">
+                @php
+                    $subtotalBeforeReduction = $transaction->details->sum('subtotal');
+                @endphp
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Subtotal</span>
-                    <span class="font-medium text-gray-800">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</span>
+                    <span class="font-medium text-gray-800">Rp {{ number_format($subtotalBeforeReduction, 0, ',', '.') }}</span>
                 </div>
+
+                @if($transaction->total_reduction_amount > 0)
+                <div class="flex justify-between text-sm text-red-600">
+                    <span class="text-red-600">Potongan Harga</span>
+                    <span class="font-medium">- Rp {{ number_format($transaction->total_reduction_amount, 0, ',', '.') }}</span>
+                </div>
+                @if($transaction->reduction_notes)
+                <div class="flex justify-end text-xs text-red-500 -mt-1">
+                    <span>({{ $transaction->reduction_notes }})</span>
+                </div>
+                @endif
+                @endif
+
                 <div class="flex justify-between text-lg font-bold">
                     <span class="text-gray-800">TOTAL</span>
                     <span class="text-blue-600">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</span>

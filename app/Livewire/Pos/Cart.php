@@ -25,6 +25,10 @@ class Cart extends Component
     public $initialType = 'wholesale';
     public $initialPendingId = null;
 
+    // New properties for reduction
+    public $totalReductionAmount = 0;
+    public $reductionNotes = '';
+
     public function clearCart()
     {
         $this->reset();
@@ -238,13 +242,15 @@ class Cart extends Component
                 $transactionData = [
                     'user_id' => auth()->id(),
                     'customer_id' => $customer->id ?? null,
-                    'total_amount' => (float) $paymentDetails['final_total'],
+                    'total_amount' => (float) $paymentDetails['final_total'], // This is already the final amount after reduction
                     'paid_amount' => (float) $paymentDetails['paid_amount'],
                     'change_amount' => $shortfall > 0 ? 0 : (float) $paymentDetails['change'], // Jika ada kekurangan, kembalian pasti 0
                     'payment_method' => $paymentDetails['payment_method'],
                     'transaction_type' => $paymentDetails['transaction_type'],
                     'status' => 'completed',
                     'notes' => $paymentDetails['notes'],
+                    'total_reduction_amount' => (float) $paymentDetails['total_reduction_amount'],
+                    'reduction_notes' => $paymentDetails['reduction_notes'],
                 ];
 
                 if ($isUpdate) {
@@ -419,29 +425,59 @@ class Cart extends Component
 
     
 
-            $transaction = Transaction::create([
+                                    $transaction = Transaction::create([
 
-                'invoice_number' => 'PEND-' . now()->format('YmdHisu'),
+    
 
-                'user_id' => auth()->id(),
+                                        'invoice_number' => 'PEND-' . now()->format('YmdHisu'),
 
-                'customer_id' => $customerId,
+    
 
-                'total_amount' => (float) $paymentDetails['subtotal'], // Hanya subtotal, karena belum ada pembayaran
+                                        'user_id' => auth()->id(),
 
-                'paid_amount' => 0,
+    
 
-                'change_amount' => 0,
+                                        'customer_id' => $customerId,
 
-                'payment_method' => 'cash', // Default, bisa diubah nanti
+    
 
-                'transaction_type' => $paymentDetails['transaction_type'],
+                                        'total_amount' => max(0, (float) $paymentDetails['subtotal'] - ((float) ($paymentDetails['total_reduction_amount'] ?? 0))),
 
-                'status' => 'pending', // Status PENTING
+    
 
-                'notes' => $paymentDetails['notes'],
+                                        'paid_amount' => 0,
 
-            ]);
+    
+
+                                        'change_amount' => 0,
+
+    
+
+                                        'payment_method' => 'cash', // Default, bisa diubah nanti
+
+    
+
+                                        'transaction_type' => $paymentDetails['transaction_type'],
+
+    
+
+                                        'status' => 'pending', // Status PENTING
+
+    
+
+                                        'notes' => $paymentDetails['notes'],
+
+    
+
+                                        'total_reduction_amount' => (float) ($paymentDetails['total_reduction_amount'] ?? 0),
+
+    
+
+                                        'reduction_notes' => $paymentDetails['reduction_notes'] ?? '',
+
+    
+
+                                    ]);
 
     
 
