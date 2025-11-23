@@ -32,12 +32,20 @@
         <div class="border-t border-gray-200 pt-6 mb-6">
             <div class="space-y-2">
                 @php
-                    $subtotalBeforeReduction = $transaction->details->sum('subtotal');
+                    $itemSubtotal = $transaction->details->sum('subtotal');
+                    $includedOldDebt = $transaction->total_amount - $itemSubtotal + $transaction->total_reduction_amount;
                 @endphp
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Subtotal</span>
-                    <span class="font-medium text-gray-800">Rp {{ number_format($subtotalBeforeReduction, 0, ',', '.') }}</span>
+                    <span class="text-gray-600">Subtotal Belanja</span>
+                    <span class="font-medium text-gray-800">Rp {{ number_format($itemSubtotal, 0, ',', '.') }}</span>
                 </div>
+
+                @if($includedOldDebt > 0)
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Bayar Hutang Lama</span>
+                    <span class="font-medium text-gray-800">Rp {{ number_format($includedOldDebt, 0, ',', '.') }}</span>
+                </div>
+                @endif
 
                 @if($transaction->total_reduction_amount > 0)
                 <div class="flex justify-between text-sm text-red-600">

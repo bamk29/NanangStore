@@ -25,7 +25,7 @@ class Invoice extends Component
     {
         // Logika dipindahkan dari PrintController.php
         $itemSubtotal = $this->transaction->details->sum('subtotal');
-        $oldDebtPaid = $this->transaction->total_amount - $itemSubtotal;
+        $includedOldDebt = $this->transaction->total_amount - $itemSubtotal + $this->transaction->total_reduction_amount;
 
         $items = [];
         foreach ($this->transaction->details as $detail) {
@@ -46,8 +46,8 @@ class Invoice extends Component
             'customerName' => optional($this->transaction->customer)->name,
             'items' => $items,
             'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.'),
-            'oldDebtPaid' => $oldDebtPaid,
-            'oldDebtPaidFormatted' => number_format($oldDebtPaid, 0, ',', '.'),
+            'includedOldDebt' => $includedOldDebt,
+            'includedOldDebtFormatted' => number_format($includedOldDebt, 0, ',', '.'),
             'customerDebt' => optional($this->transaction->customer)->debt ?? 0,
             'customerDebtFormatted' => number_format(optional($this->transaction->customer)->debt ?? 0, 0, ',', '.'),
             'totalReductionAmount' => $this->transaction->total_reduction_amount,
