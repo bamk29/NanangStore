@@ -69,6 +69,10 @@ Route::get('/customers', CustomerList::class)
     ->middleware(['auth'])
     ->name('customers.index');
 
+Route::get('/customers/{customer}/transactions', App\Livewire\Customers\CustomerTransactionHistory::class)
+    ->middleware(['auth'])
+    ->name('customers.transactions');
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile.edit');

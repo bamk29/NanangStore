@@ -40,18 +40,41 @@ class GoodsReceiptList extends Component
                     if ($product) {
                         // Ensure stock doesn't go negative
                         if ($product->stock < $item->quantity) {
-                            throw new \Exception("Gagal menghapus: Stok produk {$product->name} tidak akan cukup jika dibatalkan.");
+                            throw new \Exception("Gagal menghapus: Stok produk {$product->name} tidak akan cukup jika dibatalkan (Sisa: {$product->stock}, Dibatalkan: {$item->quantity}).");
                         }
-                        $product->decrement('stock', $item->quantity);
+                        
+                        $product->decrement('stock', (float) $item->quantity);
+                        
+                        // Revert Cost Price if this was the latest receipt
+                        // We check if the latest item for this product is the one we are deleting
+                        $latestItem = \App\Models\GoodsReceiptItem::where('product_id', $product->id)
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+
+                        if ($latestItem && $latestItem->id == $item->id) {
+                            // Find the previous item
+                            $previousItem = \App\Models\GoodsReceiptItem::where('product_id', $product->id)
+                                ->where('id', '!=', $item->id)
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+                            
+                            if ($previousItem) {
+                                $product->cost_price = $previousItem->cost;
+                            }
+                        }
+
                         if ($product->units_in_box > 1) {
                             $product->box_stock = floor($product->stock / $product->units_in_box);
+                            // Also update box cost if cost price changed
+                            $product->box_cost = $product->cost_price * $product->units_in_box;
                         }
                         $product->save();
                     }
                 }
 
                 // 2. Delete associated financial transaction
-                FinancialTransaction::where('goods_receipt_id', $receipt->id)->delete();
+                // 2. Delete associated financial transaction
+                FinancialTransaction::where('description', 'Penerimaan barang via ' . $receipt->receipt_number)->delete();
 
                 // 3. Delete the receipt itself (items will be cascade deleted)
                 $receipt->delete();

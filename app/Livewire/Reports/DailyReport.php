@@ -42,61 +42,52 @@ class DailyReport extends Component
         $filteredDetails = $detailsQuery->get();
 
         // 3. Calculate summaries from the filtered details
-        $totalSales = $filteredDetails->sum('subtotal');
-        $totalCost = $filteredDetails->reduce(function ($carry, $detail) {
-            if (!$detail->product) return $carry;
-            $cost = $detail->product->cost_price * $detail->quantity;
-            return $carry + $cost;
-        }, 0);
-        $totalProfit = $filteredDetails->reduce(function ($carry, $detail) {
-            if (!$detail->product) return $carry;
-            $profit = ($detail->price - $detail->product->cost_price) * $detail->quantity;
-            return $carry + $profit;
-        }, 0);
+        $totalSales = 0;
+        $totalCost = 0;
+        $totalProfit = 0;
 
-        // 4. Group details by transaction to calculate payment methods
-        $transactions = $filteredDetails->groupBy('transaction_id');
-        $salesByPaymentMethod = [
-            'cash' => 0,
-            'transfer' => 0,
-            'debt' => 0,
-        ];
-        
-        foreach ($transactions as $transactionId => $details) {
-            $paymentMethod = $details->first()->transaction->payment_method;
-            if (array_key_exists($paymentMethod, $salesByPaymentMethod)) {
-                $salesByPaymentMethod[$paymentMethod] += $details->sum('subtotal');
-            }
-        }
-
-        // 5. Calculate product performance
+        // 5. Calculate product performance (Moved up to combine loops for efficiency)
         $productPerformance = collect();
+
         foreach ($filteredDetails as $detail) {
-            if (!$detail->product) continue;
+            // Calculate Reduction Ratio for this transaction
+            $transaction = $detail->transaction;
+            $grossTotal = $transaction->total_amount + $transaction->total_reduction_amount;
+            $ratio = $grossTotal > 0 ? ($transaction->total_amount / $grossTotal) : 1; // Default to 1 if no gross total (shouldn't happen for valid sales)
 
-            $sellingPrice = $detail->price;
-            $costPrice = $detail->product->cost_price ?? 0;
-            $quantity = $detail->quantity;
-            $profit = ($sellingPrice - $costPrice) * $quantity;
+            // Apply ratio to subtotal
+            $adjustedSubtotal = $detail->subtotal * $ratio;
+            $adjustedPrice = $detail->price * $ratio;
 
-            $productId = $detail->product_id;
-            $item = $productPerformance->get($productId, [
-                'product_name' => $detail->product->name,
-                'remaining_stock' => $detail->product->stock,
-                'total_quantity' => 0,
-                'total_sales' => 0,
-                'total_profit' => 0,
-                'cost_price' => $costPrice,
-                'avg_selling_price' => 0,
-                'prices' => [],
-            ]);
+            $totalSales += $adjustedSubtotal;
 
-            $item['total_quantity'] += $quantity;
-            $item['total_sales'] += $detail->subtotal;
-            $item['total_profit'] += $profit;
-            $item['prices'][] = $sellingPrice;
+            if ($detail->product) {
+                $cost = $detail->product->cost_price * $detail->quantity;
+                $totalCost += $cost;
+                
+                $profit = $adjustedSubtotal - $cost;
+                $totalProfit += $profit;
 
-            $productPerformance->put($productId, $item);
+                // Product Performance Data
+                $productId = $detail->product_id;
+                $item = $productPerformance->get($productId, [
+                    'product_name' => $detail->product->name,
+                    'remaining_stock' => $detail->product->stock,
+                    'total_quantity' => 0,
+                    'total_sales' => 0,
+                    'total_profit' => 0,
+                    'cost_price' => $detail->product->cost_price ?? 0,
+                    'avg_selling_price' => 0,
+                    'prices' => [],
+                ]);
+
+                $item['total_quantity'] += $detail->quantity;
+                $item['total_sales'] += $adjustedSubtotal;
+                $item['total_profit'] += $profit;
+                $item['prices'][] = $adjustedPrice;
+
+                $productPerformance->put($productId, $item);
+            }
         }
 
         $this->productSalesData = $productPerformance->map(function ($item) {
@@ -107,12 +98,115 @@ class DailyReport extends Component
             return $item;
         })->sortByDesc('total_profit')->values()->all();
 
+        // 4. Group details by transaction to calculate payment methods (Re-implemented to use adjusted values)
+        // Note: This is slightly complex because we need to sum the *adjusted* subtotals per transaction
+        // But we already have the adjusted subtotals calculated above.
+        // Simpler approach: Iterate through details again or aggregate during the first loop.
+        // Let's aggregate during the first loop.
+        
+        $salesByPaymentMethod = [
+            'cash' => 0,
+            'transfer' => 0,
+            'debt' => 0,
+        ];
+        
+        // Track total discounts given based on allocation flags
+        $totalDiscount = 0;
+        $transactionDiscountData = []; // Store transaction-level data for discount calculation
+
+        foreach ($filteredDetails as $detail) {
+             // Calculate Reduction Ratio (Duplicate logic, but safe)
+            $transaction = $detail->transaction;
+            $transactionId = $transaction->id;
+            $grossTotal = $transaction->total_amount + $transaction->total_reduction_amount;
+            $ratio = $grossTotal > 0 ? ($transaction->total_amount / $grossTotal) : 1;
+            $adjustedSubtotal = $detail->subtotal * $ratio;
+
+            $paymentMethod = $transaction->payment_method;
+            if (array_key_exists($paymentMethod, $salesByPaymentMethod)) {
+                $salesByPaymentMethod[$paymentMethod] += $adjustedSubtotal;
+            }
+            
+            // Track filtered items' gross subtotal per transaction for discount allocation
+            if (!isset($transactionDiscountData[$transactionId])) {
+                $transactionDiscountData[$transactionId] = [
+                    'filtered_gross' => 0,
+                    'total_reduction' => $transaction->total_reduction_amount ?? 0,
+                    'discount_for_bakso' => $transaction->discount_for_bakso ?? false,
+                    'discount_for_nanang' => $transaction->discount_for_nanang ?? false,
+                    'transaction' => $transaction,
+                ];
+            }
+            $transactionDiscountData[$transactionId]['filtered_gross'] += $detail->subtotal;
+        }
+        
+        // Calculate discount based on allocation flags and store filter
+        foreach ($transactionDiscountData as $data) {
+            $transaction = $data['transaction'];
+            $filteredGross = $data['filtered_gross'];
+            $totalReduction = $data['total_reduction'];
+            $discountForBakso = $data['discount_for_bakso'];
+            $discountForNanang = $data['discount_for_nanang'];
+            
+            if ($totalReduction <= 0) {
+                continue; // No discount to allocate
+            }
+            
+            // Get transaction's total gross (all items, not just filtered)
+            $transactionGross = $transaction->total_amount + $transaction->total_reduction_amount;
+            
+            if ($transactionGross <= 0) {
+                continue;
+            }
+            
+            // Determine discount allocation based on flags and filter
+            if ($this->storeFilter === 'bakso') {
+                // Filter Bakso: only count discount if it was allocated to Bakso
+                if ($discountForBakso && !$discountForNanang) {
+                    // 100% discount to Bakso
+                    $totalDiscount += $totalReduction;
+                } elseif ($discountForBakso && $discountForNanang) {
+                    // Split proportionally, count Bakso's portion
+                    $proportion = $filteredGross / $transactionGross;
+                    $totalDiscount += $totalReduction * $proportion;
+                } elseif (!$discountForBakso && !$discountForNanang) {
+                    // No checkbox selected: proportional fallback
+                    $proportion = $filteredGross / $transactionGross;
+                    $totalDiscount += $totalReduction * $proportion;
+                }
+                // If only Nanang checked, Bakso gets 0 discount
+                
+            } elseif ($this->storeFilter === 'nanang_store') {
+                // Filter Nanang Store: only count discount if it was allocated to Nanang
+                if ($discountForNanang && !$discountForBakso) {
+                    // 100% discount to Nanang
+                    $totalDiscount += $totalReduction;
+                } elseif ($discountForBakso && $discountForNanang) {
+                    // Split proportionally, count Nanang's portion
+                    $proportion = $filteredGross / $transactionGross;
+                    $totalDiscount += $totalReduction * $proportion;
+                } elseif (!$discountForBakso && !$discountForNanang) {
+                    // No checkbox selected: proportional fallback
+                    $proportion = $filteredGross / $transactionGross;
+                    $totalDiscount += $totalReduction * $proportion;
+                }
+                // If only Bakso checked, Nanang gets 0 discount
+                
+            } else {
+                // Filter "Semua": count full discount
+                $totalDiscount += $totalReduction;
+            }
+        }
+
+        $transactions = $filteredDetails->groupBy('transaction_id'); // Keep this for count
+        
         $this->summary = [
             'total_sales' => $totalSales,
             'total_cost' => $totalCost,
             'total_profit' => $totalProfit,
-            'total_transactions' => $transactions->count(), // Count of unique transactions
+            'total_transactions' => $transactions->count(),
             'sales_by_payment' => $salesByPaymentMethod,
+            'total_discount' => $totalDiscount,
         ];
     }
 

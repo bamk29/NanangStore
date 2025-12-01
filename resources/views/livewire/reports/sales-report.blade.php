@@ -1,45 +1,96 @@
 <div class="py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Filters -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <!-- Header & Print Button -->
+        <div class="flex justify-between items-center mb-6 print:hidden">
+            <h1 class="text-2xl font-bold text-gray-900">Laporan Penjualan Lengkap</h1>
+            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Cetak Laporan
+            </button>
+        </div>
+
+        <!-- Filters (Hidden on Print) -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6 print:hidden">
+            <!-- Quick Date Filters -->
+            <div class="mb-4 flex flex-wrap gap-2">
+                <button wire:click="setDateRange('today')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">Hari Ini</button>
+                <button wire:click="setDateRange('week')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">Minggu Ini</button>
+                <button wire:click="setDateRange('month')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">Bulan Ini</button>
+                <button wire:click="setDateRange('year')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">Tahun Ini</button>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input type="date" wire:model.live="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
+                    <input type="date" wire:model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" wire:model.live="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
+                    <input type="date" wire:model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Category</label>
-                    <select wire:model.live="categoryFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">All Categories</option>
+                    <label class="block text-sm font-medium text-gray-700">Toko</label>
+                    <select wire:model="storeFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Semua Toko</option>
+                        <option value="nanang_store">Nanang Store</option>
+                        <option value="bakso">Giling Bakso</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Kategori</label>
+                    <select wire:model="categoryFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Semua Kategori</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Transaction Type</label>
-                    <select wire:model.live="transactionType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">All Types</option>
-                        <option value="retail">Retail</option>
-                        <option value="wholesale">Wholesale</option>
+                    <label class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
+                    <select wire:model="paymentMethodFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Semua Metode</option>
+                        <option value="cash">Tunai</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="debt">Kasbon</option>
                     </select>
                 </div>
-            </div>
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Group By</label>
-                    <select wire:model.live="groupBy" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="date">Date</option>
-                        <option value="product">Product</option>
-                        <option value="category">Category</option>
+                    <label class="block text-sm font-medium text-gray-700">Tipe Transaksi</label>
+                    <select wire:model="transactionType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Semua Tipe</option>
+                        <option value="retail">Eceran</option>
+                        <option value="wholesale">Grosir</option>
                     </select>
                 </div>
-                <div class="flex items-end">
-                    <button wire:click="exportCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Kelompokkan Berdasarkan</label>
+                    <select wire:model="groupBy" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="date">Tanggal</option>
+                        <option value="product">Produk</option>
+                        <option value="category">Kategori</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Interval Grafik</label>
+                    <select wire:model="chartInterval" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="daily">Harian</option>
+                        <option value="weekly">Mingguan</option>
+                        <option value="monthly">Bulanan</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button wire:click="applyFilter" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Terapkan Filter
+                    </button>
+                    <button wire:click="exportCsv" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
                         Export CSV
                     </button>
                 </div>
@@ -47,55 +98,190 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900">Total Sales</h3>
-                <p class="mt-2 text-3xl font-bold text-blue-600">Rp {{ number_format($totalSales, 0, ',', '.') }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                <h3 class="text-sm font-medium text-gray-500">Total Penjualan</h3>
+                <p class="mt-2 text-2xl font-bold text-gray-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ number_format($totalTransactions) }} Transaksi</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900">Total Transactions</h3>
-                <p class="mt-2 text-3xl font-bold text-blue-600">{{ number_format($totalTransactions, 0, ',', '.') }}</p>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+                <h3 class="text-sm font-medium text-gray-500">Total Modal (HPP)</h3>
+                <p class="mt-2 text-2xl font-bold text-gray-900">Rp {{ number_format($totalCost, 0, ',', '.') }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900">Average Transaction Value</h3>
-                <p class="mt-2 text-3xl font-bold text-blue-600">Rp {{ number_format($averageTransactionValue, 0, ',', '.') }}</p>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                <h3 class="text-sm font-medium text-gray-500">Total Keuntungan</h3>
+                <p class="mt-2 text-2xl font-bold text-green-600">Rp {{ number_format($totalProfit, 0, ',', '.') }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+                <h3 class="text-sm font-medium text-gray-500">Margin Keuntungan</h3>
+                <p class="mt-2 text-2xl font-bold text-purple-600">
+                    {{ $totalSales > 0 ? number_format(($totalProfit / $totalSales) * 100, 1) : 0 }}%
+                </p>
             </div>
         </div>
 
+        <!-- Charts Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6 print:break-inside-avoid">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Grafik Tren Penjualan & Keuntungan</h3>
+            <div id="salesChart" style="min-height: 350px;" wire:ignore></div>
+        </div>
+
         <!-- Sales Data Table -->
-        <div class="bg-white rounded-lg shadow overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            @if($groupBy === 'date')
-                                Date
-                            @elseif($groupBy === 'product')
-                                Product
-                            @else
-                                Category
-                            @endif
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sales</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                        @if($groupBy === 'date')
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($salesData as $data)
+        <div class="bg-white rounded-lg shadow overflow-hidden print:shadow-none">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $data['key'] }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ number_format($data['quantity'], 0, ',', '.') }}</td>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                @if($groupBy === 'date') Tanggal
+                                @elseif($groupBy === 'product') Produk
+                                @else Kategori
+                                @endif
+                            </th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Penjualan</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Modal</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Keuntungan</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Margin</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                             @if($groupBy === 'date')
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $data['transaction_count'] }}</td>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Transaksi</th>
                             @endif
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($salesData as $data)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $data['key'] }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">Rp {{ number_format($data['total_cost'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 font-medium">Rp {{ number_format($data['total_profit'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                                    {{ $data['total_sales'] > 0 ? number_format(($data['total_profit'] / $data['total_sales']) * 100, 1) : 0 }}%
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ number_format($data['quantity'], 0, ',', '.') }}</td>
+                                @if($groupBy === 'date')
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ $data['transaction_count'] }}</td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-10 text-center text-gray-500">Tidak ada data penjualan untuk filter yang dipilih.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot class="bg-gray-50 font-bold">
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">TOTAL</td>
+                            <td class="px-6 py-4 text-sm text-right text-gray-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                            <td class="px-6 py-4 text-sm text-right text-gray-500">Rp {{ number_format($totalCost, 0, ',', '.') }}</td>
+                            <td class="px-6 py-4 text-sm text-right text-green-600">Rp {{ number_format($totalProfit, 0, ',', '.') }}</td>
+                            <td class="px-6 py-4 text-sm text-right text-gray-500">
+                                {{ $totalSales > 0 ? number_format(($totalProfit / $totalSales) * 100, 1) : 0 }}%
+                            </td>
+                            <td class="px-6 py-4 text-sm text-right text-gray-900">{{ number_format($salesData->sum('quantity'), 0, ',', '.') }}</td>
+                            @if($groupBy === 'date')
+                                <td class="px-6 py-4 text-sm text-right text-gray-900">{{ number_format($totalTransactions) }}</td>
+                            @endif
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            let chart;
+
+            const renderChart = (data) => {
+                // Ensure data is valid
+                if (!data || !data.sales || !data.profit || !data.labels) {
+                    console.error('Invalid chart data:', data);
+                    return;
+                }
+
+                const options = {
+                    series: [{
+                        name: 'Penjualan',
+                        data: data.sales
+                    }, {
+                        name: 'Keuntungan',
+                        data: data.profit
+                    }],
+                    chart: {
+                        type: 'area',
+                        height: 350,
+                        toolbar: { show: false }
+                    },
+                    dataLabels: { enabled: false },
+                    stroke: { curve: 'smooth' },
+                    xaxis: {
+                        categories: data.labels,
+                        type: 'category' // Changed from datetime to category to support custom labels like "Week X"
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: (value) => {
+                                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumSignificantDigits: 3 }).format(value);
+                            }
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: (value) => {
+                                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+                            }
+                        }
+                    },
+                    colors: ['#3B82F6', '#10B981']
+                };
+
+                const chartElement = document.querySelector("#salesChart");
+                
+                if (chart && chartElement) {
+                    chart.updateOptions(options);
+                } else if (chartElement) {
+                    chart = new ApexCharts(chartElement, options);
+                    chart.render();
+                }
+            };
+
+            // Initial render
+            renderChart(@json($chartData));
+
+            // Update on Livewire update
+            Livewire.on('chart-updated', (data) => {
+                // Livewire 3 might pass data as [data] or data depending on dispatch
+                // Let's handle both
+                const chartData = Array.isArray(data) ? data[0] : data;
+                renderChart(chartData);
+            });
+        });
+    </script>
+    
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .py-6, .py-6 * {
+                visibility: visible;
+            }
+            .py-6 {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .print\:hidden {
+                display: none !important;
+            }
+            .shadow {
+                box-shadow: none !important;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
 </div>

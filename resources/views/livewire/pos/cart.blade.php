@@ -250,17 +250,9 @@
                 <div class="text-center">
                     <p class="text-gray-500 text-sm md:text-base">Total Awal</p>
                     <p class="text-2xl md:text-3xl font-bold text-gray-500 transition-all"
-                       :class="{'line-through': wholesaleDiscount > 0 || manualReductionAmount > 0}"
+                       :class="{'line-through': manualReductionAmount > 0}"
                        x-text="formatCurrency(finalTotalBeforeReduction)"></p>
                 </div>
-
-                <!-- Automatic Wholesale Discount Display -->
-                <template x-if="wholesaleDiscount > 0">
-                    <div x-transition class="flex justify-between items-center bg-green-50 text-green-800 p-2 rounded-lg">
-                        <span class="text-sm font-semibold">Diskon Grosir Otomatis</span>
-                        <span class="text-sm font-bold" x-text="'- ' + formatCurrency(wholesaleDiscount)"></span>
-                    </div>
-                </template>
 
                 <!-- Manual Reduction Section -->
                 <div>
@@ -287,6 +279,28 @@
                                 class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
                                 placeholder="Contoh: Diskon spesial, Tukar tambah..."></textarea>
                         </div>
+                        
+                        <!-- Discount Allocation Checkboxes -->
+                        <template x-if="manualReductionAmount > 0">
+                            <div class="border-t pt-3 space-y-2">
+                                <p class="text-sm font-semibold text-gray-700">Potong dari:</p>
+                                <div class="space-y-2">
+                                    <label class="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                        <input type="checkbox" x-model="discountForBakso" 
+                                               class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                                        <span class="ml-2 text-sm text-gray-700">🥩 Giling Bakso</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                        <input type="checkbox" x-model="discountForNanang" 
+                                               class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                                        <span class="ml-2 text-sm text-gray-700">🏪 Toko Nanang</span>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 italic">
+                                    💡 Centang bisnis unit yang akan menerima potongan. Jika tidak ada yang dicentang, potongan akan dibagi proporsional.
+                                </p>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -599,14 +613,11 @@
             pending_transaction_id: null, // Lacak ID transaksi pending
             isProcessingPayment: false,
             finalTotalBeforeReduction: 0,
-            wholesaleDiscount: 0,
             manualReductionAmount: 0,
             manualReductionNotes: '',
             showManualReductionFields: false,
-            manualReductionAmount: 0,
-            manualReductionNotes: '',
-            showManualReductionFields: false,
-            wholesaleDiscount: 0, // New property for wholesale discount
+            discountForBakso: false, // Checkbox for Giling Bakso discount
+            discountForNanang: false, // Checkbox for Nanang Store discount
 
             init() {
                 this.$watch('paid_amount', () => this.calculateChange());
@@ -794,17 +805,14 @@
 
             recalculate() {
                 let currentSubtotal = 0;
-                let subtotalAtRetail = 0;
                 this.items.forEach(item => {
                     const useWholesale = this.transaction_type === 'wholesale' && item.quantity >= item.wholesale_min_qty;
                     item.price = useWholesale ? item.wholesale_price : item.retail_price;
                     item.subtotal = item.price * item.quantity;
                     currentSubtotal += item.subtotal;
-                    subtotalAtRetail += item.retail_price * item.quantity;
                 });
 
                 this.subtotal = currentSubtotal;
-                this.wholesaleDiscount = subtotalAtRetail - currentSubtotal; // Set the new property
 
                 this.calculateFinalTotal();
                 this.$dispatch('cart-updated', {
@@ -911,11 +919,10 @@
                     notes: this.notes,
                     transaction_type: this.transaction_type,
                     pending_id: this.pending_transaction_id,
-                    total_reduction_amount: (this.wholesaleDiscount || 0) + (this.manualReductionAmount || 0),
-                    reduction_notes: [
-                        (this.wholesaleDiscount > 0 ? 'Diskon grosir' : ''),
-                        this.manualReductionNotes
-                    ].filter(Boolean).join('; '),
+                    total_reduction_amount: this.manualReductionAmount || 0,
+                    reduction_notes: this.manualReductionNotes,
+                    discount_for_bakso: this.discountForBakso,
+                    discount_for_nanang: this.discountForNanang,
                 };
                 this.$wire.processPaymentFinal(this.items, paymentDetails);
             },
@@ -926,11 +933,8 @@
                     subtotal: this.subtotal,
                     transaction_type: this.transaction_type,
                     notes: this.notes,
-                    total_reduction_amount: (this.wholesaleDiscount || 0) + (this.manualReductionAmount || 0),
-                    reduction_notes: [
-                        (this.wholesaleDiscount > 0 ? 'Diskon grosir' : ''),
-                        this.manualReductionNotes
-                    ].filter(Boolean).join('; '),
+                    total_reduction_amount: this.manualReductionAmount || 0,
+                    reduction_notes: this.manualReductionNotes,
                 };
                 this.$wire.holdTransaction(this.items, paymentDetails);
             },
@@ -943,10 +947,11 @@
                 this.showPaymentModal = false;
                 this.showHoldConfirmation = false;
                 this.pending_transaction_id = null;
-                this.wholesaleDiscount = 0;
                 this.manualReductionAmount = 0;
                 this.manualReductionNotes = '';
                 this.showManualReductionFields = false;
+                this.discountForBakso = false;
+                this.discountForNanang = false;
             },
 
             loadCart(items, customer, type, pending_id = null) {

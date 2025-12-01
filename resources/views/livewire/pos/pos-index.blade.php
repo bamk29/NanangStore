@@ -2,7 +2,10 @@
      x-init="init()"
      @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id)"
      @cart:reset.window="if (!isDesktop) isCartVisible = false"
+     @cart:reset.window="if (!isDesktop) isCartVisible = false"
      @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
+     @customer:selected.window="setCustomer($event.detail.customer)"
+     @customer:cleared.window="clearCustomer()"
      @keydown.escape.window="handleEscape()"
      class="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
 
@@ -55,6 +58,12 @@
                             class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
                             :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
                             Semua
+                        </button>
+                        <button x-show="isCustomerSelected" @click="categoryId = 'recommendations'"
+                            class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+                            :class="{ 'bg-purple-500 text-white shadow-sm': categoryId === 'recommendations', 'bg-purple-100 text-purple-700 hover:bg-purple-200': categoryId !== 'recommendations' }"
+                            style="display: none;">
+                            ★ Sering Dibeli
                         </button>
                         <template x-for="category in categories.slice(0, 2)" :key="category.id">
                             <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
@@ -249,7 +258,11 @@
             categoryId: '',
             isLoading: true,
             selectedIndex: -1, // -1 means no selection
+            selectedIndex: -1, // -1 means no selection
             ignoreNextSearchQueryWatch: false,
+            recommendedProducts: [],
+            isCustomerSelected: false,
+            currentCustomerId: null,
 
             // Cart State
             cartItemIds: [],
@@ -309,11 +322,41 @@
                     this.categoryId = ''; // Reset category filter
                     this.fetchProducts();
                 });
-                this.$watch('categoryId', () => {
+                this.$watch('categoryId', (value) => {
                     this.selectedIndex = -1; // Reset selection on new category
                     this.searchQuery = ''; // Reset search query
-                    this.fetchProducts();
+                    if (value === 'recommendations') {
+                        this.products = this.recommendedProducts;
+                    } else {
+                        this.fetchProducts();
+                    }
                 });
+            },
+
+            setCustomer(customer) {
+                this.isCustomerSelected = true;
+                this.currentCustomerId = customer.id;
+                this.fetchRecommendations(customer.id);
+            },
+
+            clearCustomer() {
+                this.isCustomerSelected = false;
+                this.currentCustomerId = null;
+                this.recommendedProducts = [];
+                if (this.categoryId === 'recommendations') {
+                    this.categoryId = '';
+                }
+            },
+
+            fetchRecommendations(customerId) {
+                fetch(`/api/products/recommendations/${customerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        this.recommendedProducts = data;
+                        // Optional: Auto-switch to recommendations if found
+                        // if (data.length > 0) this.categoryId = 'recommendations';
+                    })
+                    .catch(error => console.error('Error fetching recommendations:', error));
             },
 
             handleEscape() {
@@ -344,138 +387,176 @@
                     return;
                 }
 
-                let barcode = '';
+                let barcodeBuffer = '';
                 let lastKeystrokeTime = 0;
-                let processingBarcode = false;
-                let lastSpaceTime = 0; // For double space shortcut
+                let lastSpaceTime = 0; 
+                
+                // Scanner State
+                this.scanQueue = [];
+                this.isProcessingQueue = false;
+                this.lastScannedBarcode = '';
+                this.lastScanTime = 0;
 
                 window.addEventListener('keydown', (e) => {
-                    // Shortcut global untuk Bayar (F2) dan Tunda (F4)
-                    if (e.key === 'F2') {
-                        e.preventDefault();
-                        window.dispatchEvent(new CustomEvent('shortcut:pay'));
-                    }
-                    if (e.key === 'F3') {
-                        e.preventDefault();
-                        this.isScannerMode = !this.isScannerMode;
-                    }
-                    if (e.key === 'F4') {
-                        e.preventDefault();
-                        window.dispatchEvent(new CustomEvent('shortcut:hold'));
-                    }
+                    // Shortcut global
+                    if (e.key === 'F2') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:pay')); return; }
+                    if (e.key === 'F3') { e.preventDefault(); this.isScannerMode = !this.isScannerMode; return; }
+                    if (e.key === 'F4') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:hold')); return; }
+                    if (e.key === 'Escape') { this.handleEscape(); return; }
 
-                    // If a modal is open, or the cart is open on mobile, ignore product navigation
-                    if (this.isModalOpen || (!this.isDesktop && this.isCartVisible)) {
-                        // Exception for Escape key, which is handled globally now
-                        if (e.key === 'Escape') {
-                            this.handleEscape();
-                        }
-                        return;
-                    }
+                    // Ignore if modal/cart open (except Escape)
+                    if (this.isModalOpen || (!this.isDesktop && this.isCartVisible)) return;
 
-                    const targetIsSomeInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
-                    if (e.key === ' ' && !targetIsSomeInput) {
+                    const targetIsInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+                    const targetIsSearch = e.target === this.$refs.searchInput;
+
+                    // Double space shortcut
+                    if (e.key === ' ' && !targetIsInput) {
                         e.preventDefault();
                         const now = Date.now();
-                        if (now - lastSpaceTime < 300) { // Double space pressed
-                            this.resetSearchAndFocus(); // This one still focuses
-                            lastSpaceTime = 0; // Reset timer
-                        } else {
-                            lastSpaceTime = now; // Record first space press
+                        if (now - lastSpaceTime < 300) { 
+                            this.resetSearchAndFocus(); 
+                            lastSpaceTime = 0; 
+                        } else { 
+                            lastSpaceTime = now; 
                         }
                         return;
                     }
 
-                    // If in navigation mode, handle navigation
+                    // Navigation
                     if (this.selectedIndex > -1) {
-                        e.preventDefault();
-                        switch (e.key) {
-                            case 'ArrowDown':
-                            case 'ArrowRight':
-                                this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1);
-                                this.scrollIntoView();
-                                break;
-                            case 'ArrowUp':
-                            case 'ArrowLeft':
-                                this.selectedIndex = Math.max(0, this.selectedIndex - 1);
-                                this.scrollIntoView();
-                                break;
-                            case 'Enter':
-                                if (this.products[this.selectedIndex]) {
-                                    this.openModal(this.products[this.selectedIndex]);
-                                }
-                                break;
-                        }
-                        return; // Stop further processing
-                    }
-
-                    // If not in navigation mode, check for entry points
-                    // 1. Enter navigation from search input
-                    if (e.target === this.$refs.searchInput && e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        if (this.products.length > 0) {
-                            this.selectedIndex = 0;
-                            this.scrollIntoView();
-                        }
-                        return;
-                    }
-
-                    // 2. Handle barcode scanning
-                    const targetIsOurSearch = e.target === this.$refs.searchInput;
-
-                    if (targetIsSomeInput && !targetIsOurSearch) {
-                        return; // Ignore if other inputs are focused
-                    }
-
-                    if (e.key === 'Enter') {
-                        const codeToProcess = targetIsOurSearch ? this.searchQuery : barcode;
-                        if (codeToProcess.length > 2) {
+                        // ... navigation logic (keep existing) ...
+                        if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Enter'].includes(e.key)) {
                             e.preventDefault();
-                            if(processingBarcode) return;
-                            processingBarcode = true;
-                            this.fetchProductsByBarcode(codeToProcess).finally(() => {
-                                processingBarcode = false;
-                                barcode = '';
-                            });
+                            if(e.key === 'ArrowDown' || e.key === 'ArrowRight') { this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1); this.scrollIntoView(); }
+                            if(e.key === 'ArrowUp' || e.key === 'ArrowLeft') { this.selectedIndex = Math.max(0, this.selectedIndex - 1); this.scrollIntoView(); }
+                            if(e.key === 'Enter' && this.products[this.selectedIndex]) { this.openModal(this.products[this.selectedIndex]); }
+                            return;
+                        }
+                    }
+
+                    // Enter navigation from search
+                    if (targetIsSearch && e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (this.products.length > 0) { this.selectedIndex = 0; this.scrollIntoView(); }
+                        return;
+                    }
+
+                    // --- BARCODE SCANNER LOGIC ---
+                    
+                    // 1. Handle "Enter" (End of scan)
+                    if (e.key === 'Enter') {
+                        // Determine what to process: buffer or search input
+                        // If the buffer has content, it takes precedence (scanner usually types fast then hits enter)
+                        // If buffer is empty, check search input
+                        
+                        let codeToProcess = '';
+                        
+                        if (barcodeBuffer.length > 2) {
+                            codeToProcess = barcodeBuffer;
+                            e.preventDefault(); // Prevent form submission or newline
+                        } else if (targetIsSearch && this.searchQuery.length > 2) {
+                            codeToProcess = this.searchQuery;
+                            // Don't prevent default here if you want normal enter behavior, 
+                            // but for a POS search box, enter usually means "search" or "pick first".
+                            // Let's treat it as a potential barcode if it looks like one, or just search.
+                            // For now, let's assume if they hit enter in search, they might be manually typing a barcode.
+                        }
+
+                        if (codeToProcess) {
+                            this.handleScannedCode(codeToProcess);
+                            barcodeBuffer = ''; // Clear buffer
+                            if (targetIsSearch) {
+                                this.searchQuery = ''; // Clear search input if it was used
+                                this.ignoreNextSearchQueryWatch = true; // Prevent search trigger
+                                this.$refs.searchInput.blur(); // Remove focus to prevent interference
+                            }
                         }
                         return;
                     }
 
+                    // 2. Capture Keystrokes
+                    // Ignore special keys
                     if (e.key.length > 1) return;
 
-                    if (!targetIsSomeInput) {
-                        const now = Date.now();
-                        if (now - lastKeystrokeTime > 100) {
-                            barcode = '';
-                        }
-                        barcode += e.key;
-                        lastKeystrokeTime = now;
+                    // Timing check: Scanners type VERY fast (usually < 50ms between keys)
+                    // Humans type slower.
+                    const now = Date.now();
+                    
+                    if (now - lastKeystrokeTime > 100) {
+                        // Gap too long, reset buffer (assume new scan or manual typing started)
+                        barcodeBuffer = ''; 
                     }
+                    
+                    // If focusing another input (not search), don't capture into buffer unless it looks like a scan
+                    if (targetIsInput && !targetIsSearch) {
+                        // If it's a fast burst, maybe it IS a scanner even in another input?
+                        // But usually we don't want to interfere with typing notes.
+                        // So we only capture if NOT in another input, OR if it's the search input.
+                        lastKeystrokeTime = now;
+                        return; 
+                    }
+
+                    barcodeBuffer += e.key;
+                    lastKeystrokeTime = now;
                 });
 
                 window.posKeyboardListenerAttached = true;
             },
 
-            scrollIntoView() {
-                this.$nextTick(() => {
-                    const el = document.getElementById('product-' + this.selectedIndex);
-                    if (el) {
-                        el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            handleScannedCode(code) {
+                const now = Date.now();
+                
+                // Duplicate Scan Prevention (0.5s delay for SAME item)
+                if (code === this.lastScannedBarcode && (now - this.lastScanTime < 500)) {
+                    console.log('Duplicate scan ignored (debounce)');
+                    return;
+                }
+
+                this.lastScannedBarcode = code;
+                this.lastScanTime = now;
+
+                // Add to queue
+                this.scanQueue.push(code);
+                this.processScanQueue();
+            },
+
+            async processScanQueue() {
+                if (this.isProcessingQueue || this.scanQueue.length === 0) return;
+
+                this.isProcessingQueue = true;
+                const code = this.scanQueue.shift(); // Get first item
+
+                try {
+                    await this.fetchProductsByBarcode(code);
+                } catch (err) {
+                    console.error("Scan error:", err);
+                } finally {
+                    this.isProcessingQueue = false;
+                    // Process next item immediately if exists
+                    if (this.scanQueue.length > 0) {
+                        this.processScanQueue();
                     }
-                });
+                }
             },
 
             async fetchProductsByBarcode(barcode) {
                 try {
+                    // Optimistic UI: Play sound immediately? No, wait for result to know if success/error.
+                    // But we want it "fast".
+                    
                     const response = await fetch(`/api/products/by-code/${barcode}`);
                     const product = await response.json();
 
                     if (response.ok) {
                         this.quickAddToCart(product);
-                        this.playSound('success');
-                        // Clear search and remove focus from the input
-                        this.ignoreNextSearchQueryWatch = true;
-                        this.clearSearchAndExit();
+                        // Sound is played in quickAddToCart
+                        
+                        // Clear search if it was populated
+                        if (this.searchQuery === barcode) {
+                            this.searchQuery = '';
+                            this.ignoreNextSearchQueryWatch = true;
+                        }
                     } else {
                         this.playSound('error');
                         window.Livewire.dispatch('show-alert', { type: 'error', message: product.message || 'Produk tidak ditemukan.' });
@@ -484,8 +565,6 @@
                     console.error('Error fetching product by barcode:', error);
                     this.playSound('error');
                     window.Livewire.dispatch('show-alert', { type: 'error', message: 'Gagal mengambil data produk.' });
-                } finally {
-                    // Removed this.isLoading = false;
                 }
             },
 

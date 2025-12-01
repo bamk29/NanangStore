@@ -251,6 +251,8 @@ class Cart extends Component
                     'notes' => $paymentDetails['notes'],
                     'total_reduction_amount' => (float) $paymentDetails['total_reduction_amount'],
                     'reduction_notes' => $paymentDetails['reduction_notes'],
+                    'discount_for_bakso' => $paymentDetails['discount_for_bakso'] ?? false,
+                    'discount_for_nanang' => $paymentDetails['discount_for_nanang'] ?? false,
                 ];
 
                 if ($isUpdate) {
@@ -305,13 +307,14 @@ class Cart extends Component
                     }
                     // Jika checkbox tidak dicentang
                     else {
-                        // Jika metode bayar adalah "Hutang", tambahkan seluruh tagihan baru ke hutang lama.
+                        // Jika metode bayar adalah "Hutang", tambahkan seluruh tagihan baru (setelah diskon) ke hutang lama.
                         if ($paymentDetails['payment_method'] === 'debt') {
-                            $newDebt = $initialDebt + (float) $paymentDetails['subtotal'];
+                            $newDebt = $initialDebt + (float) $paymentDetails['final_total'];
                         }
                         // Jika bayar cash/transfer tapi kurang
                         else {
-                            $shortfall = (float) $paymentDetails['subtotal'] - (float) $paymentDetails['paid_amount'];
+                            // Hitung kekurangan dari total akhir (setelah diskon)
+                            $shortfall = (float) $paymentDetails['final_total'] - (float) $paymentDetails['paid_amount'];
                             if ($shortfall > 0) {
                                 $newDebt = $initialDebt + $shortfall;
                             } else {
@@ -334,17 +337,66 @@ class Cart extends Component
                 }
 
                 // [FINANCIAL INTEGRATION] Pencatatan Pemasukan
-                $incomeByCategory = [];
+                // NEW LOGIC: Apply discount directly to selected business unit(s)
+                
+                // First, calculate gross income per business unit (before manual discount)
+                $grossIncomeByUnit = [];
                 foreach ($cart as $item) {
                     $product = Product::find($item['id']);
                     $businessUnit = ($product->category_id == 1) ? 'giling_bakso' : 'nanang_store';
-                    if (!isset($incomeByCategory[$businessUnit])) {
-                        $incomeByCategory[$businessUnit] = 0;
+                    if (!isset($grossIncomeByUnit[$businessUnit])) {
+                        $grossIncomeByUnit[$businessUnit] = 0;
                     }
-                    $incomeByCategory[$businessUnit] += (float) $item['subtotal'];
+                    $grossIncomeByUnit[$businessUnit] += (float) $item['subtotal'];
                 }
 
-                foreach ($incomeByCategory as $unit => $amount) {
+                // Get manual discount amount
+                $manualDiscount = (float) ($paymentDetails['total_reduction_amount'] ?? 0);
+                
+                // Get discount allocation flags
+                $discountForBakso = $paymentDetails['discount_for_bakso'] ?? false;
+                $discountForNanang = $paymentDetails['discount_for_nanang'] ?? false;
+                
+                // Calculate net income per business unit after applying manual discount
+                $netIncomeByUnit = $grossIncomeByUnit;
+                
+                if ($manualDiscount > 0) {
+                    // Determine how to apply the discount based on checkboxes
+                    if ($discountForBakso && !$discountForNanang) {
+                        // Apply discount only to Giling Bakso
+                        if (isset($netIncomeByUnit['giling_bakso'])) {
+                            $netIncomeByUnit['giling_bakso'] = max(0, $netIncomeByUnit['giling_bakso'] - $manualDiscount);
+                        }
+                    } elseif ($discountForNanang && !$discountForBakso) {
+                        // Apply discount only to Nanang Store
+                        if (isset($netIncomeByUnit['nanang_store'])) {
+                            $netIncomeByUnit['nanang_store'] = max(0, $netIncomeByUnit['nanang_store'] - $manualDiscount);
+                        }
+                    } elseif ($discountForBakso && $discountForNanang) {
+                        // Apply discount proportionally to both units based on their gross income
+                        $totalGross = array_sum($grossIncomeByUnit);
+                        if ($totalGross > 0) {
+                            foreach ($netIncomeByUnit as $unit => $amount) {
+                                $ratio = $amount / $totalGross;
+                                $unitDiscount = $manualDiscount * $ratio;
+                                $netIncomeByUnit[$unit] = max(0, $amount - $unitDiscount);
+                            }
+                        }
+                    } else {
+                        // No checkbox selected: apply proportionally (fallback to old behavior)
+                        $totalGross = array_sum($grossIncomeByUnit);
+                        if ($totalGross > 0) {
+                            foreach ($netIncomeByUnit as $unit => $amount) {
+                                $ratio = $amount / $totalGross;
+                                $unitDiscount = $manualDiscount * $ratio;
+                                $netIncomeByUnit[$unit] = max(0, $amount - $unitDiscount);
+                            }
+                        }
+                    }
+                }
+
+                // Create financial transactions with net income
+                foreach ($netIncomeByUnit as $unit => $amount) {
                     if ($amount > 0) {
                         \App\Models\FinancialTransaction::create([
                             'business_unit' => $unit,

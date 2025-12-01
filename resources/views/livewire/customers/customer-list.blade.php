@@ -33,11 +33,43 @@
             <table class="min-w-full divide-y divide-gray-300">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nama</th>
-                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 md:table-cell">Tgl. Bergabung</th>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 cursor-pointer" wire:click="sortBy('name')">
+                            Nama
+                            @if($sortField === 'name')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
+                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 md:table-cell cursor-pointer" wire:click="sortBy('created_at')">
+                            Tgl. Bergabung
+                            @if($sortField === 'created_at')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
                         <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 lg:table-cell">No. Telepon</th>
-                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 sm:table-cell">Poin</th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Hutang</th>
+                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 sm:table-cell cursor-pointer" wire:click="sortBy('points')">
+                            Poin
+                            @if($sortField === 'points')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 cursor-pointer" wire:click="sortBy('transactions_count')">
+                            Total Transaksi
+                            @if($sortField === 'transactions_count')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 cursor-pointer" wire:click="sortBy('transactions_max_created_at')">
+                            Terakhir Transaksi
+                            @if($sortField === 'transactions_max_created_at')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 cursor-pointer" wire:click="sortBy('debt')">
+                            Hutang
+                            @if($sortField === 'debt')
+                                <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                            @endif
+                        </th>
                         <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
                     </tr>
                 </thead>
@@ -51,11 +83,18 @@
                             <td class="hidden px-3 py-4 text-sm text-gray-500 md:table-cell">{{ $customer->created_at->format('d M Y') }}</td>
                             <td class="hidden px-3 py-4 text-sm text-gray-500 lg:table-cell">{{ $customer->phone }}</td>
                             <td class="hidden px-3 py-4 text-sm text-gray-500 sm:table-cell">{{ $customer->points }}</td>
+                            <td class="px-3 py-4 text-sm text-gray-500">{{ $customer->transactions_count }}</td>
+                            <td class="px-3 py-4 text-sm text-gray-500">
+                                {{ $customer->transactions_max_created_at ? \Carbon\Carbon::parse($customer->transactions_max_created_at)->format('d M Y') : '-' }}
+                            </td>
                             <td class="px-3 py-4 text-sm font-semibold {{ $customer->debt > 0 ? 'text-red-600' : 'text-gray-500' }}">Rp {{ number_format($customer->debt, 0, ',', '.') }}</td>
                             <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <div class="flex items-center justify-end space-x-2">
                                     <a href="{{ route('pos.index', ['customer_id' => $customer->id]) }}" wire:navigate class="p-2 rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 hover:text-sky-800" title="Mulai Belanja">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    </a>
+                                    <a href="{{ route('customers.transactions', $customer->id) }}" wire:navigate class="p-2 rounded-full bg-purple-100 text-purple-600 hover:bg-purple-200 hover:text-purple-800" title="Riwayat Transaksi">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                                     </a>
                                     @if($customer->debt > 0)
                                         <button wire:click="openDebtModal({{ $customer->id }})" class="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 hover:text-green-800" title="Bayar Hutang">

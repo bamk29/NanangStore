@@ -116,3 +116,27 @@ Route::get('/purchase-order-products', function (Request $request) {
 
     return response()->json($products);
 });
+
+/*
+|--------------------------------------------------------------------------
+| API: Product Recommendations for Customer
+|--------------------------------------------------------------------------
+| Mengambil produk yang paling sering dibeli oleh pelanggan tertentu.
+*/
+Route::get('/products/recommendations/{customer}', function (Customer $customer) {
+    $products = \App\Models\TransactionDetail::whereHas('transaction', function ($query) use ($customer) {
+            $query->where('customer_id', $customer->id);
+        })
+        ->select('product_id', DB::raw('count(*) as frequency'))
+        ->with('product')
+        ->groupBy('product_id')
+        ->orderByDesc('frequency')
+        ->limit(10)
+        ->get()
+        ->map(function ($item) {
+            return $item->product;
+        })
+        ->filter(); // Filter out nulls if product was deleted
+
+    return response()->json($products->values());
+});

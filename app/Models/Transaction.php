@@ -20,8 +20,11 @@ class Transaction extends Model
         'status',
         'total_reduction_amount',
         'reduction_notes',
+        'discount_for_bakso',
+        'discount_for_nanang',
 
     ];
+
 
     public function user()
     {

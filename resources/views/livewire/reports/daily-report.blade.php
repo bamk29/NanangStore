@@ -45,7 +45,7 @@
             </div>
 
             <!-- Summary -->
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">
                     <div class="p-5">
                         <h3 class="text-sm font-medium text-gray-500 truncate">Total Penjualan</h3>
@@ -62,6 +62,12 @@
                     <div class="p-5">
                         <h3 class="text-sm font-medium text-gray-500 truncate">Total Keuntungan</h3>
                         <p class="mt-1 text-2xl font-semibold text-green-600">Rp {{ number_format($summary['total_profit'] ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">
+                    <div class="p-5">
+                        <h3 class="text-sm font-medium text-gray-500 truncate">Total Potongan</h3>
+                        <p class="mt-1 text-2xl font-semibold text-red-600">Rp {{ number_format($summary['total_discount'] ?? 0, 0, ',', '.') }}</p>
                     </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow rounded-lg print:shadow-none print:border">

@@ -10,7 +10,18 @@
 
         <!-- Filters -->
         <div class="mt-6 p-4 bg-white rounded-lg shadow">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="mb-4 flex space-x-2">
+                <button wire:click="setDateRange('today')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">
+                    Hari Ini
+                </button>
+                <button wire:click="setDateRange('week')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">
+                    Minggu Ini
+                </button>
+                <button wire:click="setDateRange('month')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">
+                    Bulan Ini
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label for="startDate" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
                     <input wire:model.lazy="startDate" type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -18,6 +29,14 @@
                 <div>
                     <label for="endDate" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
                     <input wire:model.lazy="endDate" type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="storeFilter" class="block text-sm font-medium text-gray-700">Toko</label>
+                    <select wire:model.lazy="storeFilter" id="storeFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="all">Semua Toko</option>
+                        <option value="nanang_store">Nanang Store</option>
+                        <option value="bakso">Giling Bakso</option>
+                    </select>
                 </div>
                 <div>
                     <label for="categoryFilter" class="block text-sm font-medium text-gray-700">Kategori</label>
@@ -58,9 +77,12 @@
                         <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Peringkat</th>
                         <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Produk</th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kategori</th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jml Terjual</th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Penjualan</th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Keuntungan</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Harga Rata²</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Jml Terjual</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Total Penjualan</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Total Modal</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Total Keuntungan</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Margin</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -69,9 +91,12 @@
                             <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ $index + 1 }}</td>
                             <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900">{{ $data['product_name'] }}</td>
                             <td class="px-3 py-4 text-sm text-gray-500">{{ $data['category_name'] }}</td>
-                            <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['total_quantity']) }}</td>
-                            <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-4 text-sm text-green-600 font-bold">Rp {{ number_format($data['total_profit'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 text-sm text-right text-gray-500">Rp {{ number_format($data['avg_price'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 text-sm text-right text-gray-500 font-medium">{{ number_format($data['total_quantity']) }}</td>
+                            <td class="px-3 py-4 text-sm text-right text-gray-500">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 text-sm text-right text-gray-500">Rp {{ number_format($data['total_cost'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 text-sm text-right font-bold {{ $data['total_profit'] < 0 ? 'text-red-600' : 'text-green-600' }}">Rp {{ number_format($data['total_profit'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 text-sm text-right {{ $data['margin_percentage'] < 0 ? 'text-red-600' : 'text-gray-500' }}">{{ number_format($data['margin_percentage'], 1) }}%</td>
                         </tr>
                     @empty
                         <tr>

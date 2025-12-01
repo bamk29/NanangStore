@@ -47,6 +47,16 @@ class CustomerList extends Component
         $this->resetPage();
     }
 
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
     protected function rules()
     {
         return [
@@ -203,6 +213,8 @@ class CustomerList extends Component
     public function render()
     {
         $customers = Customer::query()
+            ->withCount('transactions')
+            ->withMax('transactions', 'created_at')
             ->when($this->search, function ($query) {
                 $query->where('name', 'like', '%' . $this->search . '%')
                       ->orWhere('phone', 'like', '%' . $this->search . '%');

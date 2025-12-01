@@ -39,6 +39,8 @@ class GoodsReceiptForm extends Component
             'items.*.quantity_received' => 'required|numeric|min:0',
             'items.*.cost' => 'required|numeric|min:0',
             'items.*.retail_price' => 'required|numeric|min:0',
+            'items.*.wholesale_price' => 'nullable|numeric|min:0',
+            'items.*.wholesale_min_qty' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -65,6 +67,8 @@ class GoodsReceiptForm extends Component
                     'quantity_received' => $item->quantity_received,
                     'cost' => $item->cost,
                     'retail_price' => $item->product->retail_price,
+                    'wholesale_price' => $item->product->wholesale_price,
+                    'wholesale_min_qty' => $item->product->wholesale_min_qty,
                     'total_cost' => $item->total_cost,
                 ];
             }
@@ -94,6 +98,8 @@ class GoodsReceiptForm extends Component
                     'quantity_received' => $remaining_qty,
                     'cost' => $poItem->cost,
                     'retail_price' => $poItem->product->retail_price,
+                    'wholesale_price' => $poItem->product->wholesale_price,
+                    'wholesale_min_qty' => $poItem->product->wholesale_min_qty,
                     'total_cost' => $remaining_qty * $poItem->cost,
                     'po_item_id' => $poItem->id,
                 ];
@@ -131,6 +137,8 @@ class GoodsReceiptForm extends Component
                     $product->increment('stock', $itemData['quantity_received']);
                     $product->cost_price = $itemData['cost'];
                     $product->retail_price = $itemData['retail_price'];
+                    $product->wholesale_price = $itemData['wholesale_price'] ?? 0;
+                    $product->wholesale_min_qty = $itemData['wholesale_min_qty'] ?? 0;
                     
                     if ($product->units_in_box > 1) {
                         $product->box_cost = $itemData['cost'] * $product->units_in_box;
@@ -173,7 +181,7 @@ class GoodsReceiptForm extends Component
                         'category' => 'pembelian_stok',
                         'amount' => $amount,
                         'description' => 'Penerimaan barang via ' . $receipt->receipt_number,
-                        'goods_receipt_id' => $receipt->id,
+                        // 'goods_receipt_id' => $receipt->id, // Removed as column doesn't exist
                         'user_id' => auth()->id(),
                         'date' => $this->receipt_date,
                     ]);
