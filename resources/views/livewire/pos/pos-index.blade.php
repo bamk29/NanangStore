@@ -1,6 +1,6 @@
 <div x-data="posManager()"
      x-init="init()"
-     @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id)"
+     @cart-updated.window="cartItemIds = $event.detail.items.map(item => item.id); cartTotal = $event.detail.total || 0"
      @cart:reset.window="if (!isDesktop) isCartVisible = false"
      @cart:reset.window="if (!isDesktop) isCartVisible = false"
      @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
@@ -174,6 +174,7 @@
             <button @click="isCartVisible = true" class="relative bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 <span x-show="cartItemIds.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center" x-text="cartItemIds.length"></span>
+                <div x-show="cartTotal > 0" class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-blue-100 whitespace-nowrap" x-text="formatCurrency(cartTotal)"></div>
             </button>
         </div>
 
@@ -188,7 +189,12 @@
              x-transition:leave-start="transform translate-y-0"
              x-transition:leave-end="transform translate-y-full">
             <div class="p-3 bg-white border-b border-gray-200 flex items-center justify-between rounded-t-2xl">
-                <h2 class="font-bold text-lg text-gray-800">Keranjang</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-lg text-gray-800">Keranjang</h2>
+                    <button @click="shareBill()" class="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-50" title="Copy Struk WA">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-8.683-2.031-9.672-.272-.989-.471-1.135-.644-1.135-.174 0-.371-.006-.57-.006-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+                    </button>
+                </div>
                 <button @click="isCartVisible = false" class="p-2 rounded-full hover:bg-gray-100">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -223,6 +229,26 @@
                 </button>
             </div>
 
+            <div x-show="customer" class="mb-4">
+                <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-2 py-1">
+                    <div class="flex items-center min-w-0">
+                        <span class="text-xs text-blue-600 mr-2 flex-shrink-0">Pelanggan:</span>
+                        <p class="font-semibold text-sm text-blue-800 truncate" x-text="customer.name"></p>
+                    </div>
+                    <div class="flex items-center">
+                        <button x-show="customer.debt > 0" @click="shareDebt()" class="p-1 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100 mr-1" title="Share Tagihan WA">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-8.683-2.031-9.672-.272-.989-.471-1.135-.644-1.135-.174 0-.371-.006-.57-.006-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+                        </button>
+                        <button @click="clearCustomer()" class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-6 text-center">
                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
                 <div class="flex items-center justify-center rounded-md">
@@ -246,8 +272,10 @@
     function posManager() {
         return {
             // UI State
-            isDesktop: window.innerWidth >= 768,
-            isCartVisible: window.innerWidth >= 768,
+            // Updated breakpoint to 1024px (lg) to match CSS 'hidden lg:flex'
+            // This ensures tablets (768-1023px) use the mobile view (FAB) instead of empty desktop view
+            isDesktop: window.innerWidth >= 1024, 
+            isCartVisible: window.innerWidth >= 1024,
             isLandscape: window.matchMedia("(orientation: landscape)").matches,
             isScannerMode: false,
 
@@ -266,6 +294,7 @@
 
             // Cart State
             cartItemIds: [],
+            cartTotal: 0,
 
             // Quantity Modal State
             isModalOpen: false,
@@ -279,12 +308,18 @@
                 this.fetchCategories();
                 this.fetchProducts();
                 this.initKeyboardListeners();
+                
+                // Preload Sounds
+                this.sounds = {
+                    success: new Audio('/sounds/success.mp3'),
+                    error: new Audio('/sounds/error.mp3')
+                };
 
                 // Set initial state of main navigation
                 this.$store.ui.isBottomNavVisible = false;
 
                 const handleResize = () => {
-                    this.isDesktop = window.innerWidth >= 768;
+                    this.isDesktop = window.innerWidth >= 1024;
                     this.isLandscape = window.matchMedia("(orientation: landscape)").matches;
                     if (this.isDesktop) {
                         this.isCartVisible = true;
@@ -333,6 +368,14 @@
                 });
             },
 
+            playSound(type) {
+                if (this.sounds && this.sounds[type]) {
+                    // Clone node to allow overlapping sounds (fast scanning)
+                    const sound = this.sounds[type].cloneNode();
+                    sound.play().catch(e => console.error("Error playing sound:", e));
+                }
+            },
+
             setCustomer(customer) {
                 this.isCustomerSelected = true;
                 this.currentCustomerId = customer.id;
@@ -349,7 +392,13 @@
             },
 
             fetchRecommendations(customerId) {
-                fetch(`/api/products/recommendations/${customerId}`)
+                fetch(`/api/products/recommendations/${customerId}`, {
+                    headers: {
+                        'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                })
                     .then(response => response.json())
                     .then(data => {
                         this.recommendedProducts = data;
@@ -387,13 +436,11 @@
                     return;
                 }
 
-                let barcodeBuffer = '';
-                let lastKeystrokeTime = 0;
-                let lastSpaceTime = 0; 
+                let buffer = '';
+                let lastTime = 0;
+                let scanTimeout;
                 
                 // Scanner State
-                this.scanQueue = [];
-                this.isProcessingQueue = false;
                 this.lastScannedBarcode = '';
                 this.lastScanTime = 0;
 
@@ -402,6 +449,9 @@
                     if (e.key === 'F2') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:pay')); return; }
                     if (e.key === 'F3') { e.preventDefault(); this.isScannerMode = !this.isScannerMode; return; }
                     if (e.key === 'F4') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:hold')); return; }
+                    if (e.key === 'F7') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:reduction')); return; }
+                    if (e.key === 'F8') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:quantity')); return; }
+                    if (e.key === 'F9') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:customer')); return; }
                     if (e.key === 'Escape') { this.handleEscape(); return; }
 
                     // Ignore if modal/cart open (except Escape)
@@ -414,130 +464,109 @@
                     if (e.key === ' ' && !targetIsInput) {
                         e.preventDefault();
                         const now = Date.now();
-                        if (now - lastSpaceTime < 300) { 
+                        if (now - this.lastSpaceTime < 300) { 
                             this.resetSearchAndFocus(); 
-                            lastSpaceTime = 0; 
+                            this.lastSpaceTime = 0; 
                         } else { 
-                            lastSpaceTime = now; 
+                            this.lastSpaceTime = now; 
                         }
                         return;
                     }
 
                     // Navigation
                     if (this.selectedIndex > -1) {
-                        // ... navigation logic (keep existing) ...
                         if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Enter'].includes(e.key)) {
-                            e.preventDefault();
-                            if(e.key === 'ArrowDown' || e.key === 'ArrowRight') { this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1); this.scrollIntoView(); }
-                            if(e.key === 'ArrowUp' || e.key === 'ArrowLeft') { this.selectedIndex = Math.max(0, this.selectedIndex - 1); this.scrollIntoView(); }
-                            if(e.key === 'Enter' && this.products[this.selectedIndex]) { this.openModal(this.products[this.selectedIndex]); }
-                            return;
+                            // Only handle navigation if buffer is empty (not scanning)
+                            if (buffer.length === 0) {
+                                e.preventDefault();
+                                if(e.key === 'ArrowDown' || e.key === 'ArrowRight') { this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1); this.scrollIntoView(); }
+                                if(e.key === 'ArrowUp' || e.key === 'ArrowLeft') { this.selectedIndex = Math.max(0, this.selectedIndex - 1); this.scrollIntoView(); }
+                                if(e.key === 'Enter' && this.products[this.selectedIndex]) { this.openModal(this.products[this.selectedIndex]); }
+                                return;
+                            }
                         }
                     }
 
                     // Enter navigation from search
-                    if (targetIsSearch && e.key === 'ArrowDown') {
+                    if (targetIsSearch && e.key === 'ArrowDown' && buffer.length === 0) {
                         e.preventDefault();
                         if (this.products.length > 0) { this.selectedIndex = 0; this.scrollIntoView(); }
                         return;
                     }
 
-                    // --- BARCODE SCANNER LOGIC ---
-                    
-                    // 1. Handle "Enter" (End of scan)
+                    // --- OPTIMIZED BARCODE SCANNER LOGIC ---
+                    const now = Date.now();
+                    const timeDiff = now - lastTime;
+                    lastTime = now;
+
+                    // Check if input is fast (scanner usually < 30-50ms)
+                    const isFast = timeDiff < 60;
+
+                    // If typing in an input but it's SLOW, ignore (let it be manual input)
+                    // If it's FAST, we assume it's a scanner, even if focused on an input
+                    if (!isFast && targetIsInput && !targetIsSearch) {
+                        buffer = ''; // Reset buffer on manual typing
+                        return; 
+                    }
+
+                    // Reset buffer if gap is too long
+                    if (timeDiff > 100) {
+                        buffer = '';
+                    }
+
                     if (e.key === 'Enter') {
                         // Determine what to process: buffer or search input
-                        // If the buffer has content, it takes precedence (scanner usually types fast then hits enter)
-                        // If buffer is empty, check search input
-                        
                         let codeToProcess = '';
                         
-                        if (barcodeBuffer.length > 2) {
-                            codeToProcess = barcodeBuffer;
-                            e.preventDefault(); // Prevent form submission or newline
+                        if (buffer.length > 2) {
+                            codeToProcess = buffer;
+                            e.preventDefault(); 
+                            e.stopPropagation();
                         } else if (targetIsSearch && this.searchQuery.length > 2) {
+                            // Fallback for manual entry in search box
                             codeToProcess = this.searchQuery;
-                            // Don't prevent default here if you want normal enter behavior, 
-                            // but for a POS search box, enter usually means "search" or "pick first".
-                            // Let's treat it as a potential barcode if it looks like one, or just search.
-                            // For now, let's assume if they hit enter in search, they might be manually typing a barcode.
                         }
 
                         if (codeToProcess) {
                             this.handleScannedCode(codeToProcess);
-                            barcodeBuffer = ''; // Clear buffer
+                            buffer = ''; 
+                            if (scanTimeout) clearTimeout(scanTimeout);
+                            
                             if (targetIsSearch) {
-                                this.searchQuery = ''; // Clear search input if it was used
-                                this.ignoreNextSearchQueryWatch = true; // Prevent search trigger
-                                this.$refs.searchInput.blur(); // Remove focus to prevent interference
+                                this.searchQuery = ''; 
+                                this.ignoreNextSearchQueryWatch = true; 
+                                this.$refs.searchInput.blur(); 
                             }
                         }
                         return;
                     }
 
-                    // 2. Capture Keystrokes
                     // Ignore special keys
                     if (e.key.length > 1) return;
 
-                    // Timing check: Scanners type VERY fast (usually < 50ms between keys)
-                    // Humans type slower.
-                    const now = Date.now();
+                    buffer += e.key;
                     
-                    if (now - lastKeystrokeTime > 100) {
-                        // Gap too long, reset buffer (assume new scan or manual typing started)
-                        barcodeBuffer = ''; 
-                    }
-                    
-                    // If focusing another input (not search), don't capture into buffer unless it looks like a scan
-                    if (targetIsInput && !targetIsSearch) {
-                        // If it's a fast burst, maybe it IS a scanner even in another input?
-                        // But usually we don't want to interfere with typing notes.
-                        // So we only capture if NOT in another input, OR if it's the search input.
-                        lastKeystrokeTime = now;
-                        return; 
-                    }
-
-                    barcodeBuffer += e.key;
-                    lastKeystrokeTime = now;
+                    // Auto-submit on pause (if no Enter is sent)
+                    if (scanTimeout) clearTimeout(scanTimeout);
+                    scanTimeout = setTimeout(() => {
+                        if (buffer.length > 5) {
+                            this.handleScannedCode(buffer);
+                            buffer = '';
+                        }
+                    }, 200);
                 });
 
                 window.posKeyboardListenerAttached = true;
             },
 
             handleScannedCode(code) {
-                const now = Date.now();
+                // No debounce for different items, or even same items if user wants speed.
+                // We just fire and forget.
                 
-                // Duplicate Scan Prevention (0.5s delay for SAME item)
-                if (code === this.lastScannedBarcode && (now - this.lastScanTime < 500)) {
-                    console.log('Duplicate scan ignored (debounce)');
-                    return;
-                }
+                // Visual feedback that scan was received?
+                // Maybe flash the screen or something? For now, just process.
 
-                this.lastScannedBarcode = code;
-                this.lastScanTime = now;
-
-                // Add to queue
-                this.scanQueue.push(code);
-                this.processScanQueue();
-            },
-
-            async processScanQueue() {
-                if (this.isProcessingQueue || this.scanQueue.length === 0) return;
-
-                this.isProcessingQueue = true;
-                const code = this.scanQueue.shift(); // Get first item
-
-                try {
-                    await this.fetchProductsByBarcode(code);
-                } catch (err) {
-                    console.error("Scan error:", err);
-                } finally {
-                    this.isProcessingQueue = false;
-                    // Process next item immediately if exists
-                    if (this.scanQueue.length > 0) {
-                        this.processScanQueue();
-                    }
-                }
+                this.fetchProductsByBarcode(code);
             },
 
             async fetchProductsByBarcode(barcode) {
@@ -545,7 +574,13 @@
                     // Optimistic UI: Play sound immediately? No, wait for result to know if success/error.
                     // But we want it "fast".
                     
-                    const response = await fetch(`/api/products/by-code/${barcode}`);
+                    const response = await fetch(`/api/products/by-code/${barcode}`, {
+                        headers: {
+                            'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
                     const product = await response.json();
 
                     if (response.ok) {
@@ -570,7 +605,13 @@
 
             // Product Search Methods
             fetchCategories() {
-                fetch('/api/categories')
+                fetch('/api/categories', {
+                    headers: {
+                        'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                })
                     .then(response => response.json())
                     .then(data => { this.categories = data; });
             },
@@ -578,7 +619,13 @@
                 return new Promise((resolve, reject) => {
                     this.isLoading = true;
                     const params = new URLSearchParams({ q: this.searchQuery, category_id: this.categoryId });
-                    fetch(`/api/products?${params}`)
+                    fetch(`/api/products?${params}`, {
+                        headers: {
+                            'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    })
                         .then(response => response.json())
                         .then(data => {
                             this.products = data.slice(0, 40);
@@ -691,8 +738,10 @@
                 }).format(amount);
             },
             playSound(type) {
-                const audio = new Audio(`/sounds/${type}.mp3`);
-                audio.play().catch(e => console.error("Error playing sound:", e));
+                if (this.sounds && this.sounds[type]) {
+                    const sound = this.sounds[type].cloneNode();
+                    sound.play().catch(e => console.error("Error playing sound:", e));
+                }
             }
         }
     }

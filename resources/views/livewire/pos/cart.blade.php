@@ -4,6 +4,8 @@
     x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
     x-on:cart:reset.window="resetCart()" x-on:customer-selected-in-modal.window="showCustomerWarningModal = false"
     @shortcut:pay.window="initiatePayment()" @shortcut:hold.window="initiateHold()"
+    @shortcut:reduction.window="toggleManualReduction()" @shortcut:quantity.window="focusLastItemQuantity()"
+    @shortcut:customer.window="focusCustomerSearch()"
     @keydown.escape.window="handleEscape()" class="flex flex-col h-full bg-white">
     <!-- Tombol Eceran/Grosir & Pelanggan -->
     <div class="p-2 bg-gray-100 flex-shrink-0 border-b">
@@ -316,8 +318,12 @@
                     <div class="grid grid-cols-3 gap-2">
                         <template x-for="method in ['cash', 'transfer', 'debt']" :key="method">
                             <label class="p-3 border rounded-lg text-center cursor-pointer select-none transition"
-                                :class="{ 'bg-blue-600 text-white border-blue-600': payment_method === method, 'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method }">
-                                <input type="radio" class="hidden" x-model="payment_method" :value="method">
+                                :class="{ 
+                                    'bg-blue-600 text-white border-blue-600': payment_method === method, 
+                                    'bg-gray-100 hover:bg-gray-200 text-gray-700': payment_method !== method && (method !== 'debt' || customer),
+                                    'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400': method === 'debt' && !customer
+                                }">
+                                <input type="radio" class="hidden" x-model="payment_method" :value="method" :disabled="method === 'debt' && !customer">
                                 <span x-text="method === 'cash' ? 'Tunai' : method === 'transfer' ? 'Transfer' : 'Hutang'"></span>
                             </label>
                         </template>
@@ -356,7 +362,7 @@
                 <!-- Change Section -->
                 <div>
                     <label class="block text-sm font-semibold mb-2">Kembalian</label>
-                    <div class="text-xl md:text-2xl font-bold"
+                    <div class="text-4xl md:text-5xl font-bold"
                         :class="{ 'text-red-600': change < 0, 'text-green-600': change >= 0 }"
                         x-text="formatCurrency(change)"></div>
                 </div>
@@ -816,7 +822,8 @@
 
                 this.calculateFinalTotal();
                 this.$dispatch('cart-updated', {
-                    items: this.items
+                    items: this.items,
+                    total: this.final_total
                 });
             },
 
@@ -973,6 +980,101 @@
                     currency: 'IDR',
                     minimumFractionDigits: 0
                 }).format(amount);
+            },
+
+            // Shortcuts
+            toggleManualReduction() {
+                this.showManualReductionFields = !this.showManualReductionFields;
+                if (this.showManualReductionFields) {
+                    this.$nextTick(() => {
+                        if (this.$refs.manualReductionInput) this.$refs.manualReductionInput.focus();
+                    });
+                }
+            },
+            focusLastItemQuantity() {
+                if (this.items.length > 0) {
+                    // Focus the last item's quantity input
+                    // We need to find the input element. Since we iterate, we can use ID or index.
+                    // The inputs have x-model="item.quantity". We can add x-ref to them or use querySelector.
+                    // Let's use a dynamic ref or class.
+                    // Actually, let's just use document.querySelectorAll for simplicity in this context
+                    const inputs = document.querySelectorAll('input[x-model="item.quantity"]');
+                    if (inputs.length > 0) {
+                        const lastInput = inputs[inputs.length - 1];
+                        lastInput.focus();
+                        lastInput.select();
+                    }
+                }
+            },
+            focusCustomerSearch() {
+                // Dispatch event to focus customer search (handled in customerSearch component)
+                window.dispatchEvent(new CustomEvent('focus-customer-search'));
+            },
+
+            // WhatsApp Share
+            shareBill() {
+                if (this.items.length === 0) return;
+                
+                let text = `*Struk Belanja Sementara*\n`;
+                text += `*${new Date().toLocaleString('id-ID')}*\n\n`;
+                
+                this.items.forEach(item => {
+                    text += `${item.name}\n`;
+                    text += `${item.quantity} x ${this.formatCurrency(item.price)} = ${this.formatCurrency(item.subtotal)}\n`;
+                });
+                
+                text += `\n--------------------------------\n`;
+                text += `*Total: ${this.formatCurrency(this.final_total)}*\n`;
+                
+                if (this.customer) {
+                    text += `Pelanggan: ${this.customer.name}\n`;
+                }
+                
+                this.copyToClipboard(text);
+            },
+
+            shareDebt() {
+                if (!this.customer || this.customer.debt <= 0) return;
+                
+                let text = `Halo Kak *${this.customer.name}*,\n\n`;
+                text += `Kami dari *NanangStore* ingin menginformasikan rincian tagihan Anda:\n\n`;
+                text += `Total Tagihan: *${this.formatCurrency(this.customer.debt)}*\n\n`;
+                text += `Mohon kesediaannya untuk melakukan pembayaran. Terima kasih. 🙏`;
+                
+                this.copyToClipboard(text);
+            },
+
+            copyToClipboard(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        // Show toast or alert
+                        alert('Teks berhasil disalin! Silakan tempel di WhatsApp.');
+                        // Or open WhatsApp directly?
+                        // window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                        this.fallbackCopyTextToClipboard(text);
+                    });
+                } else {
+                    this.fallbackCopyTextToClipboard(text);
+                }
+            },
+            
+            fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    var successful = document.execCommand('copy');
+                    var msg = successful ? 'successful' : 'unsuccessful';
+                    alert('Teks berhasil disalin! Silakan tempel di WhatsApp.');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('Gagal menyalin teks.');
+                }
+                document.body.removeChild(textArea);
             }
         }
     }

@@ -39,12 +39,11 @@ class Transaction extends Model
     public static function generateInvoiceNumber()
     {
         $prefix = 'INV';
-        $date = now()->format('Ymd');
-        $lastNumber = self::whereDate('created_at', today())
-            ->max('id') ?? 0;
-        $number = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-
-        return "{$prefix}-{$date}-{$number}";
+        // Format: INV-YYYYMMDDHHMMSS-MS (e.g., INV-20231202123045-123)
+        // This ensures uniqueness without database queries and avoids race conditions.
+        $date = now()->format('YmdHisv');
+        
+        return "{$prefix}-{$date}";
     }
 
     public function customer()

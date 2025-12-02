@@ -123,7 +123,12 @@
         <!-- Charts Section -->
         <div class="bg-white rounded-lg shadow p-6 mb-6 print:break-inside-avoid">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Grafik Tren Penjualan & Keuntungan</h3>
-            <div id="salesChart" style="min-height: 350px;" wire:ignore></div>
+            <div x-data="salesChart(@js($chartData))" 
+                 x-init="initChart()" 
+                 wire:ignore 
+                 class="w-full">
+                <div x-ref="chartContainer" style="min-height: 350px;"></div>
+            </div>
         </div>
 
         <!-- Sales Data Table -->
@@ -192,73 +197,94 @@
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-        document.addEventListener('livewire:initialized', () => {
-            let chart;
+        function salesChart(initialData) {
+            return {
+                chart: null,
+                data: initialData,
+                initChart() {
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
 
-            const renderChart = (data) => {
-                // Ensure data is valid
-                if (!data || !data.sales || !data.profit || !data.labels) {
-                    console.error('Invalid chart data:', data);
-                    return;
-                }
+                    const options = this.getOptions(this.data);
+                    this.chart = new ApexCharts(this.$refs.chartContainer, options);
+                    this.chart.render();
 
-                const options = {
-                    series: [{
-                        name: 'Penjualan',
-                        data: data.sales
-                    }, {
-                        name: 'Keuntungan',
-                        data: data.profit
-                    }],
-                    chart: {
-                        type: 'area',
-                        height: 350,
-                        toolbar: { show: false }
-                    },
-                    dataLabels: { enabled: false },
-                    stroke: { curve: 'smooth' },
-                    xaxis: {
-                        categories: data.labels,
-                        type: 'category' // Changed from datetime to category to support custom labels like "Week X"
-                    },
-                    yaxis: {
-                        labels: {
-                            formatter: (value) => {
-                                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumSignificantDigits: 3 }).format(value);
+                    // Listen for updates from Livewire
+                    Livewire.on('chart-updated', (data) => {
+                        const chartData = Array.isArray(data) ? data[0] : data;
+                        this.updateChart(chartData);
+                    });
+                },
+                updateChart(newData) {
+                    this.data = newData;
+                    if (this.chart) {
+                        this.chart.updateOptions(this.getOptions(newData));
+                    }
+                },
+                getOptions(data) {
+                    return {
+                        series: [{
+                            name: 'Penjualan',
+                            data: data.sales
+                        }, {
+                            name: 'Keuntungan',
+                            data: data.profit
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 350,
+                            toolbar: { show: false },
+                            fontFamily: 'inherit'
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: { curve: 'smooth', width: 2 },
+                        xaxis: {
+                            categories: data.labels,
+                            type: 'category',
+                            labels: {
+                                style: { colors: '#6B7280', fontSize: '12px' }
                             }
-                        }
-                    },
-                    tooltip: {
-                        y: {
-                            formatter: (value) => {
-                                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#6B7280', fontSize: '12px' },
+                                formatter: (value) => {
+                                    return new Intl.NumberFormat('id-ID', { 
+                                        style: 'currency', 
+                                        currency: 'IDR', 
+                                        maximumSignificantDigits: 3,
+                                        notation: 'compact'
+                                    }).format(value);
+                                }
                             }
+                        },
+                        tooltip: {
+                            theme: 'light',
+                            y: {
+                                formatter: (value) => {
+                                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+                                }
+                            }
+                        },
+                        colors: ['#3B82F6', '#10B981'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.7,
+                                opacityTo: 0.3,
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        grid: {
+                            borderColor: '#F3F4F6',
+                            strokeDashArray: 4,
                         }
-                    },
-                    colors: ['#3B82F6', '#10B981']
-                };
-
-                const chartElement = document.querySelector("#salesChart");
-                
-                if (chart && chartElement) {
-                    chart.updateOptions(options);
-                } else if (chartElement) {
-                    chart = new ApexCharts(chartElement, options);
-                    chart.render();
+                    };
                 }
-            };
-
-            // Initial render
-            renderChart(@json($chartData));
-
-            // Update on Livewire update
-            Livewire.on('chart-updated', (data) => {
-                // Livewire 3 might pass data as [data] or data depending on dispatch
-                // Let's handle both
-                const chartData = Array.isArray(data) ? data[0] : data;
-                renderChart(chartData);
-            });
-        });
+            }
+        }
     </script>
     
     <style>

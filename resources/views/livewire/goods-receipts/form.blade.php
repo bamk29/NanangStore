@@ -228,7 +228,13 @@
                 },
                 performSearch(query) {
                     this.isSearching = true;
-                    fetch(`/api/products?q=${query}`)
+                    fetch(`/api/products?q=${query}`, {
+                        headers: {
+                            'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    })
                         .then(res => res.json())
                         .then(data => {
                             this.searchResults = data;
@@ -345,7 +351,13 @@
                     
                     this.isSearching = true;
                     
-                    fetch(`/api/products/by-code/${barcode}`)
+                    fetch(`/api/products/by-code/${barcode}`, {
+                        headers: {
+                            'X-XSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    })
                         .then(res => {
                             if (!res.ok) throw new Error('Produk tidak ditemukan');
                             return res.json();

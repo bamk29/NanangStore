@@ -60,85 +60,72 @@ class SalesReport extends Component
 
     public function getSalesData()
     {
-        $query = Transaction::with(['details.product.category'])
-            ->where('status', 'completed')
-            ->whereBetween('created_at', [
+        $query = \App\Models\TransactionDetail::query()
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->join('products', 'transaction_details.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('transactions.status', 'completed')
+            ->whereBetween('transactions.created_at', [
                 Carbon::parse($this->startDate)->startOfDay(),
                 Carbon::parse($this->endDate)->endOfDay()
             ]);
 
+        // Apply Filters
         if ($this->transactionType) {
-            $query->where('transaction_type', $this->transactionType);
+            $query->where('transactions.transaction_type', $this->transactionType);
         }
 
         if ($this->paymentMethodFilter) {
-            $query->where('payment_method', $this->paymentMethodFilter);
+            $query->where('transactions.payment_method', $this->paymentMethodFilter);
         }
 
-        $transactions = $query->get();
-
-        $salesData = collect();
-
-        foreach ($transactions as $transaction) {
-            foreach ($transaction->details as $detail) {
-                // Category Filter
-                if ($this->categoryFilter && $detail->product->category_id != $this->categoryFilter) {
-                    continue;
-                }
-
-                // Store Filter
-                if ($this->storeFilter === 'bakso' && $detail->product->category_id != 1) {
-                    continue;
-                }
-                if ($this->storeFilter === 'nanang_store' && $detail->product->category_id == 1) {
-                    continue;
-                }
-
-                $key = match ($this->groupBy) {
-                    'date' => $transaction->created_at->format('Y-m-d'),
-                    'product' => $detail->product->name,
-                    'category' => $detail->product->category->name ?? 'Uncategorized',
-                };
-
-                $item = $salesData->get($key, [
-                    'key' => $key,
-                    'total_sales' => 0,
-                    'total_cost' => 0,
-                    'total_profit' => 0,
-                    'quantity' => 0,
-                    'transaction_count' => 0,
-                    'transactions_set' => collect(), // To count unique transactions
-                ]);
-
-                $costPrice = $detail->product->cost_price ?? 0;
-                $profit = ($detail->price - $costPrice) * $detail->quantity;
-
-                $item['total_sales'] += $detail->subtotal;
-                $item['total_cost'] += ($costPrice * $detail->quantity);
-                $item['total_profit'] += $profit;
-                $item['quantity'] += $detail->quantity;
-                
-                if (!$item['transactions_set']->contains($transaction->id)) {
-                    $item['transaction_count']++;
-                    $item['transactions_set']->push($transaction->id);
-                }
-
-                $salesData->put($key, $item);
-            }
+        if ($this->categoryFilter) {
+            $query->where('products.category_id', $this->categoryFilter);
         }
 
-        // Remove the temporary set
-        $salesData = $salesData->map(function ($item) {
-            unset($item['transactions_set']);
-            return $item;
-        });
+        if ($this->storeFilter === 'bakso') {
+            $query->where('products.category_id', 1);
+        } elseif ($this->storeFilter === 'nanang_store') {
+            $query->where('products.category_id', '!=', 1);
+        }
 
-        // Sort by date if grouped by date, otherwise by sales
+        // Selects & Grouping
+        $selects = [
+            DB::raw('SUM(transaction_details.subtotal) as total_sales'),
+            DB::raw('SUM(transaction_details.quantity) as quantity'),
+            // Cost & Profit Calculation (using current product cost as per original logic)
+            DB::raw('SUM(products.cost_price * transaction_details.quantity) as total_cost'),
+            DB::raw('SUM((transaction_details.price - COALESCE(products.cost_price, 0)) * transaction_details.quantity) as total_profit'),
+            DB::raw('COUNT(DISTINCT transactions.id) as transaction_count')
+        ];
+
         if ($this->groupBy === 'date') {
-            return $salesData->sortKeys();
+            $query->groupBy(DB::raw('DATE(transactions.created_at)'));
+            $selects[] = DB::raw('DATE(transactions.created_at) as key_group');
+            $query->orderBy('key_group');
+        } elseif ($this->groupBy === 'product') {
+            $query->groupBy('products.name');
+            $selects[] = 'products.name as key_group';
+            $query->orderByDesc('total_sales');
+        } elseif ($this->groupBy === 'category') {
+            $query->groupBy('categories.name');
+            $selects[] = DB::raw('COALESCE(categories.name, "Uncategorized") as key_group');
+            $query->orderByDesc('total_sales');
         }
 
-        return $salesData->values()->sortByDesc('total_sales');
+        $results = $query->select($selects)->get();
+
+        // Map to expected format
+        return $results->map(function ($item) {
+            return [
+                'key' => $item->key_group,
+                'total_sales' => $item->total_sales,
+                'total_cost' => $item->total_cost,
+                'total_profit' => $item->total_profit,
+                'quantity' => $item->quantity,
+                'transaction_count' => $item->transaction_count,
+            ];
+        });
     }
 
     public function getChartData()
