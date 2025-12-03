@@ -92,6 +92,8 @@ server {
 }
 ```
 
+**Cara Simpan:** Tekan `Ctrl+X`, lalu `Y`, lalu `Enter`.
+
 Aktifkan config:
 ```bash
 sudo ln -s /etc/nginx/sites-available/nanangstore /etc/nginx/sites-enabled/

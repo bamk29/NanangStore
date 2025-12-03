@@ -338,11 +338,13 @@ npm -v
       console.log(`✅ Print server (v.font-besar) berjalan di port ${PORT}`);
     });
     ```
+    Simpan file dan keluar dari nano dengan menekan `Ctrl+X`, `Y`, `Enter`.
+
 
 3.  **Auto-start dengan PM2**
     Agar server printer jalan terus (background).
     ```bash
-    sudo npm install -g pm2
+    sudo npm install -g pm2s
     pm2 start server.js --name "printer-service"
     pm2 startup
     pm2 save
