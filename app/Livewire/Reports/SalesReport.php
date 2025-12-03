@@ -8,6 +8,7 @@ use App\Models\Category;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SalesReport extends Component
 {
@@ -93,9 +94,9 @@ class SalesReport extends Component
         $selects = [
             DB::raw('SUM(transaction_details.subtotal) as total_sales'),
             DB::raw('SUM(transaction_details.quantity) as quantity'),
-            // Cost & Profit Calculation (using current product cost as per original logic)
-            DB::raw('SUM(products.cost_price * transaction_details.quantity) as total_cost'),
-            DB::raw('SUM((transaction_details.price - COALESCE(products.cost_price, 0)) * transaction_details.quantity) as total_profit'),
+            // Cost & Profit Calculation (using historical cost)
+            DB::raw('SUM(COALESCE(transaction_details.cost_price, products.cost_price, 0) * transaction_details.quantity) as total_cost'),
+            DB::raw('SUM((transaction_details.price - COALESCE(transaction_details.cost_price, products.cost_price, 0)) * transaction_details.quantity) as total_profit'),
             DB::raw('COUNT(DISTINCT transactions.id) as transaction_count')
         ];
 
@@ -161,7 +162,7 @@ class SalesReport extends Component
                  if ($this->storeFilter === 'bakso' && $detail->product->category_id != 1) continue;
                  if ($this->storeFilter === 'nanang_store' && $detail->product->category_id == 1) continue;
 
-                 $cost = $detail->product->cost_price ?? 0;
+                 $cost = $detail->cost_price ?? $detail->product->cost_price ?? 0;
                  $profit = ($detail->price - $cost) * $detail->quantity;
                  
                  $chartData[$dateKey]['sales'] += $detail->subtotal;

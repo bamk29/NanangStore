@@ -12,13 +12,13 @@
     <!-- Left Column (Products & Search) -->
     <div class="flex-1 flex flex-col">
         <!-- Top Bar -->
-        <div class="flex-shrink-0 bg-white p-2 space-y-2 z-10 lg:shadow">
+        <div class="flex-shrink-0 bg-white/80 backdrop-blur-md p-3 space-y-3 z-10 lg:shadow sticky top-0">
             <div class="flex items-center gap-2">
                 <div class="relative flex-1">
                     <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
                         :readonly="isScannerMode"
-                        :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white': !isScannerMode }"
-                        class="border rounded-lg px-3 py-2 w-full text-sm sm:text-base pr-32" placeholder="Cari produk atau scan barcode...">
+                        :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white focus:ring-4 focus:ring-blue-100': !isScannerMode }"
+                        class="border-gray-300 rounded-xl px-4 py-2.5 w-full text-base shadow-sm focus:border-blue-500 transition-all duration-200 pr-32" placeholder="Cari produk atau scan barcode...">
 
                     <div class="absolute inset-y-0 right-0 flex items-center pr-2">
                         <button @click="searchQuery = ''"
@@ -33,10 +33,10 @@
                                 style="display: none;">
                             Clear
                         </button>
-                        <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-semibold mr-2">Mode Scanner</span>
+                        <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-bold mr-2 animate-pulse">SCANNER AKTIF</span>
                         <button @click="isScannerMode = !isScannerMode"
-                                class="p-2 rounded-lg transition-colors"
-                                :class="isScannerMode ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                class="p-2 rounded-lg transition-all duration-200"
+                                :class="isScannerMode ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-300 ring-offset-1' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                                 title="Toggle Mode Scanner (F3)">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
@@ -54,34 +54,43 @@
             <div x-data="{ showAll: false }">
                 <div class="flex items-center gap-2">
                     <div class="flex-1 flex overflow-x-auto gap-2 pb-2 scrollbar-none">
+                        <!-- Semua -->
                         <button @click="categoryId = ''"
-                            class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-                            :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === '' , 'bg-gray-100 text-gray-600 hover:bg-gray-200': categoryId !== '' }">
+                            class="flex-none px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95"
+                            :class="{ 'bg-slate-800 text-white shadow-md': categoryId === '' , 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300': categoryId !== '' }">
                             Semua
                         </button>
+
+                        <!-- Sering Dibeli (Conditional) -->
                         <button x-show="isCustomerSelected" @click="categoryId = 'recommendations'"
-                            class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-                            :class="{ 'bg-purple-500 text-white shadow-sm': categoryId === 'recommendations', 'bg-purple-100 text-purple-700 hover:bg-purple-200': categoryId !== 'recommendations' }"
+                            class="flex-none px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95"
+                            :class="{ 'bg-purple-600 text-white shadow-md shadow-purple-500/30': categoryId === 'recommendations', 'bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100': categoryId !== 'recommendations' }"
                             style="display: none;">
                             ★ Sering Dibeli
                         </button>
-                        <template x-for="category in categories.slice(0, 2)" :key="category.id">
-                            <button @click="categoryId = category.id" class="flex-none px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-                            :class="{ 'bg-blue-500 text-white shadow-sm': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
+
+                        <!-- Pinned Categories (ID 1 & 15) -->
+                        <template x-for="category in categories.filter(c => c.id == 1 || c.id == 15)" :key="category.id">
+                            <button @click="categoryId = category.id" class="flex-none px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95"
+                            :class="{ 'bg-slate-800 text-white shadow-md': categoryId === category.id, 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300': categoryId !== category.id }">
                                 <span x-text="category.name"></span>
                             </button>
                         </template>
                     </div>
-                    <template x-if="categories.length > 4">
-                        <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">
+
+                    <!-- Lainnya Dropdown Toggle -->
+                    <template x-if="categories.filter(c => c.id != 1 && c.id != 15).length > 0">
+                        <button @click="showAll = !showAll" class="flex-none flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
                             <span>Lainnya</span>
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showAll }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                     </template>
                 </div>
-                <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t">
+
+                <!-- Lainnya Dropdown Content -->
+                <div x-show="showAll" x-collapse class="mt-3 pt-3 border-t border-gray-100">
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                        <template x-for="category in categories" :key="category.id">
+                        <template x-for="category in categories.filter(c => c.id != 1 && c.id != 15)" :key="category.id">
                             <button @click="categoryId = category.id; showAll = false;" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             :class="{ 'bg-blue-500 text-white': categoryId === category.id, 'bg-gray-100 text-gray-700 hover:bg-gray-200': categoryId !== category.id }">
                                 <span x-text="category.name"></span>
@@ -113,30 +122,30 @@
                 <template x-for="(product, index) in products" :key="product.id">
                     <div @click="openModal(product)"
                         :id="'product-' + index"
-                        class="relative bg-white rounded-lg shadow-2xl hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-150 cursor-pointer border"
+                        class="relative bg-white rounded-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all duration-200 cursor-pointer border border-gray-300 overflow-hidden group"
                         :class="{
-                            'border-blue-500 border-4': cartItemIds.includes(product.id),
-                            'ring-2 ring-red-500 ring-offset-1': index === selectedIndex
+                            'ring-4 ring-blue-600 ring-offset-2': cartItemIds.includes(product.id),
+                            'ring-4 ring-orange-500 ring-offset-2 shadow-orange-500/50': index === selectedIndex
                         }">
 
-                        <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1.5 right-1.5 z-10 w-10 h-10 bg-white/70 backdrop-blur-sm border-2 border-blue-500 text-blue-500 rounded-full hover:bg-blue-500 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm text-emerald-600 rounded-full hover:bg-emerald-500 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-lg border border-emerald-100 group-hover:scale-110">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                         </button>
 
                         <div class="p-1.5 flex flex-col h-full">
-                            <div class="mb-1 flex-grow pr-8">
-                                <h3 class="text-sm font-bold text-gray-800 leading-tight line-clamp-2" x-text="product.name"></h3>
-                                <div class="text-xs text-gray-500" x-text="product.code"></div>
+                            <div class="mb-0.5 flex-grow pr-6">
+                                <h3 class="text-sm font-bold text-gray-800 leading-none line-clamp-2" x-text="product.name"></h3>
+                                <div class="text-[10px] text-gray-500 mt-0.5" x-text="product.code"></div>
                             </div>
-                            <div class="mt-auto">
-                                <div class="text-sm font-bold text-blue-600" x-text="formatCurrency(product.retail_price)"></div>
-                                <div class="px-1.5 py-0.5 text-xs font-medium rounded-lg mt-1"
+                            <div class="mt-auto pt-0.5 border-t border-gray-100">
+                                <div class="text-base font-extrabold text-slate-800 leading-tight" x-text="formatCurrency(product.retail_price)"></div>
+                                <div class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded-full mt-0.5"
                                     :class="{
-                                        'bg-green-100 text-green-700': product.stock > 5,
-                                        'bg-yellow-100 text-yellow-700': product.stock > 0 && product.stock <= 5,
-                                        'bg-red-100 text-red-700': product.stock <= 0
+                                        'bg-emerald-100 text-emerald-700': product.stock > 5,
+                                        'bg-amber-100 text-amber-700': product.stock > 0 && product.stock <= 5,
+                                        'bg-rose-100 text-rose-700': product.stock <= 0
                                     }">
-                                    <span x-text="'Stok: ' + product.stock"></span>
+                                    <span x-text="product.stock > 0 ? 'Stok: ' + product.stock : 'Habis'"></span>
                                 </div>
                             </div>
                         </div>
@@ -249,20 +258,26 @@
                 </div>
             </div>
 
-            <div class="mb-6 text-center">
-                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Kuantitas</label>
-                <div class="flex items-center justify-center rounded-md">
-                    <button type="button" @click="decrement()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">-</button>
-                    <input type="number" step="1" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-24 mx-4 text-center text-2xl font-bold border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg">
-                    <button type="button" @click="increment()"  class="w-12 h-12 flex items-center justify-center text-2xl bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">+</button>
+            <div class="mb-8 text-center">
+                <label for="quantity" class="block text-sm font-bold text-gray-500 uppercase tracking-wide mb-4">Atur Jumlah</label>
+                <div class="flex items-center justify-center gap-6">
+                    <button type="button" @click="decrement()"  class="w-16 h-16 flex items-center justify-center text-3xl bg-slate-100 text-slate-600 rounded-2xl border-2 border-slate-300 hover:bg-slate-200 hover:border-slate-400 active:scale-90 transition-all duration-200 focus:outline-none shadow-sm">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"/></svg>
+                    </button>
+                    <input type="number" step="1" id="quantity" name="quantity" x-ref="quantityInput" x-model="quantity" @input.debounce.300ms="validate()" @keydown.enter.prevent.stop="if(isQuantityValid) addToCartFromModal()" class="block w-32 text-center text-4xl font-black border-2 border-slate-300 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-slate-800 p-2 bg-white shadow-inner" placeholder="1">
+                    <button type="button" @click="increment()"  class="w-16 h-16 flex items-center justify-center text-3xl bg-blue-600 text-white rounded-2xl border-2 border-blue-700 hover:bg-blue-700 active:scale-90 transition-all duration-200 focus:outline-none shadow-lg shadow-blue-500/30">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                    </button>
                 </div>
-                <p class="text-xs text-gray-500 mt-2" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
-                <p x-show="!isQuantityValid" class="text-sm text-red-600 mt-2" x-text="errorMessage"></p>
+                <p class="text-sm font-medium text-slate-400 mt-4" x-text="productForModal ? 'Stok tersedia: ' + productForModal.stock : ''"></p>
+                <p x-show="!isQuantityValid" class="text-sm font-bold text-rose-500 mt-2 animate-bounce" x-text="errorMessage"></p>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mt-8">
-                <button type="button" @click="closeModal()" class="w-full px-4 py-3 text-sm font-bold text-gray-700 bg-gray-200 rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Batal</button>
-                <button type="button" @click="addToCartFromModal()" :disabled="!isQuantityValid" class="w-full inline-flex justify-center px-4 py-3 text-sm font-bold text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">Tambah</button>
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button type="button" @click="closeModal()" class="w-full px-4 py-4 text-base font-bold text-slate-600 bg-slate-100 rounded-xl border-2 border-slate-300 hover:bg-slate-200 hover:border-slate-400 focus:outline-none transition-all">Batal</button>
+                <button type="button" @click="addToCartFromModal()" :disabled="!isQuantityValid" class="w-full inline-flex justify-center px-4 py-4 text-base font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl border-2 border-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                    <span>Simpan</span>
+                </button>
             </div>
         </div>
     </div>

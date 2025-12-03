@@ -61,52 +61,11 @@ class TransactionHistory extends Component
             \Illuminate\Support\Facades\DB::transaction(function () use ($transactionId) {
                 $transaction = Transaction::with('details.product', 'customer')->findOrFail($transactionId);
 
-                // 1. Hanya batalkan transaksi yang sudah selesai
-                if ($transaction->status !== 'completed') {
-                    throw new \Exception("Hanya transaksi yang sudah selesai yang bisa dibatalkan.");
-                }
-
-                // 2. Kembalikan Stok & Kurangi Popularitas
-                foreach ($transaction->details as $detail) {
-                    if ($product = $detail->product) {
-                        $product->increment('stock', $detail->quantity);
-
-                        // Hitung ulang stok boks jika ada
-                        if ($product->units_in_box > 0) {
-                            $product->box_stock = floor($product->stock / $product->units_in_box);
-                            $product->save();
-                        }
-                        
-                        // Kurangi usage count
-                        \App\Models\ProductUsage::where('product_id', $product->id)->decrement('usage_count');
-                    }
-                }
-
-                // 3. Kembalikan Hutang & Poin Pelanggan
-                if ($customer = $transaction->customer) {
-                    // THE CORRECT REVERSAL LOGIC:
-                    // Previous Debt = Current Debt - Goods Value + Amount Paid
-                    $goodsValue = (float) $transaction->details->sum('subtotal');
-                    $customer->debt = (float) $customer->debt - $goodsValue + (float) $transaction->paid_amount;
-                    $customer->save();
-
-                    // Revert points if they were earned on this transaction.
-                    $debtChangeOnSale = $goodsValue - (float) $transaction->paid_amount;
-                    if ($debtChangeOnSale <= 0 && $transaction->payment_method !== 'debt') {
-                        $pointsEarned = floor($goodsValue / 10000);
-                        if ($pointsEarned > 0) {
-                            $customer->decrement('points', $pointsEarned);
-                        }
-                    }
-                }
-
-                // 4. Hapus Catatan Keuangan Terkait
-                \App\Models\FinancialTransaction::where('transaction_id', $transaction->id)->delete();
-
-                // 5. Ubah Status Transaksi
-                $transaction->status = 'cancelled';
-                $transaction->save();
+                // 1. Panggil method cancel dari model
+                $transaction->cancel();
             });
+
+            session()->flash('success', 'Transaksi berhasil dibatalkan.');
 
             session()->flash('success', 'Transaksi berhasil dibatalkan.');
 
@@ -197,16 +156,12 @@ class TransactionHistory extends Component
 
     public function correctTransaction($transactionId)
     {
-        // Find the transaction *before* cancelling it
-        $transaction = Transaction::with('details.product', 'customer')->findOrFail($transactionId);
+        // Find the transaction to ensure it exists
+        $transaction = Transaction::findOrFail($transactionId);
 
-        // Cancel the transaction (using existing logic)
-        try {
-            $this->cancelTransaction($transactionId);
-        } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memulai koreksi: ' . $e->getMessage());
-            return;
-        }
+        // NOTE: We do NOT cancel the transaction here anymore.
+        // We pass the ID to POS, and POS will handle the atomic replacement (cancel old + create new).
+        // This prevents data loss if the user abandons the correction process.
 
         session()->flash('info', 'Transaksi siap untuk dikoreksi. Silakan perbaiki dan selesaikan pembayaran.');
 

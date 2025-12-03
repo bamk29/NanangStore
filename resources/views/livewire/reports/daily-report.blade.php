@@ -117,8 +117,8 @@
                             @forelse ($productSalesData as $data)
                                 <tr>
                                     <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ $data['product_name'] }}</td>
-                                    <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['total_quantity']) }}</td>
-                                    <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['remaining_stock']) }}</td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['total_quantity'], 2, ',', '.') }}</td>
+                                    <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['remaining_stock'], 2, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['cost_price'], 0, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['avg_selling_price'], 0, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($data['total_sales'], 0, ',', '.') }}</td>

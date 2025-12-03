@@ -50,4 +50,51 @@ class Transaction extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function cancel()
+    {
+        if ($this->status !== 'completed') {
+            throw new \Exception("Hanya transaksi yang sudah selesai yang bisa dibatalkan.");
+        }
+
+        // 1. Kembalikan Stok & Kurangi Popularitas
+        foreach ($this->details as $detail) {
+            if ($product = $detail->product) {
+                $product->increment('stock', $detail->quantity);
+
+                // Hitung ulang stok boks jika ada
+                if ($product->units_in_box > 0) {
+                    $product->box_stock = floor($product->stock / $product->units_in_box);
+                    $product->save();
+                }
+                
+                // Kurangi usage count
+                \App\Models\ProductUsage::where('product_id', $product->id)->decrement('usage_count');
+            }
+        }
+
+        // 2. Kembalikan Hutang & Poin Pelanggan
+        if ($customer = $this->customer) {
+            // Previous Debt = Current Debt - Goods Value + Amount Paid
+            $goodsValue = (float) $this->details->sum('subtotal');
+            $customer->debt = max(0, (float) $customer->debt - $goodsValue + (float) $this->paid_amount);
+            $customer->save();
+
+            // Revert points if they were earned on this transaction.
+            $debtChangeOnSale = $goodsValue - (float) $this->paid_amount;
+            if ($debtChangeOnSale <= 0 && $this->payment_method !== 'debt') {
+                $pointsEarned = floor($goodsValue / 10000);
+                if ($pointsEarned > 0) {
+                    $customer->decrement('points', $pointsEarned);
+                }
+            }
+        }
+
+        // 3. Hapus Catatan Keuangan Terkait
+        \App\Models\FinancialTransaction::where('transaction_id', $this->id)->delete();
+
+        // 4. Ubah Status Transaksi
+        $this->status = 'cancelled';
+        $this->save();
+    }
 }

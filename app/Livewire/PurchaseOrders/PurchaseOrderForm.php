@@ -183,85 +183,8 @@ class PurchaseOrderForm extends Component
 
     public function receiveStock()
     {
-        DB::transaction(function () {
-            $po = PurchaseOrder::findOrFail($this->orderId);
-            $all_items_fully_received = true;
-
-            // 1. Update stock and costs for received items
-            foreach ($this->items as $itemData) {
-                $qtyToReceive = (int)($itemData['quantity_to_receive'] ?? 0);
-
-                if ($qtyToReceive > 0) {
-                    $item = PurchaseOrderItem::find($itemData['id']);
-                    if ($item) {
-                        $product = Product::find($item->product_id);
-                        if ($product) {
-                            $product->increment('stock', $qtyToReceive);
-                            $product->cost_price = $item->cost;
-                            $product->unit_cost = $itemData['unit_cost'];
-                            $product->box_cost = $itemData['box_cost'];
-                            $product->units_in_box = $itemData['items_per_box'];
-
-                            if ($product->units_in_box > 0) {
-                                $product->refresh(); // Refresh to get latest stock
-                                $product->box_stock = floor($product->stock / $product->units_in_box);
-                            }
-                            $product->save();
-
-                            $item->increment('received_quantity', $qtyToReceive);
-                        }
-                    }
-                }
-            }
-
-            // 2. Check if all items are fully received and update PO status
-            foreach ($po->fresh()->items as $item) {
-                if ($item->received_quantity < $item->quantity) {
-                    $all_items_fully_received = false;
-                    break;
-                }
-            }
-
-            if ($all_items_fully_received) {
-                $po->status = 'received';
-            }
-            $po->received_date = now();
-            $po->save();
-
-            // 3. Log the financial transaction
-            $expenseByCategory = [];
-            foreach ($this->items as $itemData) {
-                $qtyToReceive = (int)($itemData['quantity_to_receive'] ?? 0);
-                if ($qtyToReceive > 0) {
-                    $product = Product::find($itemData['product_id']);
-                    if ($product) {
-                        $businessUnit = ($product->category_id == 1) ? 'giling_bakso' : 'nanang_store';
-                        if (!isset($expenseByCategory[$businessUnit])) {
-                            $expenseByCategory[$businessUnit] = 0;
-                        }
-                        $expenseByCategory[$businessUnit] += $itemData['cost'] * $qtyToReceive;
-                    }
-                }
-            }
-
-            foreach ($expenseByCategory as $unit => $amount) {
-                if ($amount > 0) {
-                    \App\Models\FinancialTransaction::create([
-                        'business_unit' => $unit,
-                        'type' => 'expense',
-                        'category' => 'pembelian_stok',
-                        'amount' => $amount,
-                        'description' => 'Pembelian stok dari PO #' . $po->order_number,
-                        'purchase_order_id' => $po->id,
-                        'user_id' => auth()->id(),
-                        'date' => now()->toDateString(),
-                    ]);
-                }
-            }
-        });
-
-        session()->flash('message', 'Stok dan harga modal berhasil diperbarui.');
-        return redirect()->route('purchase-orders.edit', $this->orderId);
+        // Redirect to Goods Receipt form with this PO ID pre-filled
+        return redirect()->route('goods-receipts.create', ['po_id' => $this->orderId]);
     }
 
     public function render()

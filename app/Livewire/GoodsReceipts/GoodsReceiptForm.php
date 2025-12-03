@@ -74,6 +74,13 @@ class GoodsReceiptForm extends Component
             }
         } else {
             $this->receipt_date = now()->format('Y-m-d');
+            
+            // Check for po_id query parameter
+            if (request()->has('po_id')) {
+                $poId = request()->query('po_id');
+                $this->purchase_order_id = $poId;
+                $this->updatedPurchaseOrderId($poId);
+            }
         }
     }
 

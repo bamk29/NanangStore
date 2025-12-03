@@ -124,8 +124,8 @@
                     </button>
 
                     @if($status === 'ordered' || $status === 'partially_received')
-                    <button wire:click="receiveStock" wire:confirm="Anda yakin ingin memproses penerimaan barang? Stok dan harga modal akan diperbarui sesuai input Anda." class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700">
-                        Terima Barang & Update Stok
+                    <button wire:click="receiveStock" class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700">
+                        Proses Penerimaan Barang (Buat GR)
                     </button>
                     @endif
                 </div>

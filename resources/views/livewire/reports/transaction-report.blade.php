@@ -84,7 +84,7 @@
                                 <li class="py-3 flex justify-between items-center">
                                     <div class="flex-1">
                                         <p class="text-sm font-medium text-gray-900">{{ $detail->product->name ?? 'Produk Dihapus' }}</p>
-                                        <p class="text-sm text-gray-500">{{ number_format($detail->quantity )}} x Rp {{ number_format($detail->price, 0, ',', '.') }}</p>
+                                        <p class="text-sm text-gray-500">{{ number_format($detail->quantity, 2, ',', '.') }} x Rp {{ number_format($detail->price, 0, ',', '.') }}</p>
                                     </div>
                                     <p class="text-sm font-medium text-gray-800">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</p>
                                 </li>

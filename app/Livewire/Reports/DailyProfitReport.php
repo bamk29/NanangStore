@@ -41,7 +41,8 @@ class DailyProfitReport extends Component
             foreach ($transaction->details as $detail) {
                 if (!$detail->product) continue;
 
-                $profit = ($detail->price - ($detail->product->cost_price ?? 0)) * $detail->quantity;
+                $cost = $detail->cost_price ?? $detail->product->cost_price ?? 0;
+                $profit = ($detail->price - $cost) * $detail->quantity;
 
                 if ($detail->product->category_id == 1) {
                     $dayData['bakso_profit'] += $profit;

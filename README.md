@@ -1,61 +1,107 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# NanangStore POS System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendukung berbagai perangkat (PC, Tablet, HP), dan dioptimalkan untuk penggunaan cepat dengan keyboard maupun layar sentuh.
 
-## About Laravel
+## 🚀 Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 1. Dashboard & Analisis
+*   **Ringkasan Penjualan**: Pantau omzet harian Toko Nanang dan Bakso secara real-time.
+*   **Quick Actions**: Akses cepat ke menu penting (Kasir, Laporan, Stok, dll).
+*   **Grafik & Statistik**: Visualisasi data penjualan untuk pengambilan keputusan.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 2. Point of Sale (Kasir)
+*   **Multi-Device Support**: Tampilan responsif yang menyesuaikan otomatis dengan layar PC, Tablet, atau HP.
+*   **Mode Scanner (F3)**: Dukungan penuh untuk barcode scanner. Tekan `F3` untuk toggle mode scanner.
+*   **Pencarian Cepat**: Cari produk berdasarkan nama atau kode dengan cepat.
+*   **Kategori Pintar**:
+    *   **Pinned Categories**: Akses instan ke kategori utama ("Giling Bakso", "Toko Nanang").
+    *   **Sering Dibeli**: Rekomendasi otomatis berdasarkan riwayat pelanggan.
+*   **Keranjang Belanja**: Kelola item, ubah kuantitas, dan hapus item dengan mudah.
+*   **Diskon & Pajak**: Dukungan untuk diskon manual dan perhitungan pajak otomatis.
+*   **Hold/Pending Transaksi**: Simpan transaksi sementara dan lanjutkan nanti.
+*   **Cetak Struk**: Cetak struk belanja langsung ke printer thermal atau kirim via WhatsApp.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 3. Laporan Lengkap
+*   **Laporan Transaksi**: Detail setiap transaksi dengan filter tanggal dan status.
+*   **Laporan Harian**: Rekapitulasi penjualan harian per produk.
+*   **Laporan Stok**: Pantau pergerakan stok masuk dan keluar.
+*   **Laporan Keuangan**: Laporan laba rugi sederhana.
 
-## Learning Laravel
+### 4. Manajemen Data
+*   **Produk**: Tambah, edit, hapus produk, atur harga (ecer/grosir), dan stok.
+*   **Pelanggan**: Database pelanggan dengan riwayat hutang dan pembelian.
+*   **Stok Opname**: Fitur untuk penyesuaian stok fisik dan sistem.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🖥️ Kompatibilitas Perangkat
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Aplikasi ini dibangun dengan teknologi **Responsive Web Design**, sehingga dapat berjalan optimal di:
 
-## Laravel Sponsors
+*   **PC / Laptop / Monitor Besar**:
+    *   Tampilan penuh dengan grid produk yang luas.
+    *   Dioptimalkan untuk penggunaan Mouse & Keyboard.
+    *   Cocok untuk kasir utama.
+*   **Tablet (iPad / Android Tab)**:
+    *   Tampilan touch-friendly dengan tombol yang mudah ditekan.
+    *   Layout adaptif (Landscape/Portrait).
+*   **HP / Smartphone**:
+    *   Tampilan mobile-first yang ringkas.
+    *   Navigasi bawah (Bottom Navigation) untuk kemudahan akses satu tangan.
+    *   Menu sidebar tersembunyi untuk memaksimalkan ruang layar.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## ⌨️ Shortcut Keyboard (Tanpa Mouse)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Untuk mempercepat operasional kasir, gunakan tombol pintas berikut:
 
-## Contributing
+| Tombol | Fungsi | Keterangan |
+| :--- | :--- | :--- |
+| **F3** | **Mode Scanner** | Mengaktifkan/menonaktifkan input khusus scanner barcode. Saat aktif, input manual dimatikan untuk mencegah error. |
+| **Enter** | **Cari / Tambah** | Tekan Enter di kolom pencarian untuk mencari produk atau menambah produk terpilih ke keranjang. |
+| **Panah Kanan/Kiri** | **Navigasi Produk** | Pindah pilihan produk di hasil pencarian (saat menggunakan keyboard). |
+| **Esc** | **Batal / Tutup** | Menutup modal atau membatalkan pencarian. |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 📖 Panduan Penggunaan Singkat
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Memulai Transaksi (Kasir)
+1.  Buka menu **Kasir Bersama** atau klik ikon POS di navigasi bawah.
+2.  **Scan Barcode**: Pastikan mode scanner aktif (tekan F3), lalu scan barang.
+3.  **Cari Manual**: Ketik nama barang di kolom pencarian, pilih barang, atur jumlah, klik **Simpan**.
+4.  **Checkout**: Klik tombol **Bayar** (atau ikon keranjang di HP), pilih metode pembayaran, masukkan nominal, dan proses transaksi.
 
-## Security Vulnerabilities
+### Mengelola Stok
+1.  Masuk ke menu **Stok Opname** atau **Produk**.
+2.  Lakukan penyesuaian stok jika ada selisih.
+3.  Gunakan **Goods Receipt** untuk mencatat barang masuk dari supplier.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Laporan
+1.  Akses menu **Laporan & Analisis** di Dashboard.
+2.  Pilih jenis laporan (Transaksi, Harian, dll).
+3.  Gunakan filter tanggal untuk melihat data periode tertentu.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🛠️ Instalasi & Teknis
+
+**Persyaratan Sistem:**
+*   PHP 8.1+
+*   Composer
+*   Node.js & NPM
+*   Database MySQL/MariaDB
+
+**Cara Install:**
+1.  Clone repository.
+2.  Jalankan `composer install`.
+3.  Jalankan `npm install && npm run build`.
+4.  Copy `.env.example` ke `.env` dan atur database.
+5.  Jalankan `php artisan key:generate`.
+6.  Jalankan `php artisan migrate --seed`.
+7.  Akses aplikasi di browser.
+
+---
+
+*Dibuat dengan ❤️ untuk NanangStore.*

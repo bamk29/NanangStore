@@ -29,11 +29,15 @@ class Cart extends Component
     public $totalReductionAmount = 0;
     public $reductionNotes = '';
 
+    // Correction Property
+    public $correctionTransactionId = null;
+
     public function clearCart()
     {
         $this->reset();
         $this->customers = [];
         $this->pending_transaction_id = null;
+        $this->correctionTransactionId = null;
     }
 
 
@@ -136,6 +140,7 @@ class Cart extends Component
                 $this->initialCustomer = $transaction->customer;
                 $this->initialType = $transaction->transaction_type;
                 $this->initialPendingId = null; // This is a new transaction, not resuming a pending one
+                $this->correctionTransactionId = $transaction->id; // Set correction ID
 
                 if ($transaction->customer) {
                     $this->selectCustomer($transaction->customer->id, $transaction->customer->name);
@@ -233,8 +238,39 @@ class Cart extends Component
             return $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Uang kurang dan tidak ada pelanggan terpilih untuk mencatat hutang.']);
         }
 
+        // Validasi Stok (Prevent Negative Stock)
+        foreach ($cart as $item) {
+            $product = Product::find($item['id']);
+            if ($product) {
+                $availableStock = $product->stock;
+
+                // Jika sedang koreksi, tambahkan stok dari transaksi lama ke stok tersedia
+                if ($this->correctionTransactionId) {
+                    $oldTransaction = Transaction::with('details')->find($this->correctionTransactionId);
+                    if ($oldTransaction) {
+                        $oldDetail = $oldTransaction->details->where('product_id', $item['id'])->first();
+                        if ($oldDetail) {
+                            $availableStock += $oldDetail->quantity;
+                        }
+                    }
+                }
+
+                if ($availableStock < $item['quantity']) {
+                    return $this->dispatch('show-alert', ['type' => 'error', 'message' => "Stok tidak cukup untuk produk: {$product->name}. Tersedia: {$availableStock}"]);
+                }
+            }
+        }
+
         try {
             DB::transaction(function () use ($cart, $paymentDetails, $customer, $shortfall) {
+                // Handle Correction: Cancel old transaction first
+                if ($this->correctionTransactionId) {
+                    $oldTransaction = Transaction::find($this->correctionTransactionId);
+                    if ($oldTransaction && $oldTransaction->status === 'completed') {
+                        $oldTransaction->cancel();
+                    }
+                }
+
                 $isUpdate = isset($paymentDetails['pending_id']) && $paymentDetails['pending_id'];
                 $transaction = null;
 
@@ -292,6 +328,7 @@ class Cart extends Component
                         'quantity' => (float) $item['quantity'],
                         'price' => (float) $item['price'],
                         'subtotal' => (float) $item['subtotal'],
+                        'cost_price' => $product ? $product->cost_price : 0,
                     ]);
                 }
 
@@ -537,6 +574,7 @@ class Cart extends Component
 
                 // Stok tidak dikurangi saat transaksi ditunda, hanya saat penjualan selesai.
 
+                $product = \App\Models\Product::find($item['id']);
                 TransactionDetail::create([
 
                     'transaction_id' => $transaction->id,
@@ -548,6 +586,8 @@ class Cart extends Component
                     'price' => (float) $item['price'],
 
                     'subtotal' => (float) $item['subtotal'],
+
+                    'cost_price' => $product ? $product->cost_price : 0,
 
                 ]);
 
