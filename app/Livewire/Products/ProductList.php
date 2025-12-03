@@ -8,6 +8,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Exports\ProductsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Http;
 
 class ProductList extends Component
 {
@@ -33,6 +34,28 @@ class ProductList extends Component
         } else {
             $this->sortField = $field;
             $this->sortDirection = 'asc';
+        }
+    }
+
+    public function printQR($productId)
+    {
+        $product = Product::find($productId);
+        if (!$product) return;
+
+        $printData = [
+            'printType' => 'qrLabel',
+            'product' => [
+                'name' => $product->name,
+                'code' => $product->code,
+                'price' => $product->retail_price,
+            ]
+        ];
+
+        try {
+            Http::timeout(5)->post('http://localhost:8000/print', $printData);
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Label QR Code untuk ' . $product->name . ' dikirim ke printer!']);
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
         }
     }
 

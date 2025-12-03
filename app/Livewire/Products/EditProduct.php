@@ -156,6 +156,25 @@ class EditProduct extends Component
         }
     }
 
+    public function printQR()
+    {
+        $printData = [
+            'printType' => 'qrLabel',
+            'product' => [
+                'name' => $this->name,
+                'code' => $this->code,
+                'price' => $this->retail_price,
+            ]
+        ];
+
+        try {
+            Http::timeout(5)->post('http://localhost:8000/print', $printData);
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Label QR Code untuk ' . $this->name . ' dikirim ke printer!']);
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal terhubung ke server printer.']);
+        }
+    }
+
     public function render()
     {
         return view('livewire.products.edit-product', [

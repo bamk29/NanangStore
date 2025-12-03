@@ -124,6 +124,10 @@
         </div>
 
         <div class="flex justify-end pt-4">
+            <button type="button" wire:click="printQR" wire:loading.attr="disabled" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 mr-3">
+                <span wire:loading wire:target="printQR" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
+                Cetak QR Code
+            </button>
             <button type="button" wire:click="printLabel" wire:loading.attr="disabled" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 mr-3">
                 <span wire:loading wire:target="printLabel" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" role="status" aria-hidden="true"></span>
                 Cetak Label

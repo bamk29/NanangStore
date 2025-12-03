@@ -63,6 +63,9 @@
                             <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($product->retail_price, 0, ',', '.') }}</td>
                             <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <div class="flex items-center justify-end space-x-2">
+                                    <button wire:click="printQR({{ $product->id }})" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800" title="Cetak QR">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 12v-2m0 0v-2m0 2H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
                                     <a href="{{ route('products.edit', $product) }}" class="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800" title="Edit">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </a>
