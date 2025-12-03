@@ -1,6 +1,6 @@
 # NanangStore POS System
 
-![Dashboard Preview](docs/images/dashboard-preview.png)
+![Dashboard Preview](docs/images/img (1).png)
 
 Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendukung berbagai perangkat (PC, Tablet, HP), dan dioptimalkan untuk penggunaan cepat dengan keyboard maupun layar sentuh.
 
@@ -12,7 +12,8 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 *   **Grafik & Statistik**: Visualisasi data penjualan untuk pengambilan keputusan.
 
 ### 2. Point of Sale (Kasir)
-![Tampilan Kasir](docs/images/pos-interface.png)
+![Tampilan Kasir](docs/images/img (2).png)
+![Tampilan Kasir](docs/images/img (11).png)
 *   **Multi-Device Support**: Tampilan responsif yang menyesuaikan otomatis dengan layar PC, Tablet, atau HP.
 *   **Mode Scanner (F3)**: Dukungan penuh untuk barcode scanner. Tekan `F3` untuk toggle mode scanner.
 *   **Pencarian Cepat**: Cari produk berdasarkan nama atau kode dengan cepat.
@@ -22,9 +23,11 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 *   **Keranjang Belanja**: Kelola item, ubah kuantitas, dan hapus item dengan mudah.
 *   **Diskon & Pajak**: Dukungan untuk diskon manual dan perhitungan pajak otomatis.
 *   **Hold/Pending Transaksi**: Simpan transaksi sementara dan lanjutkan nanti.
+![Tampilan Kasir](docs/images/img (7).png)
 *   **Cetak Struk**: Cetak struk belanja langsung ke printer thermal atau kirim via WhatsApp.
 
 ### 3. Laporan Lengkap
+![Laporan](docs/images/img (8).png)
 *   **Laporan Transaksi**: Detail setiap transaksi dengan filter tanggal dan status.
 *   **Laporan Harian**: Rekapitulasi penjualan harian per produk.
 *   **Laporan Stok**: Pantau pergerakan stok masuk dan keluar.
@@ -33,13 +36,18 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 ### 4. Manajemen Data
 *   **Produk**: Tambah, edit, hapus produk, atur harga (ecer/grosir), dan stok.
 *   **Pelanggan**: Database pelanggan dengan riwayat hutang dan pembelian.
+![Pelanggan](docs/images/img (12).png)
 *   **Stok Opname**: Fitur untuk penyesuaian stok fisik dan sistem.
 
 ---
 
 ## 🖥️ Kompatibilitas Perangkat
 
-![Mobile & Tablet View](docs/images/mobile-view.png)
+![Mobile & Tablet View](docs/images/img (6).png)
+![Mobile & Tablet View](docs/images/img (5).png)
+![Mobile & Tablet View](docs/images/img (8).png)
+![Mobile & Tablet View](docs/images/img (9).png)
+![Mobile & Tablet View](docs/images/img (3).png)
 
 Aplikasi ini dibangun dengan teknologi **Responsive Web Design**, sehingga dapat berjalan optimal di:
 
