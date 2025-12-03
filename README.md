@@ -4,6 +4,14 @@
 
 Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendukung berbagai perangkat (PC, Tablet, HP), dan dioptimalkan untuk penggunaan cepat dengan keyboard maupun layar sentuh.
 
+## ⚡ Teknologi Stack
+
+Dibangun dengan kombinasi teknologi modern untuk performa maksimal:
+*   **Laravel**: Framework PHP robust untuk backend yang aman dan scalable.
+*   **Livewire**: Full-stack framework untuk antarmuka dinamis tanpa kompleksitas SPA.
+*   **Alpine.js**: Framework JavaScript ringan untuk interaktivitas UI yang reaktif.
+*   **Tailwind CSS**: Utility-first CSS framework untuk desain custom yang cepat.
+
 ## 🚀 Fitur Utama
 
 ### 1. Dashboard & Analisis
@@ -46,7 +54,7 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 ![Mobile & Tablet View](docs/images/img(6).png)
 ![Mobile & Tablet View](docs/images/img(5).png)
 ![Mobile & Tablet View](docs/images/img(8).png)
-![Mobile & Tablet View](docs/images/img(9).png)
+![Mobile & Tablet View](docs/images/img(9).png)s
 ![Mobile & Tablet View](docs/images/img(3).png)
 
 Aplikasi ini dibangun dengan teknologi **Responsive Web Design**, sehingga dapat berjalan optimal di:
