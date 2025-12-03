@@ -31,13 +31,16 @@ npm -v
     npm install express node-thermal-printer canvas qrcode
     ```
 
-2.  Buat file `server.js`.
+2.  **Buat File `server.js` (Copy-Paste Perintah Ini)**
+    Buat file `server.js` dengan perintah:  
     ```bash
     nano server.js
     ```
 
-    Isi file (Contoh Sederhana):
-    // File: ~/print-server/print-server.js
+    Langsung copy semua blok kode di bawah ini dan paste ke terminal untuk membuat file otomatis:
+    
+    ```bash
+    // File: /opt/printer-server/server.js
     // Deskripsi: Versi final dengan FONT BESAR untuk label dan JARAK PRESISI.
 
     const express = require('express');
@@ -334,6 +337,7 @@ npm -v
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Print server (v.font-besar) berjalan di port ${PORT}`);
     });
+    ```
 
 3.  **Auto-start dengan PM2**
     Agar server printer jalan terus (background).

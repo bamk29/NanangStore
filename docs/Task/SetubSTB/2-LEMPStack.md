@@ -55,6 +55,7 @@ sudo nano /etc/nginx/sites-available/nanangstore
 
 Isi (Sesuaikan path):
 ```nginx
+# Server Block 1: Aplikasi NanangStore (Port 80)
 server {
     listen 80;
     server_name localhost;
@@ -66,21 +67,22 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # phpMyAdmin
-    location /phpmyadmin {
-        root /var/www/html;
-        index index.php index.html index.htm;
-        location ~ ^/phpmyadmin/(.+\.php)$ {
-            try_files $uri =404;
-            root /var/www/html;
-            fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-            fastcgi_index index.php;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            include fastcgi_params;
-        }
-        location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
-            root /var/www/html;
-        }
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+    }
+}
+
+# Server Block 2: phpMyAdmin (Port 8081)
+server {
+    listen 8081;
+    server_name localhost;
+    root /var/www/html/phpmyadmin; # Pastikan path ini benar sesuai install manual
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
     }
 
     location ~ \.php$ {
