@@ -49,6 +49,12 @@ Dibangun dengan kombinasi teknologi modern untuk performa maksimal:
 
 ---
 
+## 🔧 Setup Server STB (HG680P)
+Panduan lengkap mengubah STB Android menjadi Web Server & Printer Server:
+👉 **[Buka Panduan Setup STB](docs/Task/TaskSTBSetub.md)**
+
+---
+
 ## 🖥️ Kompatibilitas Perangkat
 
 ![Mobile & Tablet View](docs/images/img(6).png)
