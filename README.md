@@ -1,5 +1,7 @@
 # NanangStore POS System
 
+![Dashboard Preview](docs/images/dashboard-preview.png)
+
 Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendukung berbagai perangkat (PC, Tablet, HP), dan dioptimalkan untuk penggunaan cepat dengan keyboard maupun layar sentuh.
 
 ## 🚀 Fitur Utama
@@ -10,6 +12,7 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 *   **Grafik & Statistik**: Visualisasi data penjualan untuk pengambilan keputusan.
 
 ### 2. Point of Sale (Kasir)
+![Tampilan Kasir](docs/images/pos-interface.png)
 *   **Multi-Device Support**: Tampilan responsif yang menyesuaikan otomatis dengan layar PC, Tablet, atau HP.
 *   **Mode Scanner (F3)**: Dukungan penuh untuk barcode scanner. Tekan `F3` untuk toggle mode scanner.
 *   **Pencarian Cepat**: Cari produk berdasarkan nama atau kode dengan cepat.
@@ -35,6 +38,8 @@ Aplikasi Point of Sale (POS) modern yang dirancang untuk efisiensi tinggi, mendu
 ---
 
 ## 🖥️ Kompatibilitas Perangkat
+
+![Mobile & Tablet View](docs/images/mobile-view.png)
 
 Aplikasi ini dibangun dengan teknologi **Responsive Web Design**, sehingga dapat berjalan optimal di:
 
@@ -88,7 +93,7 @@ Untuk mempercepat operasional kasir, gunakan tombol pintas berikut:
 ## 🛠️ Instalasi & Teknis
 
 **Persyaratan Sistem:**
-*   PHP 8.1+
+*   PHP 8.3+
 *   Composer
 *   Node.js & NPM
 *   Database MySQL/MariaDB
@@ -99,8 +104,9 @@ Untuk mempercepat operasional kasir, gunakan tombol pintas berikut:
 3.  Jalankan `npm install && npm run build`.
 4.  Copy `.env.example` ke `.env` dan atur database.
 5.  Jalankan `php artisan key:generate`.
-6.  Jalankan `php artisan migrate --seed`.
-7.  Akses aplikasi di browser.
+6.  pindahaka database/finish ke migrations
+7.  Jalankan `php artisan migrate --seed`.
+8.  Akses aplikasi di browser.
 
 ---
 
