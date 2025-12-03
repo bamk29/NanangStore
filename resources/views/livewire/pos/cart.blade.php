@@ -969,6 +969,8 @@
                 this.transaction_type = type;
                 if (customer) {
                     this.setCustomer(customer);
+                    // Dispatch event for PosIndex to catch (for recommendations)
+                    this.$dispatch('customer:selected', { customer: customer });
                 }
                 this.pending_transaction_id = pending_id;
                 this.recalculate();

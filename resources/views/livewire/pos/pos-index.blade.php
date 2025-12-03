@@ -403,7 +403,7 @@
                     .then(data => {
                         this.recommendedProducts = data;
                         // Optional: Auto-switch to recommendations if found
-                        // if (data.length > 0) this.categoryId = 'recommendations';
+                        if (data.length > 0) this.categoryId = 'recommendations';
                     })
                     .catch(error => console.error('Error fetching recommendations:', error));
             },
@@ -628,6 +628,12 @@
                     })
                         .then(response => response.json())
                         .then(data => {
+                            // Fix race condition: If category is now 'recommendations', ignore this result
+                            if (this.categoryId === 'recommendations') {
+                                this.isLoading = false;
+                                resolve();
+                                return;
+                            }
                             this.products = data.slice(0, 40);
                             this.isLoading = false;
                             resolve();
