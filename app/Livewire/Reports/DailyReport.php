@@ -5,13 +5,23 @@ namespace App\Livewire\Reports;
 use App\Models\Transaction;
 use Livewire\Component;
 use Carbon\Carbon;
+use Livewire\Attributes\Url;
 
 class DailyReport extends Component
 {
+    #[Url]
     public $selectedDate;
+
+    #[Url]
     public $storeFilter = 'all'; // all, bakso, nanang_store
+
     public $summary = [];
+
     public $productSalesData = [];
+
+    public $salesByPaymentMethod = [];
+
+    
 
     public function mount()
     {

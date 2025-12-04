@@ -6,6 +6,7 @@
     @shortcut:pay.window="initiatePayment()" @shortcut:hold.window="initiateHold()"
     @shortcut:reduction.window="toggleManualReduction()" @shortcut:quantity.window="focusLastItemQuantity()"
     @shortcut:customer.window="focusCustomerSearch()"
+    @share-bill.window="shareBill()"
     @keydown.escape.window="handleEscape()" class="flex flex-col h-full bg-white">
     <!-- Tombol Eceran/Grosir & Pelanggan -->
     <div class="p-2 bg-gray-100 flex-shrink-0 border-b">
@@ -1049,9 +1050,7 @@
             copyToClipboard(text) {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(text).then(() => {
-                        // Show toast or alert
-                        alert('Teks berhasil disalin! Silakan tempel di WhatsApp.');
-                        // Or open WhatsApp directly?
+                        window.Livewire.dispatch('show-alert', { type: 'success', message: 'Teks berhasil disalin! Silakan tempel di WhatsApp.' });
                         // window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                     }).catch(err => {
                         console.error('Failed to copy: ', err);
@@ -1071,10 +1070,10 @@
                 try {
                     var successful = document.execCommand('copy');
                     var msg = successful ? 'successful' : 'unsuccessful';
-                    alert('Teks berhasil disalin! Silakan tempel di WhatsApp.');
+                    window.Livewire.dispatch('show-alert', { type: 'success', message: 'Teks berhasil disalin! Silakan tempel di WhatsApp.' });
                 } catch (err) {
                     console.error('Fallback: Oops, unable to copy', err);
-                    alert('Gagal menyalin teks.');
+                    window.Livewire.dispatch('show-alert', { type: 'error', message: 'Gagal menyalin teks.' });
                 }
                 document.body.removeChild(textArea);
             }

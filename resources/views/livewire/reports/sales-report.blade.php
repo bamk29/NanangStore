@@ -195,7 +195,7 @@
     </div>
 
     <!-- ApexCharts -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- ApexCharts -->
     <script>
         function salesChart(initialData) {
             return {
@@ -230,15 +230,30 @@
                         }, {
                             name: 'Keuntungan',
                             data: data.profit
+                        }, {
+                            name: 'Transaksi',
+                            data: data.transactions
                         }],
                         chart: {
-                            type: 'area',
                             height: 350,
+                            type: 'bar',
                             toolbar: { show: false },
                             fontFamily: 'inherit'
                         },
+                        plotOptions: {
+                            bar: {
+                                horizontal: false,
+                                columnWidth: '55%',
+                                endingShape: 'rounded',
+                                borderRadius: 4
+                            },
+                        },
                         dataLabels: { enabled: false },
-                        stroke: { curve: 'smooth', width: 2 },
+                        stroke: {
+                            show: true,
+                            width: 2,
+                            colors: ['transparent']
+                        },
                         xaxis: {
                             categories: data.labels,
                             type: 'category',
@@ -246,36 +261,65 @@
                                 style: { colors: '#6B7280', fontSize: '12px' }
                             }
                         },
-                        yaxis: {
-                            labels: {
-                                style: { colors: '#6B7280', fontSize: '12px' },
-                                formatter: (value) => {
-                                    return new Intl.NumberFormat('id-ID', { 
-                                        style: 'currency', 
-                                        currency: 'IDR', 
-                                        maximumSignificantDigits: 3,
-                                        notation: 'compact'
-                                    }).format(value);
+                        yaxis: [
+                            {
+                                seriesName: 'Penjualan',
+                                labels: {
+                                    style: { colors: '#3B82F6', fontSize: '12px' },
+                                    formatter: (value) => {
+                                        return new Intl.NumberFormat('id-ID', { 
+                                            style: 'currency', 
+                                            currency: 'IDR', 
+                                            maximumSignificantDigits: 3,
+                                            notation: 'compact'
+                                        }).format(value);
+                                    }
+                                },
+                                title: {
+                                    text: "Nominal (Rp)",
+                                    style: { color: '#3B82F6' }
+                                }
+                            },
+                            {
+                                seriesName: 'Penjualan',
+                                show: false,
+                                labels: {
+                                    formatter: (value) => {
+                                        return new Intl.NumberFormat('id-ID', { 
+                                            style: 'currency', 
+                                            currency: 'IDR', 
+                                            maximumSignificantDigits: 3,
+                                            notation: 'compact'
+                                        }).format(value);
+                                    }
+                                }
+                            },
+                            {
+                                opposite: true,
+                                seriesName: 'Transaksi',
+                                labels: {
+                                    style: { colors: '#F59E0B', fontSize: '12px' }
+                                },
+                                title: {
+                                    text: "Jumlah Transaksi",
+                                    style: { color: '#F59E0B' }
                                 }
                             }
-                        },
+                        ],
                         tooltip: {
                             theme: 'light',
                             y: {
-                                formatter: (value) => {
+                                formatter: (value, { seriesIndex, w }) => {
+                                    if (seriesIndex === 2) { // Transaksi
+                                        return value + ' Transaksi';
+                                    }
                                     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
                                 }
                             }
                         },
-                        colors: ['#3B82F6', '#10B981'],
+                        colors: ['#3B82F6', '#10B981', '#F59E0B'],
                         fill: {
-                            type: 'gradient',
-                            gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.7,
-                                opacityTo: 0.3,
-                                stops: [0, 90, 100]
-                            }
+                            opacity: 1
                         },
                         grid: {
                             borderColor: '#F3F4F6',

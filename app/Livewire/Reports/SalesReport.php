@@ -153,20 +153,26 @@ class SalesReport extends Component
             };
 
             if (!isset($chartData[$dateKey])) {
-                $chartData[$dateKey] = ['sales' => 0, 'profit' => 0];
+                $chartData[$dateKey] = ['sales' => 0, 'profit' => 0, 'transactions' => 0];
             }
 
+            $hasMatchingItems = false;
             foreach ($transaction->details as $detail) {
                  // Apply filters again (Category & Store)
                  if ($this->categoryFilter && $detail->product->category_id != $this->categoryFilter) continue;
                  if ($this->storeFilter === 'bakso' && $detail->product->category_id != 1) continue;
                  if ($this->storeFilter === 'nanang_store' && $detail->product->category_id == 1) continue;
 
+                 $hasMatchingItems = true;
                  $cost = $detail->cost_price ?? $detail->product->cost_price ?? 0;
                  $profit = ($detail->price - $cost) * $detail->quantity;
                  
                  $chartData[$dateKey]['sales'] += $detail->subtotal;
                  $chartData[$dateKey]['profit'] += $profit;
+            }
+
+            if ($hasMatchingItems) {
+                $chartData[$dateKey]['transactions'] += 1;
             }
         }
         
@@ -186,6 +192,7 @@ class SalesReport extends Component
             'labels' => $labels,
             'sales' => array_column($chartData, 'sales'),
             'profit' => array_column($chartData, 'profit'),
+            'transactions' => array_column($chartData, 'transactions'),
         ];
     }
 

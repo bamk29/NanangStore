@@ -8,6 +8,7 @@ use App\Models\TransactionDetail;
 use App\Models\Customer;
 use App\Models\PhoneOrder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 class Cart extends Component
@@ -450,6 +451,10 @@ class Cart extends Component
 
                 $this->dispatch('transaction-saved', id: $transaction->id);
                 $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Pembayaran berhasil.']);
+                
+                // Clear product cache to ensure stock updates are reflected immediately
+                Cache::forget('products_popular_default');
+                
                 $this->clearCart(); // Bersihkan state setelah berhasil
             });
 

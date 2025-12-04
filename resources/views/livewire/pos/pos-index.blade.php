@@ -15,7 +15,7 @@
         <div class="flex-shrink-0 bg-white/80 backdrop-blur-md p-3 space-y-3 z-10 lg:shadow sticky top-0">
             <div class="flex items-center gap-2">
                 <div class="relative flex-1">
-                    <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="fetchProducts()" type="text"
+                    <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="if(!isScanning) fetchProducts()" type="text"
                         :readonly="isScannerMode"
                         :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white focus:ring-4 focus:ring-blue-100': !isScannerMode }"
                         class="border-gray-300 rounded-xl px-4 py-2.5 w-full text-base shadow-sm focus:border-blue-500 transition-all duration-200 pr-32" placeholder="Cari produk atau scan barcode...">
@@ -238,25 +238,27 @@
                 </button>
             </div>
 
-            <div x-show="customer" class="mb-4">
-                <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-2 py-1">
-                    <div class="flex items-center min-w-0">
-                        <span class="text-xs text-blue-600 mr-2 flex-shrink-0">Pelanggan:</span>
-                        <p class="font-semibold text-sm text-blue-800 truncate" x-text="customer.name"></p>
-                    </div>
-                    <div class="flex items-center">
-                        <button x-show="customer.debt > 0" @click="shareDebt()" class="p-1 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100 mr-1" title="Share Tagihan WA">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-8.683-2.031-9.672-.272-.989-.471-1.135-.644-1.135-.174 0-.371-.006-.57-.006-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
-                        </button>
-                        <button @click="clearCustomer()" class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
+            <template x-if="customer">
+                <div class="mb-4">
+                    <div class="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-2 py-1">
+                        <div class="flex items-center min-w-0">
+                            <span class="text-xs text-blue-600 mr-2 flex-shrink-0">Pelanggan:</span>
+                            <p class="font-semibold text-sm text-blue-800 truncate" x-text="customer.name"></p>
+                        </div>
+                        <div class="flex items-center">
+                            <button x-show="customer.debt > 0" @click="shareDebt()" class="p-1 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100 mr-1" title="Share Tagihan WA">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-8.683-2.031-9.672-.272-.989-.471-1.135-.644-1.135-.174 0-.371-.006-.57-.006-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+                            </button>
+                            <button @click="clearCustomer()" class="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </template>
 
             <div class="mb-8 text-center">
                 <label for="quantity" class="block text-sm font-bold text-gray-500 uppercase tracking-wide mb-4">Atur Jumlah</label>
@@ -293,6 +295,8 @@
             isCartVisible: window.innerWidth >= 1024,
             isLandscape: window.matchMedia("(orientation: landscape)").matches,
             isScannerMode: false,
+            isScanning: false,
+            scanningTimeout: null,
 
             // Product Search State
             products: [],
@@ -306,6 +310,7 @@
             recommendedProducts: [],
             isCustomerSelected: false,
             currentCustomerId: null,
+            customer: null,
 
             // Cart State
             cartItemIds: [],
@@ -359,6 +364,7 @@
                 });
 
                 this.$watch('searchQuery', () => {
+                    if (this.isScanning) return;
                     if (this.ignoreNextSearchQueryWatch) {
                         this.ignoreNextSearchQueryWatch = false;
                         return;
@@ -394,12 +400,14 @@
             setCustomer(customer) {
                 this.isCustomerSelected = true;
                 this.currentCustomerId = customer.id;
+                this.customer = customer;
                 this.fetchRecommendations(customer.id);
             },
 
             clearCustomer() {
                 this.isCustomerSelected = false;
                 this.currentCustomerId = null;
+                this.customer = null;
                 this.recommendedProducts = [];
                 if (this.categoryId === 'recommendations') {
                     this.categoryId = '';
@@ -516,6 +524,14 @@
 
                     // Check if input is fast (scanner usually < 30-50ms)
                     const isFast = timeDiff < 60;
+
+                    if (isFast) {
+                        this.isScanning = true;
+                        if (this.scanningTimeout) clearTimeout(this.scanningTimeout);
+                        this.scanningTimeout = setTimeout(() => {
+                            this.isScanning = false;
+                        }, 200);
+                    }
 
                     // If typing in an input but it's SLOW, ignore (let it be manual input)
                     // If it's FAST, we assume it's a scanner, even if focused on an input
@@ -763,6 +779,25 @@
                     const sound = this.sounds[type].cloneNode();
                     sound.play().catch(e => console.error("Error playing sound:", e));
                 }
+            },
+            shareDebt() {
+                if (!this.customer || !this.customer.phone) {
+                    window.Livewire.dispatch('show-alert', { type: 'error', message: 'Nomor HP pelanggan tidak tersedia.' });
+                    return;
+                }
+                // Remove leading 0 and replace with 62 if necessary, or just use as is if already formatted
+                let phone = this.customer.phone.replace(/\D/g, '');
+                if (phone.startsWith('0')) {
+                    phone = '62' + phone.substring(1);
+                }
+                
+                const message = `Halo ${this.customer.name}, Anda memiliki total hutang sebesar ${this.formatCurrency(this.customer.debt)} di NanangStore. Mohon segera dilunasi. Terima kasih.`;
+                const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+            },
+            shareBill() {
+                // Dispatch event to Livewire to handle bill sharing (since we need cart items)
+                window.Livewire.dispatch('share-bill');
             }
         }
     }

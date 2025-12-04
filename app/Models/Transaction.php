@@ -75,15 +75,19 @@ class Transaction extends Model
 
         // 2. Kembalikan Hutang & Poin Pelanggan
         if ($customer = $this->customer) {
-            // Previous Debt = Current Debt - Goods Value + Amount Paid
-            $goodsValue = (float) $this->details->sum('subtotal');
-            $customer->debt = max(0, (float) $customer->debt - $goodsValue + (float) $this->paid_amount);
+            $transactionValue = (float) $this->total_amount; // Actual amount charged (after reductions)
+            $goodsValue = (float) $this->details->sum('subtotal'); // Gross value for points
+
+            // Previous Debt = Current Debt - Transaction Value + Amount Paid
+            $customer->debt = max(0, (float) $customer->debt - $transactionValue + (float) $this->paid_amount);
             $customer->save();
 
             // Revert points if they were earned on this transaction.
-            $debtChangeOnSale = $goodsValue - (float) $this->paid_amount;
-            if ($debtChangeOnSale <= 0 && $this->payment_method !== 'debt') {
-                $pointsEarned = floor($goodsValue / 10000);
+            // Points are earned if debt did NOT increase (i.e. paid in full or more)
+            $debtIncrease = $transactionValue - (float) $this->paid_amount;
+            
+            if ($debtIncrease <= 0 && $this->payment_method !== 'debt') {
+                $pointsEarned = floor($goodsValue / 10000); // Points based on gross value
                 if ($pointsEarned > 0) {
                     $customer->decrement('points', $pointsEarned);
                 }

@@ -31,9 +31,9 @@
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500 rounded-full opacity-10 blur-2xl group-hover:scale-110 transition-transform duration-500"></div>
                     <div class="relative">
                         <div class="flex items-center justify-between mb-6">
-                            <div class="p-3 bg-blue-500 rounded-2xl text-white shadow-[0_10px_20px_rgba(59,130,246,0.5)] ring-4 ring-blue-100 border-2 border-white group-hover:bg-blue-900 transition-colors duration-300">
+                            <a href="{{ route('reports.daily', ['storeFilter' => 'nanang_store']) }}" wire:navigate class="p-3 bg-blue-500 rounded-2xl text-white shadow-[0_10px_20px_rgba(59,130,246,0.5)] ring-4 ring-blue-100 border-2 border-white group-hover:bg-blue-900 transition-colors duration-300 cursor-pointer relative z-20">
                                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                            </div>
+                            </a>
                             <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">+Hari Ini</span>
                         </div>
                         <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Penjualan Toko</h3>
@@ -46,9 +46,9 @@
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-orange-500 rounded-full opacity-10 blur-2xl group-hover:scale-110 transition-transform duration-500"></div>
                     <div class="relative">
                         <div class="flex items-center justify-between mb-6">
-                            <div class="p-3 bg-orange-500 rounded-2xl text-white shadow-[0_10px_20px_rgba(249,115,22,0.5)] ring-4 ring-orange-100 border-2 border-white group-hover:bg-orange-900 transition-colors duration-300">
+                            <a href="{{ route('reports.daily', ['storeFilter' => 'bakso']) }}" wire:navigate class="p-3 bg-orange-500 rounded-2xl text-white shadow-[0_10px_20px_rgba(249,115,22,0.5)] ring-4 ring-orange-100 border-2 border-white group-hover:bg-orange-900 transition-colors duration-300 cursor-pointer relative z-20">
                                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v11.494m-9-5.747h18"/></svg>
-                            </div>
+                            </a>
                             <span class="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">+Hari Ini</span>
                         </div>
                         <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Penjualan Bakso</h3>
