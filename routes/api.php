@@ -21,6 +21,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // Products
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/search', [ProductController::class, 'search']);
     Route::get('/products/by-code/{code}', [ProductController::class, 'getByCode']);
     Route::get('/products/recommendations/{customer}', [ProductController::class, 'getRecommendations']);
     Route::get('/purchase-order-products', [ProductController::class, 'getForPurchaseOrder']);
@@ -31,3 +32,4 @@ Route::middleware('auth:sanctum')->group(function () {
     // Customers
     Route::get('/customers', [CustomerController::class, 'index']);
 });
+

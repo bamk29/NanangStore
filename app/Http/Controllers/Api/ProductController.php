@@ -114,4 +114,22 @@ class ProductController extends Controller
 
         return response()->json($products->values());
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->query('q', '');
+        
+        if (strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $products = Product::where('name', 'like', "%{$search}%")
+            ->orWhere('code', 'like', "%{$search}%")
+            ->orWhere('barcode', 'like', "%{$search}%")
+            ->select('id', 'name', 'code', 'barcode', 'stock')
+            ->limit(10)
+            ->get();
+
+        return response()->json($products);
+    }
 }

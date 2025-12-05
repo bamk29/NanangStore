@@ -14,37 +14,33 @@ class StockAdjustmentList extends Component
 
     public $product_id;
     public $quantity;
-    public $type;
+    public $type = 'set_stock'; // Default to set_stock
     public $notes;
     public $product_name;
-    public $search = '';
-    public $products = [];
+    public $current_stock = 0;
 
     protected $rules = [
         'product_id' => 'required',
-        'quantity' => 'required|integer|min:1',
+        'quantity' => 'required|integer|min:0',
         'type' => 'required',
         'notes' => 'nullable|string',
     ];
 
-    public function updatedSearch($value)
+    public function mount()
     {
-        if (strlen($this->search) < 2) {
-            $this->products = [];
-            return;
-        }
-        $this->products = Product::where('name', 'like', '%'.$this->search.'%')
-            ->orWhere('code', 'like', '%'.$this->search.'%')
-            ->take(5)
-            ->get();
+        $this->type = 'set_stock'; // Set default type
     }
 
-    public function selectProduct($productId, $productName)
+    public function selectProduct($productId, $productName, $currentStock = 0)
     {
         $this->product_id = $productId;
         $this->product_name = $productName;
-        $this->search = $productName;
-        $this->products = [];
+        $this->current_stock = $currentStock;
+        
+        // For set_stock type, pre-fill with current stock
+        if ($this->type === 'set_stock') {
+            $this->quantity = $currentStock;
+        }
     }
 
     public function save()
@@ -53,36 +49,61 @@ class StockAdjustmentList extends Component
 
         $product = Product::findOrFail($this->product_id);
 
-        // For "barang keluar", quantity should be negative
-        $adjustedQuantity = -abs($this->quantity);
+        if ($this->type === 'set_stock') {
+            // Set Stock: Calculate difference and set to target value
+            $difference = $this->quantity - $product->stock;
+            
+            StockAdjustment::create([
+                'product_id' => $this->product_id,
+                'quantity' => $difference,
+                'type' => $this->type,
+                'notes' => $this->notes ?: "Set stok dari {$product->stock} menjadi {$this->quantity}",
+                'user_id' => Auth::id(),
+            ]);
 
-        if ($product->stock < abs($adjustedQuantity)) {
-            $this->addError('quantity', 'Stok tidak mencukupi.');
-            return;
+            $product->update(['stock' => $this->quantity]);
+            
+            session()->flash('success', "Stok berhasil disesuaikan menjadi {$this->quantity}.");
+        } else {
+            // Other types: Reduce stock (existing behavior)
+            $adjustedQuantity = -abs($this->quantity);
+
+            if ($product->stock < abs($adjustedQuantity)) {
+                $this->addError('quantity', 'Stok tidak mencukupi.');
+                return;
+            }
+
+            StockAdjustment::create([
+                'product_id' => $this->product_id,
+                'quantity' => $adjustedQuantity,
+                'type' => $this->type,
+                'notes' => $this->notes,
+                'user_id' => Auth::id(),
+            ]);
+
+            $product->decrement('stock', abs($adjustedQuantity));
+            
+            session()->flash('success', 'Penyesuaian stok berhasil disimpan.');
         }
 
-        StockAdjustment::create([
-            'product_id' => $this->product_id,
-            'quantity' => $adjustedQuantity,
-            'type' => $this->type,
-            'notes' => $this->notes,
-            'user_id' => Auth::id(),
-        ]);
-
-        $product->decrement('stock', abs($adjustedQuantity));
-
-        session()->flash('success', 'Penyesuaian stok berhasil disimpan.');
         $this->resetForm();
     }
 
     public function resetForm()
     {
-        $this->reset(['product_id', 'quantity', 'type', 'notes', 'product_name', 'search']);
+        $this->reset(['product_id', 'quantity', 'notes', 'product_name', 'current_stock']);
+        $this->type = 'set_stock'; // Reset to default
     }
 
     public function getTypesProperty()
     {
-        return ['damage' => 'Barang Rusak', 'internal_use' => 'Pemakaian Internal', 'repack_out' => 'Repack (Keluar)', 'other' => 'Lainnya'];
+        return [
+            'set_stock' => 'Set Stok (Penyesuaian)',
+            'damage' => 'Barang Rusak',
+            'internal_use' => 'Pemakaian Internal',
+            'repack_out' => 'Repack (Keluar)',
+            'other' => 'Lainnya'
+        ];
     }
 
     public function render()

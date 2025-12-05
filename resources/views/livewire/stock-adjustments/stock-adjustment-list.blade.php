@@ -29,13 +29,98 @@
                 </h2>
             </div>
             
-            <div class="p-6">
+            <div class="p-6" x-data="{
+                scanBuffer: '',
+                scanTimeout: null,
+                isScanning: false,
+                search: '',
+                products: [],
+                isSearching: false,
+                searchDebounce: null,
+                
+                init() { 
+                    $nextTick(() => { $refs.searchInput?.focus(); }); 
+                },
+                
+                async searchProducts() {
+                    if (this.search.length < 2) {
+                        this.products = [];
+                        return;
+                    }
+                    
+                    this.isSearching = true;
+                    try {
+                        const response = await fetch(`/api/products?q=${encodeURIComponent(this.search)}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            this.products = await response.json();
+                            
+                            // Auto-select if only one result
+                            if (this.products.length === 1) {
+                                this.selectProduct(this.products[0]);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Search error:', error);
+                    } finally {
+                        this.isSearching = false;
+                    }
+                },
+                
+                selectProduct(product) {
+                    @this.call('selectProduct', product.id, product.name, product.stock);
+                    this.search = product.name;
+                    this.products = [];
+                },
+                
+                handleInput() {
+                    clearTimeout(this.searchDebounce);
+                    this.searchDebounce = setTimeout(() => {
+                        this.searchProducts();
+                    }, 300);
+                },
+                
+                handleKeyPress(event) {
+                    if (event.target.tagName === 'TEXTAREA') return;
+                    
+                    clearTimeout(this.scanTimeout);
+                    this.isScanning = true;
+                    
+                    if (event.key === 'Enter' && this.scanBuffer.length > 3) {
+                        event.preventDefault();
+                        this.search = this.scanBuffer;
+                        this.searchProducts();
+                        this.scanBuffer = '';
+                        this.isScanning = false;
+                    } else if (event.key.length === 1 && !event.ctrlKey && !event.altKey) {
+                        this.scanBuffer += event.key;
+                        this.scanTimeout = setTimeout(() => { 
+                            this.scanBuffer = ''; 
+                            this.isScanning = false; 
+                        }, 100);
+                    } else if (event.key === 'Escape') {
+                        this.search = '';
+                        this.products = [];
+                        this.scanBuffer = '';
+                        this.isScanning = false;
+                    }
+                }
+            }" @keydown.window="handleKeyPress">
                 @if (session()->has('success'))
                     <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-3">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         {{ session('success') }}
                     </div>
                 @endif
+                <div x-show="isScanning" x-transition class="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center gap-2">
+                    <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                    Scanner aktif... Scan barcode produk
+                </div>
 
                 <form wire:submit.prevent="save" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,34 +128,53 @@
                         <div class="space-y-6">
                             <!-- Product Search -->
                             <div class="relative">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Cari Produk</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Cari Produk (Scan/Ketik)</label>
                                 <div class="relative">
                                     <input type="text" 
-                                        wire:model.debounce.300ms="search" 
-                                        class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all pl-10"
-                                        placeholder="Ketik nama atau kode produk...">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                        x-ref="searchInput"
+                                        x-model="search"
+                                        @input="handleInput"
+                                        class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all pr-20 text-lg"
+                                        placeholder="Scan barcode atau ketik nama produk..."
+                                        autocomplete="off">
+                                    
+                                    <!-- Right side icons -->
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-2">
+                                        <!-- Clear button -->
+                                        <button 
+                                            type="button"
+                                            x-show="search.length > 0"
+                                            @click="search = ''; products = []; $refs.searchInput.focus()"
+                                            class="text-slate-400 hover:text-slate-600 transition-colors">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                        
+                                        <!-- Loading spinner -->
+                                        <div x-show="isSearching">
+                                            <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Search Results Dropdown -->
-                                @if(!empty($search) && count($products) > 0)
-                                    <div class="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto">
-                                        @foreach($products as $product)
-                                            <button type="button" 
-                                                wire:click="selectProduct({{ $product->id }}, '{{ $product->name }}')"
-                                                class="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 group">
-                                                <div class="font-medium text-slate-800 group-hover:text-blue-600">{{ $product->name }}</div>
-                                                <div class="text-xs text-slate-500">Stok Saat Ini: <span class="font-bold">{{ $product->stock }}</span></div>
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                @elseif(!empty($search) && count($products) === 0)
-                                    <div class="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-200 p-4 text-center text-slate-500 text-sm">
-                                        Produk tidak ditemukan
-                                    </div>
-                                @endif
+                                <div x-show="products.length > 0" x-cloak class="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto">
+                                    <template x-for="product in products" :key="product.id">
+                                        <button type="button" 
+                                            @click="selectProduct(product)"
+                                            class="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 group">
+                                            <div class="font-medium text-slate-800 group-hover:text-blue-600" x-text="product.name"></div>
+                                            <div class="text-xs text-slate-500">
+                                                Stok Saat Ini: <span class="font-bold" x-text="product.stock"></span>
+                                                <span x-show="product.barcode" class="ml-2 text-slate-400">| Barcode: <span x-text="product.barcode"></span></span>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
                                 @error('product_id') <span class="text-sm text-red-500 mt-1">{{ $message }}</span> @enderror
                             </div>
 
@@ -81,15 +185,59 @@
                                     {{ $product_name ?? 'Belum ada produk dipilih' }}
                                 </div>
                             </div>
+                            
+                            @if($type === 'set_stock' && $product_id)
+                                <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="text-xs text-blue-600 font-medium">Stok Saat Ini</div>
+                                            <div class="text-2xl font-bold text-blue-700">{{ $current_stock }}</div>
+                                        </div>
+                                        @if($quantity && $quantity != $current_stock)
+                                            <div>
+                                                <div class="text-xs text-blue-600 font-medium">Perubahan</div>
+                                                <div class="text-2xl font-bold {{ ($quantity - $current_stock) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                    {{ ($quantity - $current_stock) >= 0 ? '+' : '' }}{{ $quantity - $current_stock }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
 
                             <!-- Quantity -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah (Keluar)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    @if($type === 'set_stock')
+                                        Stok Baru (Setelah Penyesuaian)
+                                    @else
+                                        Jumlah (Keluar)
+                                    @endif
+                                </label>
                                 <input type="number" 
-                                    wire:model="quantity" 
-                                    class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
-                                    placeholder="0">
+                                    wire:model.live="quantity" 
+                                    class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all text-lg font-semibold"
+                                    placeholder="0"
+                                    min="0">
                                 @error('quantity') <span class="text-sm text-red-500 mt-1">{{ $message }}</span> @enderror
+                                
+                                @if($product_id)
+                                    <div class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                        <div class="text-xs font-medium text-slate-600 mb-2">Data Stok:</div>
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <span class="text-slate-500">Stok Saat Ini:</span>
+                                                <span class="font-bold text-slate-800 ml-1">{{ $current_stock }}</span>
+                                            </div>
+                                            @if($type === 'set_stock' && $quantity)
+                                                <div>
+                                                    <span class="text-slate-500">Stok Baru:</span>
+                                                    <span class="font-bold text-blue-600 ml-1">{{ $quantity }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
@@ -98,8 +246,7 @@
                             <!-- Type -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Tipe Penyesuaian</label>
-                                <select wire:model="type" class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all">
-                                    <option value="">Pilih Tipe</option>
+                                <select wire:model.live="type" class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all">
                                     @foreach($types as $key => $value)
                                         <option value="{{ $key }}">{{ $value }}</option>
                                     @endforeach
@@ -113,6 +260,15 @@
                                 <textarea wire:model="notes" rows="4" 
                                     class="w-full rounded-xl border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all"
                                     placeholder="Tulis alasan penyesuaian stok..."></textarea>
+                            </div>
+                            
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                                <strong>Tips:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Gunakan scanner barcode untuk input cepat</li>
+                                    <li>Tekan <kbd class="px-1 py-0.5 bg-white border rounded">Esc</kbd> untuk clear pencarian</li>
+                                    <li>Set Stok: Atur stok ke nilai tertentu</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -146,6 +302,7 @@
                             <th class="px-6 py-4">Tanggal</th>
                             <th class="px-6 py-4">Produk</th>
                             <th class="px-6 py-4 text-center">Jumlah</th>
+                            <th class="px-6 py-4 text-center">Stok Final</th>
                             <th class="px-6 py-4">Tipe</th>
                             <th class="px-6 py-4">User</th>
                             <th class="px-6 py-4">Catatan</th>
@@ -157,8 +314,13 @@
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $adjustment->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="px-6 py-4 font-medium text-slate-800">{{ $adjustment->product->name }}</td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                        {{ $adjustment->quantity }}
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $adjustment->quantity >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ $adjustment->quantity >= 0 ? '+' : '' }}{{ $adjustment->quantity }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                                        {{ $adjustment->product->stock }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
@@ -171,7 +333,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                                     <div class="flex flex-col items-center gap-2">
                                         <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                                         <p>Belum ada riwayat penyesuaian stok</p>
