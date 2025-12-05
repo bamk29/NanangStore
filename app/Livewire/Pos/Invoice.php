@@ -23,29 +23,31 @@ class Invoice extends Component
 
     public function printInvoice(string $headerType)
 {
-    // Logika dipindahkan dari PrintController.php
+    // Logika perhitungan tetap sama
     $itemSubtotal = $this->transaction->details->sum('subtotal');
+    $totalReductionAmountRaw = $this->transaction->total_reduction_amount; // Digunakan untuk Potongan Akhir
     
-    // Perhitungan Total Hemat
-    $totalReductionAmountRaw = $this->transaction->total_reduction_amount;
-    
-    // Perhitungan Hutang Lama yang Dibayar
-    // CATATAN: Pastikan total_amount - itemSubtotal + total_reduction_amount merepresentasikan HUTANG LAMA DIBAYAR.
+    // Perhitungan Hutang Lama yang Dibayar (Menggunakan total_reduction_amount)
     $oldDebtPaid = $this->transaction->total_amount - $itemSubtotal + $totalReductionAmountRaw;
 
     $items = [];
     foreach ($this->transaction->details as $detail) {
-        // Logika untuk menentukan apakah ada diskon
-        $hasDiscount = $detail->price_retail != $detail->price_applied; // ASUMSI: Model memiliki field price_retail & price_applied
-
+        
+        // Harga yang benar-benar digunakan saat transaksi
+        $priceUsed = $detail->price_applied; 
+        $priceLabel = '';
+        
+        // ASUMSI: Jika harga jual lebih rendah dari harga retail, kita labeli sebagai Grosir
+        if ($priceUsed < $detail->price_retail) {
+             $priceLabel = ' (Grosir)';
+        }
+        
         $items[] = [
-            'productName' => $detail->product->name,
+            'productName' => $detail->product->name . $priceLabel, // Nama + Label Harga (jika ada)
             'quantity' => rtrim(rtrim(number_format($detail->quantity, 2, ',', '.'), '0'), ','),
             
-            // FIX 1: MENAMBAHKAN KUNCI YANG DIBUTUHKAN NODE.JS UNTUK DISKON/ARROW
-            'has_discount' => $hasDiscount,
-            'price_retail_formatted' => number_format($detail->price_retail, 0, ',', '.'),
-            'price_applied_formatted' => number_format($detail->price_applied, 0, ',', '.'),
+            // Kunci yang dibutuhkan oleh Node.js untuk mencetak harga per item
+            'price_applied_formatted' => number_format($priceUsed, 0, ',', '.'),
             
             'subtotal' => number_format($detail->subtotal, 0, ',', '.')
         ];
@@ -61,19 +63,16 @@ class Invoice extends Component
         'items' => $items,
         'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.'),
         
-        // FIX 2: MENGGANTI includedOldDebt menjadi oldDebtPaid
-        'oldDebtPaid' => $oldDebtPaid,
+        // Kunci yang dibutuhkan Node.js untuk Bayar Hutang Lama
+        'oldDebtPaid' => $oldDebtPaid, 
         'oldDebtPaidFormatted' => number_format($oldDebtPaid, 0, ',', '.'),
 
         'customerDebt' => optional($this->transaction->customer)->debt ?? 0,
         'customerDebtFormatted' => number_format(optional($this->transaction->customer)->debt ?? 0, 0, ',', '.'),
         
-        // FIX 3: MENGGANTI totalReductionAmount menjadi totalDiscountRaw (Untuk blok "ANDA HEMAT")
+        // Kunci yang dibutuhkan Node.js untuk Potongan Akhir
         'totalDiscountRaw' => $totalReductionAmountRaw, 
         'totalDiscountFormatted' => number_format($totalReductionAmountRaw, 0, ',', '.'),
-
-        // NOTE: Kunci 'reductionNotes' tidak digunakan di server.js
-        // 'reductionNotes' => $this->transaction->reduction_notes, 
 
         'totalAmount' => number_format($this->transaction->total_amount, 0, ',', '.'),
         'paidAmount' => number_format($this->transaction->paid_amount, 0, ',', '.'),
@@ -86,7 +85,6 @@ class Invoice extends Component
         Http::timeout(5)->post($printServerUrl, $printData);
         $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Perintah cetak berhasil dikirim!']);
     } catch (\Exception $e) {
-        // Tampilkan error yang lebih spesifik jika terjadi kegagalan koneksi
         $errorMessage = 'Gagal terhubung ke server printer.';
         if (Str::contains($e->getMessage(), ['timeout', 'refused'])) {
              $errorMessage .= ' Cek PM2 (pm2 status) di STB Anda.';
