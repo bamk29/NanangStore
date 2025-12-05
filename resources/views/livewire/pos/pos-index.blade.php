@@ -296,7 +296,10 @@
             isLandscape: window.matchMedia("(orientation: landscape)").matches,
             isScannerMode: false,
             isScanning: false,
+            isScanning: false,
             scanningTimeout: null,
+            scanQueue: [], // Queue for barcode scans
+            isProcessingScan: false, // Flag to track processing status
 
             // Product Search State
             products: [],
@@ -591,13 +594,21 @@
             },
 
             handleScannedCode(code) {
-                // No debounce for different items, or even same items if user wants speed.
-                // We just fire and forget.
-                
-                // Visual feedback that scan was received?
-                // Maybe flash the screen or something? For now, just process.
+                // Push code to queue and trigger processing
+                this.scanQueue.push(code);
+                this.processScanQueue();
+            },
 
-                this.fetchProductsByBarcode(code);
+            async processScanQueue() {
+                if (this.isProcessingScan) return;
+                this.isProcessingScan = true;
+
+                while (this.scanQueue.length > 0) {
+                    const code = this.scanQueue.shift(); // Get first item
+                    await this.fetchProductsByBarcode(code); // Wait for it to finish
+                }
+
+                this.isProcessingScan = false;
             },
 
             async fetchProductsByBarcode(barcode) {
