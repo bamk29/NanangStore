@@ -26,29 +26,24 @@ class Invoice extends Component
     // Logika perhitungan tetap sama
     $itemSubtotal = $this->transaction->details->sum('subtotal');
     $totalReductionAmountRaw = $this->transaction->total_reduction_amount; // Digunakan untuk Potongan Akhir
-    
-    // Perhitungan Hutang Lama yang Dibayar (Menggunakan total_reduction_amount)
+
+    // Perhitungan Hutang Lama yang Dibayar
     $oldDebtPaid = $this->transaction->total_amount - $itemSubtotal + $totalReductionAmountRaw;
 
     $items = [];
     foreach ($this->transaction->details as $detail) {
-        
-        // Harga yang benar-benar digunakan saat transaksi
-        $priceUsed = $detail->price_applied; 
-        $priceLabel = '';
-        
-        // ASUMSI: Jika harga jual lebih rendah dari harga retail, kita labeli sebagai Grosir
-        if ($priceUsed < $detail->price_retail) {
-             $priceLabel = ' (Grosir)';
-        }
-        
+
+        // FIX TERAKHIR: Menggunakan sumber data harga yang sama dengan UI Anda
+        $priceUsed = $detail->price; 
+        $priceLabel = ''; // Label Grosir/Retail dihilangkan untuk menyederhanakan
+
         $items[] = [
-            'productName' => $detail->product->name . $priceLabel, // Nama + Label Harga (jika ada)
+            'productName' => $detail->product->name . $priceLabel,
             'quantity' => rtrim(rtrim(number_format($detail->quantity, 2, ',', '.'), '0'), ','),
-            
-            // Kunci yang dibutuhkan oleh Node.js untuk mencetak harga per item
+
+            // Kunci yang dibutuhkan oleh Node.js, kini diisi oleh $detail->price
             'price_applied_formatted' => number_format($priceUsed, 0, ',', '.'),
-            
+
             'subtotal' => number_format($detail->subtotal, 0, ',', '.')
         ];
     }
@@ -62,15 +57,15 @@ class Invoice extends Component
         'customerName' => optional($this->transaction->customer)->name,
         'items' => $items,
         'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.'),
-        
-        // Kunci yang dibutuhkan Node.js untuk Bayar Hutang Lama
+
+        // Kunci untuk Hutang Lama
         'oldDebtPaid' => $oldDebtPaid, 
         'oldDebtPaidFormatted' => number_format($oldDebtPaid, 0, ',', '.'),
 
         'customerDebt' => optional($this->transaction->customer)->debt ?? 0,
         'customerDebtFormatted' => number_format(optional($this->transaction->customer)->debt ?? 0, 0, ',', '.'),
-        
-        // Kunci yang dibutuhkan Node.js untuk Potongan Akhir
+
+        // Kunci untuk Potongan Akhir
         'totalDiscountRaw' => $totalReductionAmountRaw, 
         'totalDiscountFormatted' => number_format($totalReductionAmountRaw, 0, ',', '.'),
 
@@ -92,6 +87,7 @@ class Invoice extends Component
         $this->dispatch('show-alert', ['type' => 'error', 'message' => $errorMessage]);
     }
 }
+
 
     public function render()
     {
