@@ -342,13 +342,17 @@
                 this.$store.ui.isBottomNavVisible = false;
 
                 const handleResize = () => {
+                    const wasDesktop = this.isDesktop;
                     this.isDesktop = window.innerWidth >= 1024;
                     this.isLandscape = window.matchMedia("(orientation: landscape)").matches;
-                    if (this.isDesktop) {
+                    
+                    // Only change visibility if mode changes
+                    if (this.isDesktop && !wasDesktop) {
                         this.isCartVisible = true;
-                    } else {
+                    } else if (!this.isDesktop && wasDesktop) {
                         this.isCartVisible = false;
                     }
+                    // If staying in mobile mode (e.g. keyboard open/close), do not change isCartVisible
                 };
                 window.addEventListener('resize', handleResize);
 
