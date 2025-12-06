@@ -154,7 +154,7 @@
 
     <!-- Modals -->
     <!-- Modal Pilih Pelanggan -->
-    <div x-show="showCustomerWarningModal" x-cloak
+    <div x-show="showCustomerWarningModal" x-cloak wire:ignore
         class="fixed inset-0 z-50 flex items-start sm:items-center justify-center sm:p-4 sm:pt-20">
         <!-- Backdrop (Desktop Only) -->
         <div @click="showCustomerWarningModal = false" class="hidden sm:block absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -236,7 +236,7 @@
     </div>
 
     <!-- Modal Pembayaran -->
-    <div x-show="showPaymentModal" x-cloak
+    <div x-show="showPaymentModal" x-cloak wire:ignore
         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center overflow-hidden"
         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
@@ -459,7 +459,7 @@
     </div>
 
     <!-- Modal Konfirmasi Tunda Transaksi -->
-    <div x-show="showHoldConfirmation" x-cloak
+    <div x-show="showHoldConfirmation" x-cloak wire:ignore
         class="fixed inset-0 z-[60] flex items-center justify-center p-4"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0"
