@@ -300,6 +300,19 @@
                             </div>
                         </div>
                     </a>
+
+                    <!-- Penyesuaian Harga -->
+                    <a href="{{ route('price-adjustments.index') }}" wire:navigate class="group bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.08)] border border-slate-200 hover:shadow-[0_15px_40px_rgb(0,0,0,0.12)] hover:border-yellow-300 hover:bg-slate-50 transition-all duration-300 relative overflow-hidden">
+                        <div class="flex flex-col items-center text-center space-y-4 relative z-10">
+                            <div class="w-16 h-16 rounded-2xl bg-yellow-500 text-white flex items-center justify-center shadow-[0_10px_25px_rgba(234,179,8,0.6)] group-hover:scale-110 group-hover:bg-yellow-900 transition-all duration-300 ring-4 ring-yellow-100 border-2 border-white">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 group-hover:text-yellow-600 transition-colors">Atur Harga</h3>
+                                <p class="text-xs text-slate-500 mt-1 font-medium">Update harga</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </section>
 

@@ -143,6 +143,7 @@ Route::middleware('auth')->group(function () {
     // Inventory Management
     Route::prefix('inventory')->group(function () {
         Route::get('/adjustments', StockAdjustmentList::class)->name('stock-adjustments.index');
+        Route::get('/price-adjustments', \App\Livewire\PriceAdjustments\PriceAdjustmentList::class)->name('price-adjustments.index');
     });
 
     // Report Routes

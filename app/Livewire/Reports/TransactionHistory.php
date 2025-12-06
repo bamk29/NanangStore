@@ -156,16 +156,24 @@ class TransactionHistory extends Component
 
     public function correctTransaction($transactionId)
     {
-        // Find the transaction to ensure it exists
-        $transaction = Transaction::findOrFail($transactionId);
+        // Find the transaction with necessary relations to ensure accurate cancellation
+        $transaction = Transaction::with(['details', 'customer'])->findOrFail($transactionId);
 
-        // NOTE: We do NOT cancel the transaction here anymore.
-        // We pass the ID to POS, and POS will handle the atomic replacement (cancel old + create new).
-        // This prevents data loss if the user abandons the correction process.
+        try {
+            DB::transaction(function () use ($transaction) {
+                // Cancel the transaction immediately to revert stock and debt
+                if ($transaction->status === 'completed') {
+                    $transaction->cancel();
+                }
+            });
 
-        session()->flash('info', 'Transaksi siap untuk dikoreksi. Silakan perbaiki dan selesaikan pembayaran.');
+            session()->flash('info', 'Transaksi lama telah dibatalkan. Silakan buat transaksi baru berdasarkan data lama.');
 
-        // Redirect with a query parameter, exactly like the 'resume' feature
-        return $this->redirect(route('pos.index', ['correct' => $transactionId]), navigate: true);
+            // Redirect with a query parameter to load the cancelled transaction data
+            return $this->redirect(route('pos.index', ['correct' => $transactionId]), navigate: true);
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal memproses koreksi: ' . $e->getMessage());
+        }
     }
 }

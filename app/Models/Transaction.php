@@ -75,16 +75,21 @@ class Transaction extends Model
 
         // 2. Kembalikan Hutang & Poin Pelanggan
         if ($customer = $this->customer) {
-            $transactionValue = (float) $this->total_amount; // Actual amount charged (after reductions)
-            $goodsValue = (float) $this->details->sum('subtotal'); // Gross value for points
+            // Calculate real transaction value (goods - reduction), ignoring any "old debt" included in total_amount
+            $goodsValue = (float) $this->details->sum('subtotal');
+            $transactionValue = $goodsValue - (float) $this->total_reduction_amount;
+            
+            // Net Payment = Paid Amount - Change Amount (Uang yang benar-benar masuk ke toko)
+            $netPayment = (float) $this->paid_amount - (float) $this->change_amount;
 
-            // Previous Debt = Current Debt - Transaction Value + Amount Paid
-            $customer->debt = max(0, (float) $customer->debt - $transactionValue + (float) $this->paid_amount);
+            // Previous Debt = Current Debt - Transaction Value + Net Payment
+            // Contoh: Hutang 30k - Belanja 100k + Bayar 120k = 50k (Kembali ke awal)
+            $customer->debt = max(0, (float) $customer->debt - $transactionValue + $netPayment);
             $customer->save();
 
             // Revert points if they were earned on this transaction.
             // Points are earned if debt did NOT increase (i.e. paid in full or more)
-            $debtIncrease = $transactionValue - (float) $this->paid_amount;
+            $debtIncrease = $transactionValue - $netPayment;
             
             if ($debtIncrease <= 0 && $this->payment_method !== 'debt') {
                 $pointsEarned = floor($goodsValue / 10000); // Points based on gross value

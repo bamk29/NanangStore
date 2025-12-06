@@ -248,7 +248,9 @@ class Cart extends Component
                 // Jika sedang koreksi, tambahkan stok dari transaksi lama ke stok tersedia
                 if ($this->correctionTransactionId) {
                     $oldTransaction = Transaction::with('details')->find($this->correctionTransactionId);
-                    if ($oldTransaction) {
+                    // Only add back stock if the transaction is NOT cancelled (i.e., stock is currently held by it)
+                    // If it IS cancelled, the stock has already been returned to the product, so we don't need to add it back here.
+                    if ($oldTransaction && $oldTransaction->status !== 'cancelled') {
                         $oldDetail = $oldTransaction->details->where('product_id', $item['id'])->first();
                         if ($oldDetail) {
                             $availableStock += $oldDetail->quantity;

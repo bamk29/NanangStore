@@ -105,7 +105,7 @@ class ProductController extends Controller
             ->with('product')
             ->groupBy('product_id')
             ->orderByDesc('frequency')
-            ->limit(10)
+            ->limit(20)
             ->get()
             ->map(function ($item) {
                 return $item->product;
