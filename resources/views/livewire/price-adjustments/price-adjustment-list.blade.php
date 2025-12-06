@@ -37,15 +37,11 @@
                 products: [],
                 isSearching: false,
                 searchDebounce: null,
-                boxPrice: {{ $current_box_cost ?? 0 }},
-                largeUnit: {{ $current_units_in_box ?? 0 }},
+                boxPrice: @entangle('new_box_cost'),
+                largeUnit: @entangle('new_units_in_box'),
                 
                 init() { 
                     $nextTick(() => { $refs.searchInput?.focus(); }); 
-                    
-                    // Watch for Livewire updates
-                    $watch('$wire.current_box_cost', value => this.boxPrice = value || 0);
-                    $watch('$wire.current_units_in_box', value => this.largeUnit = value || 0);
                 },
                 
                 async searchProducts() {
@@ -123,6 +119,12 @@
                     if (retail === 0) return '0%';
                     const margin = ((retail - cost) / retail) * 100;
                     return margin.toFixed(1) + '%';
+                },
+                
+                calculateProfit(cost, price) {
+                    cost = parseFloat(cost) || 0;
+                    price = parseFloat(price) || 0;
+                    return this.formatCurrency(price - cost);
                 },
                 
                 calculateRecommendedCost() {
@@ -250,7 +252,6 @@
                                             <label class="block text-[10px] text-slate-600 mb-1">Harga Box</label>
                                             <input type="number" 
                                                 x-model.number="boxPrice" 
-                                                wire:model.live="new_box_cost"
                                                 class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-xs py-1"
                                                 placeholder="0" min="0" step="1000">
                                         </div>
@@ -258,14 +259,18 @@
                                             <label class="block text-[10px] text-slate-600 mb-1">Satuan Besar</label>
                                             <input type="number" 
                                                 x-model.number="largeUnit" 
-                                                wire:model.live="new_units_in_box"
                                                 class="w-full rounded border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-xs py-1"
                                                 placeholder="0" min="0">
                                         </div>
                                     </div>
-                                    <div class="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-center">
-                                        <div class="text-[10px] text-emerald-600 font-medium">Rekomendasi Harga Modal</div>
-                                        <div class="text-sm font-bold text-emerald-700" x-text="formatCurrency(calculateRecommendedCost())"></div>
+                                    <div class="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded flex items-center justify-between">
+                                        <div>
+                                            <div class="text-[10px] text-emerald-600 font-medium">Rekomendasi Harga Modal</div>
+                                            <div class="text-sm font-bold text-emerald-700" x-text="formatCurrency(calculateRecommendedCost())"></div>
+                                        </div>
+                                        <button type="button" @click="$wire.set('new_cost', calculateRecommendedCost())" class="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+                                            Atur
+                                        </button>
                                     </div>
                                 </div>
                                 
@@ -277,14 +282,22 @@
                                     @error('new_cost') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-slate-600 mb-1">Harga Retail <span x-text="'(' + calculateMargin({{ $new_cost }}, {{ $new_retail }}) + ')'" class="text-blue-600 font-semibold"></span></label>
+                                    <label class="block text-xs text-slate-600 mb-1">
+                                        Harga Retail 
+                                        <span x-text="'(' + calculateMargin({{ $new_cost }}, {{ $new_retail }}) + ')'" class="text-blue-600 font-semibold ml-1"></span>
+                                        <span x-text="'(Untung ' + calculateProfit({{ $new_cost }}, {{ $new_retail }}) + ')'" class="text-emerald-600 font-semibold ml-1"></span>
+                                    </label>
                                     <input type="number" wire:model.live="new_retail" 
                                         class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                                         placeholder="0" min="0" step="100">
                                     @error('new_retail') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-slate-600 mb-1">Harga Grosir <span x-text="'(' + calculateMargin({{ $new_cost }}, {{ $new_wholesale }}) + ')'" class="text-blue-600 font-semibold"></span></label>
+                                    <label class="block text-xs text-slate-600 mb-1">
+                                        Harga Grosir 
+                                        <span x-text="'(' + calculateMargin({{ $new_cost }}, {{ $new_wholesale }}) + ')'" class="text-blue-600 font-semibold ml-1"></span>
+                                        <span x-text="'(Untung ' + calculateProfit({{ $new_cost }}, {{ $new_wholesale }}) + ')'" class="text-emerald-600 font-semibold ml-1"></span>
+                                    </label>
                                     <input type="number" wire:model.live="new_wholesale" 
                                         class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 text-sm"
                                         placeholder="0" min="0" step="100">
