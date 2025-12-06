@@ -155,12 +155,14 @@
     <!-- Modals -->
     <!-- Modal Pilih Pelanggan -->
     <div x-show="showCustomerWarningModal" x-cloak
-        @click="showCustomerWarningModal = false"
-        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-20">
-        <div @click.stop
-            @keydown.F2.prevent="skipToPay()"
+        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-20">
+        <!-- Backdrop -->
+        <div @click="showCustomerWarningModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        
+        <!-- Content -->
+        <div @keydown.F2.prevent="skipToPay()"
             @keydown.F4.prevent="skipToHold()"
-            class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
+            class="relative bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
 
             <div class="p-6 relative">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih atau Buat Pelanggan</h3>
@@ -235,14 +237,16 @@
 
     <!-- Modal Pembayaran -->
     <div x-show="showPaymentModal" x-cloak
-        @click="showPaymentModal = false"
-        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-hidden"
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center overflow-hidden"
         x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                <div @click.stop
-                    @keydown.enter.prevent="completePayment()"
-                    class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24">
+        <!-- Backdrop -->
+        <div @click="showPaymentModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        
+        <!-- Content -->
+        <div @keydown.enter.prevent="completePayment()"
+            class="relative bg-white w-full max-w-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out rounded-t-2xl sm:rounded-2xl sm:mb-0 mb-24">
             <div class="p-4 md:p-5 border-b bg-gray-50 flex justify-between items-center">
                 <h3 class="text-lg md:text-xl font-bold text-gray-800">💰 Detail Pembayaran</h3>
                 <button @click="showPaymentModal = false"
@@ -456,17 +460,19 @@
 
     <!-- Modal Konfirmasi Tunda Transaksi -->
     <div x-show="showHoldConfirmation" x-cloak
-        @click="showHoldConfirmation = false"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0">
-        <div @click.stop
-             @keydown.enter.window.prevent="if(showHoldConfirmation) { holdSale(); showHoldConfirmation = false; }"
-             class="bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all">
+        <!-- Backdrop -->
+        <div @click="showHoldConfirmation = false" class="absolute inset-0 bg-black/30"></div>
+
+        <!-- Content -->
+        <div @keydown.enter.window.prevent="if(showHoldConfirmation) { holdSale(); showHoldConfirmation = false; }"
+             class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all">
 
             <div class="p-6 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
