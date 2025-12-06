@@ -155,16 +155,16 @@
     <!-- Modals -->
     <!-- Modal Pilih Pelanggan -->
     <div x-show="showCustomerWarningModal" x-cloak
-        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-20">
-        <!-- Backdrop -->
-        <div @click="showCustomerWarningModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center sm:p-4 sm:pt-20">
+        <!-- Backdrop (Desktop Only) -->
+        <div @click="showCustomerWarningModal = false" class="hidden sm:block absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
         
         <!-- Content -->
         <div @keydown.F2.prevent="skipToPay()"
             @keydown.F4.prevent="skipToHold()"
-            class="relative bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
+            class="relative bg-white w-full h-full sm:h-auto sm:rounded-2xl shadow-xl sm:max-w-md transform transition-all flex flex-col sm:block">
 
-            <div class="p-6 relative">
+            <div class="p-6 relative flex-grow overflow-y-auto sm:flex-grow-0 sm:overflow-visible">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih atau Buat Pelanggan</h3>
                 <button @click="showCustomerWarningModal = false" class="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -212,7 +212,7 @@
                     </div>
                 </div>
             </div>
-            <div class="px-6 pb-4 space-y-3 border-t bg-gray-50 rounded-b-2xl pt-4">
+            <div class="px-6 pb-4 space-y-3 border-t bg-gray-50 rounded-b-2xl pt-4 mt-auto sm:mt-0">
                 <!-- New Buttons -->
                 <div class="grid grid-cols-2 gap-2">
                     <button @click="skipToHold()"
