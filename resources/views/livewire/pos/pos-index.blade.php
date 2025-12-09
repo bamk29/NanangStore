@@ -9,8 +9,20 @@
      @customer:selected.window="setCustomer($event.detail.customer)"
      @customer:cleared.window="clearCustomer()"
      @cart:modal-updated.window="isCartModalOpen = $event.detail.isOpen"
-     @keydown.window="handleGlobalKeydown($event)"
+    @keydown.window="handleGlobalKeydown($event)"
      class="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
+
+    <!-- GHOST INPUT / TRAP INPUT FOR SCANNER MODE (F3) -->
+    <!-- Positioned off-screen/hidden but active for focus -->
+    <input type="text" 
+           x-ref="scannerTrap"
+           x-model="ghostQuery"
+           class="fixed top-0 left-0 w-px h-px opacity-0 overflow-hidden -z-10"
+           inputmode="none"
+           autocomplete="off"
+           @keydown="handleTrapKeydown($event)"
+           @blur="if(isScannerMode) $nextTick(() => $el.focus())"
+    >
 
     <!-- Left Column (Products & Search) -->
     <div class="flex-1 flex flex-col">
@@ -440,6 +452,7 @@
             products: [],
             categories: [],
             searchQuery: '',
+            ghostQuery: '', // Buffer for F3 Ghost Input
             categoryId: '',
             isLoading: true,
             selectedIndex: -1, // -1 means no selection
@@ -544,6 +557,34 @@
                         this.fetchProducts();
                     }
                 });
+
+                // F3 Scanner Mode Watcher - Switch Focus to Ghost Input
+                this.$watch('isScannerMode', (value) => {
+                    if (value) {
+                        this.$nextTick(() => {
+                            if (this.$refs.scannerTrap) this.$refs.scannerTrap.focus();
+                        });
+                    } else {
+                        // Return to search
+                        this.$nextTick(() => {
+                            if (this.$refs.searchInput) this.$refs.searchInput.focus();
+                        });
+                    }
+                });
+            },
+
+            handleTrapKeydown(e) {
+                // Stop global listener from also trying to process this
+                e.stopPropagation();
+                
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    if (this.ghostQuery && this.ghostQuery.length > 2) {
+                        this.handleScannedCode(this.ghostQuery);
+                        this.ghostQuery = '';
+                    }
+                }
             },
 
             playSound(type) {
