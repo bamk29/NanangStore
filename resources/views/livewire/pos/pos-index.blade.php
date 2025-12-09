@@ -800,6 +800,16 @@
                 // Push code to queue and trigger processing
                 this.scanQueue.push(code);
                 this.processScanQueue();
+
+                // SELF-HEALING FOCUS:
+                // Regardless of where the scan came from (global buffer or input),
+                // always return focus to the search input.
+                // This ensures the NEXT scan is captured by the browser's fast native buffer.
+                this.$nextTick(() => {
+                    if (this.$refs.searchInput) {
+                        this.$refs.searchInput.focus();
+                    }
+                });
             },
 
             processScanQueue() {
