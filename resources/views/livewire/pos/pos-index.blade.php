@@ -731,15 +731,15 @@
                 const timeDiff = now - this.lastKeyTime;
                 this.lastKeyTime = now;
 
-                // Check if input is fast (scanner usually < 30-50ms)
-                const isFast = timeDiff < 60;
+                // Check if input is fast (scanner usually < 30-50ms, but Bluetooth can be slower)
+                const isFast = timeDiff < 150; // Increased from 60
 
                 if (isFast) {
                     this.isScanning = true;
                     if (this.scanningTimeout) clearTimeout(this.scanningTimeout);
                     this.scanningTimeout = setTimeout(() => {
                         this.isScanning = false;
-                    }, 200);
+                    }, 500); // Increased from 200
                 }
 
                 // If typing in an input but it's SLOW, ignore (let it be manual input)
@@ -750,7 +750,7 @@
                 }
 
                 // Reset buffer if gap is too long
-                if (timeDiff > 100) {
+                if (timeDiff > 500) { // Increased from 100
                     this.barcodeBuffer = '';
                 }
 
@@ -775,7 +775,7 @@
                         if (targetIsSearch) {
                             this.searchQuery = ''; 
                             this.ignoreNextSearchQueryWatch = true; 
-                            this.$refs.searchInput.blur(); 
+                            // this.$refs.searchInput.blur(); // Removed to keep focus for continuous scanning/searching
                         }
                     }
                     return;
@@ -802,16 +802,13 @@
                 this.processScanQueue();
             },
 
-            async processScanQueue() {
-                if (this.isProcessingScan) return;
-                this.isProcessingScan = true;
-
+            processScanQueue() {
+                // Process all items currently in the queue immediately
                 while (this.scanQueue.length > 0) {
-                    const code = this.scanQueue.shift(); // Get first item
-                    await this.fetchProductsByBarcode(code); // Wait for it to finish
+                    const code = this.scanQueue.shift();
+                    // Fire and forget - allow parallel requests for speed
+                    this.fetchProductsByBarcode(code);
                 }
-
-                this.isProcessingScan = false;
             },
 
             async fetchProductsByBarcode(barcode) {

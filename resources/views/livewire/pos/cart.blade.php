@@ -572,11 +572,13 @@
                 });
                 // Listen for the global focus event
                 window.addEventListener('focus-customer-search', () => {
-                    this.$nextTick(() => {
-                        if (this.$refs.customerSearchInput) {
-                            this.$refs.customerSearchInput.focus();
-                        }
-                    });
+                    setTimeout(() => {
+                        this.$nextTick(() => {
+                            if (this.$refs.customerSearchInput) {
+                                this.$refs.customerSearchInput.focus();
+                            }
+                        });
+                    }, 100); // Wait for x-show transition
                 });
             },
             fetchCustomers() {
@@ -652,6 +654,8 @@
 
             init() {
                 this.$watch('final_total', () => this.calculateChange());
+                this.$watch('paid_amount', () => this.calculateChange()); // Fix: Watch paid_amount
+                this.$watch('payment_method', () => this.calculateChange()); // Fix: Watch payment_method
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
                 this.$watch('manualReductionAmount', () => this.calculateFinalTotal());
                 this.$watch('showManualReductionFields', (value) => {
