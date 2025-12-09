@@ -83,7 +83,8 @@ class ProductList extends Component
             ->when($this->search, function ($query) {
                 return $query->where(function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('code', 'like', '%' . $this->search . '%');
+                      ->orWhere('code', 'like', '%' . $this->search . '%')
+                      ->orWhere('description', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->categoryFilter, function ($query) {
@@ -99,4 +100,58 @@ class ProductList extends Component
         ]);
     }
 
+    public function updateProductDescription($productId, $description)
+    {
+        $product = Product::find($productId);
+        if ($product) {
+            $product->update(['description' => $description]);
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Deskripsi diperbarui.']);
+        }
+    }
+    public function generateAbbreviation($productId)
+    {
+        $product = Product::find($productId);
+        if ($product) {
+            $abbreviation = $this->createAbbreviation($product->name);
+            $product->update(['description' => $abbreviation]);
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Singkatan dibuat: ' . $abbreviation]);
+        }
+    }
+
+    public function bulkGenerateAbbreviations()
+    {
+        // Only process products with empty descriptions
+        $products = Product::whereNull('description')->orWhere('description', '')->get();
+        $count = 0;
+
+        foreach ($products as $product) {
+            $abbreviation = $this->createAbbreviation($product->name);
+            $product->update(['description' => $abbreviation]);
+            $count++;
+        }
+
+        $this->dispatch('show-alert', ['type' => 'success', 'message' => $count . ' produk berhasil dibuatkan singkatan otomatis.']);
+    }
+
+    private function createAbbreviation($name)
+    {
+        $words = explode(' ', $name);
+        $abbrWords = [];
+        
+        foreach ($words as $word) {
+            if (empty($word)) continue;
+            
+            // Keep first letter (vowel or consonant)
+            $first = mb_substr($word, 0, 1);
+            // Remove vowels from the rest
+            $rest = mb_substr($word, 1);
+            $rest = preg_replace('/[aeiouAEIOU]/', '', $rest);
+            
+            $abbrWords[] = $first . $rest;
+        }
+        
+        $result = implode(' ', $abbrWords);
+        // Fallback if somehow empty
+        return empty($result) ? $name : $result;
+    }
 }

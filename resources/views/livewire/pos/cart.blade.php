@@ -1,4 +1,4 @@
-<div x-data="cartManager()" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
+<div x-data="{ ...cartManager(), showCustomerCreateModal: @entangle('showCustomerCreateModal') }" x-init="loadCart(@js($initialItems), @js($initialCustomer), @js($initialType), @js($initialPendingId))"
     x-on:add-to-cart.window="addToCart($event.detail.product, $event.detail.quantity)"
     x-on:customer:selected.window="setCustomer($event.detail.customer)" x-on:customer:cleared.window="customer = null; include_old_debt = false; calculateFinalTotal();"
     x-on:transaction-saved.window="window.location.href = '/pos/invoice/' + $event.detail.id"
@@ -7,6 +7,9 @@
     @shortcut:reduction.window="toggleManualReduction()" @shortcut:quantity.window="focusLastItemQuantity()"
     @shortcut:customer.window="focusCustomerSearch()"
     @share-bill.window="shareBill()"
+    @shortcut:quantity-inc.window="incrementLastItem()"
+    @shortcut:quantity-dec.window="decrementLastItem()"
+    @keydown.f1.window="handleF1($event)"
     @keydown.escape.window="handleEscape()" class="flex flex-col h-full bg-white">
     <!-- Tombol Eceran/Grosir & Pelanggan -->
     <div class="p-2 bg-gray-100 flex-shrink-0 border-b">
@@ -46,6 +49,7 @@
                     <div class="flex items-center text-gray-500">
                         <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                         <span class="font-medium text-sm">Pilih Pelanggan</span>
+                        <kbd class="ml-auto px-1.5 py-0.5 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-300 rounded shadow-sm">F9</kbd>
                     </div>
                 </button>
             </template>
@@ -77,8 +81,9 @@
                         <div class="relative w-auto mx-1">
 
                             <input type="text" inputmode="decimal" x-model="item.quantity"
+                                :id="'qty-input-' + item.id"
                                 @input="validateAndRecalculate(item.id)"
-                                class="w-16 h-9 text-center bg-transparent text-base font-semibold text-gray-800 focus:outline-none focus:ring-0">
+                                class="quantity-input w-16 h-9 text-center bg-transparent text-base font-semibold text-gray-800 focus:outline-none focus:ring-0">
                         </div>
                         <button @click="increment(item.id)"
                             class="w-9 h-9 flex items-center justify-center mx-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 active:scale-95 transition-all duration-150 focus:outline-none">
@@ -186,7 +191,7 @@
                 </div>
                 <div x-data="customerSearch()" class="relative" :class="{'mb-52': isOpen}">
                     <input type="text" x-ref="customerSearchInput" x-model.debounce.300ms="searchQuery"
-                        @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape.stop="isOpen = false"
+                        @focus="handleFocus()" @keydown="handleKeydown($event)" @keydown.escape="if(isOpen) { isOpen = false; $event.stopPropagation(); }"
                         placeholder="Cari pelanggan (nama/telp)..."
                         class="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <div x-show="isOpen" x-transition
@@ -265,10 +270,18 @@
 
                 <!-- Manual Reduction Section -->
                 <div>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" x-model="showManualReductionFields" class="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Tambah Potongan Manual</span>
-                    </label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" x-model="showManualReductionFields" class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 rounded">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Tambah Potongan Manual</span>
+                            <kbd class="ml-2 px-1.5 py-0.5 text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-300 rounded shadow-sm">F7</kbd>
+                        </label>
+                        <template x-if="showManualReductionFields">
+                            <button @click="manualReductionAmount = 0; manualReductionNotes = ''; showManualReductionFields = false;" class="text-xs text-red-500 hover:text-red-700">
+                                Hapus
+                            </button>
+                        </template>
+                    </div>
                 </div>
 
                 <template x-if="showManualReductionFields">
@@ -350,7 +363,9 @@
                                 <button class="px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 font-semibold"
                                     @click="addPaidAmount(val)" x-text="val.toLocaleString('id-ID')"></button>
                             </template>
-                            <button class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold" @click="setPaidAmount(final_total)">Uang Pas</button>
+                            <button class="px-2 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 col-span-2 font-semibold flex items-center justify-center gap-1" @click="setPaidAmount(final_total)">
+                                Uang Pas <kbd class="px-1.5 py-0.5 text-[10px] font-bold bg-white/50 border border-blue-200 rounded text-blue-800">F1</kbd>
+                            </button>
                             <button class="px-2 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 col-span-2 font-semibold" @click="resetAmount()">Reset</button>
                         </div>
                         <template x-if="paid_amount < final_total && customer">
@@ -636,7 +651,6 @@
             discountForNanang: false, // Checkbox for Nanang Store discount
 
             init() {
-                this.$watch('paid_amount', () => this.calculateChange());
                 this.$watch('final_total', () => this.calculateChange());
                 this.$watch('include_old_debt', () => this.calculateFinalTotal());
                 this.$watch('manualReductionAmount', () => this.calculateFinalTotal());
@@ -689,7 +703,26 @@
                     if (value) {
                         window.dispatchEvent(new CustomEvent('focus-customer-search'));
                     }
+                    this.dispatchModalState();
                 });
+
+                // Watch other modals for global state dispatch
+                this.$watch('showPaymentModal', () => this.dispatchModalState());
+                this.$watch('showHoldConfirmation', () => this.dispatchModalState());
+                this.$watch('showUnderpaymentConfirmation', () => this.dispatchModalState());
+                this.$watch('showCustomerCreateModal', () => this.dispatchModalState());
+            },
+
+            dispatchModalState() {
+                const isAnyModalOpen = this.showCustomerWarningModal || 
+                                     this.showPaymentModal || 
+                                     this.showHoldConfirmation || 
+                                     this.showUnderpaymentConfirmation ||
+                                     this.showCustomerCreateModal; 
+                
+                window.dispatchEvent(new CustomEvent('cart:modal-updated', { 
+                    detail: { isOpen: isAnyModalOpen } 
+                }));
             },
 
             handleEscape() {
@@ -1003,24 +1036,44 @@
                     });
                 }
             },
+            handleF1(e) {
+                if (this.showPaymentModal) {
+                    e.preventDefault();
+                    this.setPaidAmount(this.final_total);
+                }
+            },
+            incrementLastItem() {
+                if (this.items.length > 0) {
+                    const lastItem = this.items[this.items.length - 1];
+                    this.increment(lastItem.id);
+                }
+            },
+            decrementLastItem() {
+                if (this.items.length > 0) {
+                    const lastItem = this.items[this.items.length - 1];
+                    this.decrement(lastItem.id);
+                }
+            },
             focusLastItemQuantity() {
                 if (this.items.length > 0) {
-                    // Focus the last item's quantity input
-                    // We need to find the input element. Since we iterate, we can use ID or index.
-                    // The inputs have x-model="item.quantity". We can add x-ref to them or use querySelector.
-                    // Let's use a dynamic ref or class.
-                    // Actually, let's just use document.querySelectorAll for simplicity in this context
-                    const inputs = document.querySelectorAll('input[x-model="item.quantity"]');
-                    if (inputs.length > 0) {
-                        const lastInput = inputs[inputs.length - 1];
-                        lastInput.focus();
-                        lastInput.select();
-                    }
+                    this.$nextTick(() => {
+                        const lastItem = this.items[this.items.length - 1];
+                        const inputId = 'qty-input-' + lastItem.id;
+                        const inputElement = document.getElementById(inputId);
+                        
+                        if (inputElement) {
+                            inputElement.focus();
+                            inputElement.select();
+                        }
+                    });
                 }
             },
             focusCustomerSearch() {
+                this.showCustomerWarningModal = true;
                 // Dispatch event to focus customer search (handled in customerSearch component)
-                window.dispatchEvent(new CustomEvent('focus-customer-search'));
+                this.$nextTick(() => {
+                    window.dispatchEvent(new CustomEvent('focus-customer-search'));
+                });
             },
 
             // WhatsApp Share

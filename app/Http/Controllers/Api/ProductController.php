@@ -87,7 +87,8 @@ class ProductController extends Controller
         $products = Product::query()
             ->when($search, function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             })
             ->select('id', 'name', 'code', 'stock', 'units_in_box', 'unit_cost', 'box_cost')
             ->limit(10)
@@ -126,6 +127,7 @@ class ProductController extends Controller
         $products = Product::where('name', 'like', "%{$search}%")
             ->orWhere('code', 'like', "%{$search}%")
             ->orWhere('barcode', 'like', "%{$search}%")
+            ->orWhere('description', 'like', "%{$search}%")
             ->select('id', 'name', 'code', 'barcode', 'stock')
             ->limit(10)
             ->get();

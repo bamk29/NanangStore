@@ -85,9 +85,19 @@ Untuk mempercepat operasional kasir, gunakan tombol pintas berikut:
 
 | Tombol | Fungsi | Keterangan |
 | :--- | :--- | :--- |
+| **F1** | **Uang Pas** | Mengisi nominal bayar dengan "Uang Pas" secara otomatis (hanya di menu pembayaran). |
+| **F2** | **Bayar** | Membuka menu pembayaran / checkout. |
 | **F3** | **Mode Scanner** | Mengaktifkan/menonaktifkan input khusus scanner barcode. Saat aktif, input manual dimatikan untuk mencegah error. |
+| **F4** | **Pending Transaksi** | Menyimpan transaksi sementara (Hold) untuk dilanjutkan nanti. |
+| **F7** | **Diskon** | Membuka menu input diskon atau potongan harga. |
+| **F8** | **Ubah Kuantitas** | Mengubah jumlah barang item yang dipilih di keranjang. |
+| **F9** | **Pilih Pelanggan** | Membuka modal pencarian dan pemilihan pelanggan. |
+| **+ / -** | **Cepat Ubah Qty** | Menambah (+) atau mengurangi (-) kuantitas barang yang *terakhir dimasukkan* ke keranjang. |
+| **Delete** | **Hapus Pencarian** | Menghapus isi pencarian & langsung fokus kembali ke kolom cari (saat tidak mengetik). |
+| **/** | **Fokus Cari** | Fokus ke kolom pencarian produk (alternatif Spasi 2x). |
+| **Spasi (2x)** | **Reset Pencarian** | Tekan Spasi 2 kali dengan cepat untuk menghapus pencarian dan fokus kembali ke input cari. |
 | **Enter** | **Cari / Tambah** | Tekan Enter di kolom pencarian untuk mencari produk atau menambah produk terpilih ke keranjang. |
-| **Panah Kanan/Kiri** | **Navigasi Produk** | Pindah pilihan produk di hasil pencarian (saat menggunakan keyboard). |
+| **Panah** | **Navigasi Produk** | Gunakan panah Atas/Bawah/Kiri/Kanan untuk memilih produk di hasil pencarian. |
 | **Esc** | **Batal / Tutup** | Menutup modal atau membatalkan pencarian. |
 
 ---

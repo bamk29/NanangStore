@@ -6,7 +6,10 @@
      @pending-transaction-loaded.window="if (!isDesktop) isCartVisible = true"
      @customer:selected.window="setCustomer($event.detail.customer)"
      @customer:cleared.window="clearCustomer()"
-     @keydown.escape.window="handleEscape()"
+     @customer:selected.window="setCustomer($event.detail.customer)"
+     @customer:cleared.window="clearCustomer()"
+     @cart:modal-updated.window="isCartModalOpen = $event.detail.isOpen"
+     @keydown.window="handleGlobalKeydown($event)"
      class="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
 
     <!-- Left Column (Products & Search) -->
@@ -17,11 +20,17 @@
                 <div class="relative flex-1">
                     <input x-ref="searchInput" x-model.debounce.300ms="searchQuery" @keydown.enter="if(!isScanning) fetchProducts()" type="text"
                         :readonly="isScannerMode"
-                        :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white focus:ring-4 focus:ring-blue-100': !isScannerMode }"
+                        :class="{ 'bg-gray-100 focus:bg-gray-100 cursor-not-allowed': isScannerMode, 'bg-white focus:ring-4 focus:ring-blue-100': !isScannerMode && !isSearchFocusedByShortcut, 'ring-4 ring-yellow-300 focus:ring-yellow-300 transition-none': isSearchFocusedByShortcut }"
                         class="border-gray-300 rounded-xl px-4 py-2.5 w-full text-base shadow-sm focus:border-blue-500 transition-all duration-200 pr-32" placeholder="Cari produk atau scan barcode...">
+                        
+                    <!-- Search Shortcut Badge (/) -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" 
+                         x-show="searchQuery.length === 0 && !isScannerMode">
+                        <kbd class="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-gray-400 bg-gray-50 border border-gray-200 rounded-md shadow-sm">/</kbd>
+                    </div>
 
                     <div class="absolute inset-y-0 right-0 flex items-center pr-2">
-                        <button @click="searchQuery = ''"
+                        <button @click="resetSearchAndFocus()"
                                 x-show="searchQuery.length > 0 && !isScannerMode"
                                 x-transition:enter="transition-opacity ease-out duration-200"
                                 x-transition:enter-start="opacity-0"
@@ -29,23 +38,31 @@
                                 x-transition:leave="transition-opacity ease-in duration-150"
                                 x-transition:leave-start="opacity-100"
                                 x-transition:leave-end="opacity-0"
-                                class="px-2 py-1 border border-zinc-800 bg-zinc-100 rounded-md text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-20 mr-2"
+                                class="px-2 py-1 border border-zinc-800 bg-zinc-100 rounded-md text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-20 mr-2 flex items-center gap-1"
                                 style="display: none;">
-                            Clear
+                            Clear <kbd class="text-[10px] px-1 bg-white border border-gray-300 rounded text-gray-500">Del</kbd>
                         </button>
                         <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-bold mr-2 animate-pulse">SCANNER AKTIF</span>
                         <button @click="isScannerMode = !isScannerMode"
                                 class="p-2 rounded-lg transition-all duration-200"
                                 :class="isScannerMode ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-300 ring-offset-1' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                                 title="Toggle Mode Scanner (F3)">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
-                                <path stroke-linecap="round" d="M9 10v4M12 10v4M15 10v4"/>
-                                <path stroke-linecap="round" d="M7 18h10"/>
-                              </svg>
+                            <div class="relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
+                                    <path stroke-linecap="round" d="M9 10v4M12 10v4M15 10v4"/>
+                                    <path stroke-linecap="round" d="M7 18h10"/>
+                                </svg>
+                                <span class="absolute -bottom-3 -right-3 px-1 py-0.5 text-[9px] font-bold bg-gray-800 text-white rounded border border-gray-600 shadow-sm" x-show="!isScannerMode">F3</span>
+                            </div>
                         </button>
                     </div>
                 </div>
+                <button @click="showShortcutModal = true" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" title="Shortcut Keyboard (?)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                </button>
                 <button @click="$store.ui.isBottomNavVisible = !$store.ui.isBottomNavVisible" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
@@ -125,7 +142,7 @@
                         class="relative bg-white rounded-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all duration-200 cursor-pointer border border-gray-300 overflow-hidden group"
                         :class="{
                             'ring-4 ring-blue-600 ring-offset-2': cartItemIds.includes(product.id),
-                            'ring-4 ring-orange-500 ring-offset-2 shadow-orange-500/50': index === selectedIndex
+                            'ring-4 ring-orange-500 ring-offset-2 shadow-orange-500/50': index === selectedIndex && !isModalOpen && !showShortcutModal && !isCartModalOpen
                         }">
 
                         <button @click.stop="quickAddToCart(product)" x-show="!cartItemIds.includes(product.id)" class="absolute top-1 right-1 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm text-emerald-600 rounded-full hover:bg-emerald-500 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-lg border border-emerald-100 group-hover:scale-110">
@@ -229,7 +246,19 @@
     </div>
 
     <!-- Quantity Modal -->
-    <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
+    <div x-show="isModalOpen" x-cloak 
+        @keydown.window="
+            if (isModalOpen) {
+                if (['+', '=', 'ArrowUp'].includes($event.key)) {
+                    $event.preventDefault();
+                    increment();
+                } else if (['-', '_', 'ArrowDown'].includes($event.key)) {
+                    $event.preventDefault();
+                    decrement();
+                }
+            }
+        "
+        class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
         <div @click.away="closeModal()" class="bg-white rounded-2xl shadow-xl p-5 md:p-6 w-full max-w-sm mx-auto">
             <div class="flex justify-between items-start mb-4">
                 <h3 class="text-lg font-bold text-gray-900 pr-4" x-text="productForModal ? productForModal.name : ''"></h3>
@@ -283,6 +312,112 @@
             </div>
         </div>
     </div>
+
+    <!-- Shortcut Help Modal -->
+    <div x-show="showShortcutModal" x-cloak 
+         class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div @click.away="showShortcutModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            <div class="p-5 border-b bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Shortcut Keyboard
+                </h3>
+                <button @click="showShortcutModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-[70vh] overflow-y-auto">
+                <!-- Group 1: Transaksi -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Transaksi</h4>
+                    <ul class="space-y-3">
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Bayar / Checkout</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F2</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Uang Pas (di menu bayar)</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F1</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Pending / Hold</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F4</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Diskon Manual</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F7</kbd>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 2: Produk & Keranjang -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Produk & Keranjang</h4>
+                    <ul class="space-y-3">
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Cari Produk</span>
+                            <div class="flex gap-1">
+                                <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">/</kbd>
+                                <span class="text-xs text-gray-400 self-center">atau</span>
+                                <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">Spasi 2x</kbd>
+                            </div>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Navigasi Produk</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">Arrow Down ↓</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Hapus Pencarian</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">Del</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Mode Scanner</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F3</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Ubah Jumlah (Manual)</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F8</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Cepat Tambah/Kurang Qty</span>
+                            <div class="flex gap-1">
+                                <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">+</kbd>
+                                <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">-</kbd>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 3: Lainnya -->
+                <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lainnya</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Pilih Pelanggan</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">F9</kbd>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Tutup Modal / Batal</span>
+                            <kbd class="px-2 py-1 text-xs font-bold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm">Esc</kbd>
+                        </li>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t text-center">
+                <button @click="showShortcutModal = false" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30">
+                    Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -321,16 +456,31 @@
 
             // Quantity Modal State
             isModalOpen: false,
+            isCartModalOpen: false,
             productForModal: null,
             quantity: 1,
             isQuantityValid: true,
+            isQuantityValid: true,
+            isQuantityValid: true,
             errorMessage: '',
+
+            // Shortcut Modal
+            showShortcutModal: false,
+            isSearchFocusedByShortcut: false,
+
+            // Keyboard State
+            barcodeBuffer: '',
+            lastKeyTime: 0,
+            scanTimeout: null,
+            lastSpaceTime: 0,
+            lastScannedBarcode: '',
+            lastScanTime: 0,
 
             // Init
             init() {
                 this.fetchCategories();
                 this.fetchProducts();
-                this.initKeyboardListeners();
+                // this.initKeyboardListeners(); // Removed manual listener
                 
                 // Preload Sounds
                 this.sounds = {
@@ -408,6 +558,7 @@
                 this.isCustomerSelected = true;
                 this.currentCustomerId = customer.id;
                 this.customer = customer;
+                this.selectedIndex = -1; // Reset product selection to avoid confusion
                 this.fetchRecommendations(customer.id);
             },
 
@@ -460,141 +611,189 @@
                 }
             },
 
-            // Keyboard Listeners
-            initKeyboardListeners() {
-                if (window.posKeyboardListenerAttached) {
+            prepareForModal() {
+                this.selectedIndex = -1;
+                this.$refs.searchInput.blur();
+            },
+
+            getGridColumns() {
+                const width = window.innerWidth;
+                if (width >= 1280) return 6; // xl
+                if (width >= 640) return 4;  // sm, md, lg
+                return 3;                    // mobile
+            },
+
+            // Keyboard Listeners (Refactored to Alpine Method)
+            handleGlobalKeydown(e) {
+                // Shortcut global
+                if (e.key === 'F2') { e.preventDefault(); this.prepareForModal(); window.dispatchEvent(new CustomEvent('shortcut:pay')); return; }
+                if (e.key === 'F3') { e.preventDefault(); this.isScannerMode = !this.isScannerMode; return; }
+                if (e.key === 'F4') { e.preventDefault(); this.prepareForModal(); window.dispatchEvent(new CustomEvent('shortcut:hold')); return; }
+                if (e.key === 'F7') { e.preventDefault(); this.prepareForModal(); window.dispatchEvent(new CustomEvent('shortcut:reduction')); return; }
+                if (e.key === 'F8') { e.preventDefault(); this.prepareForModal(); window.dispatchEvent(new CustomEvent('shortcut:quantity')); return; }
+                if (e.key === 'F9') { e.preventDefault(); this.prepareForModal(); window.dispatchEvent(new CustomEvent('shortcut:customer')); return; }
+                if (e.key === 'Escape') { this.handleEscape(); return; }
+                
+                const targetIsInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+                const targetIsSearch = e.target === this.$refs.searchInput;
+
+                // New Shortcuts
+                if ((e.key === '+' || e.key === '=') && !targetIsInput) { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:quantity-inc')); return; }
+                if ((e.key === '-' || e.key === '_') && !targetIsInput) { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:quantity-dec')); return; }
+                if (e.key === '/' && !targetIsInput) { e.preventDefault(); this.resetSearchAndFocus(); return; }
+                
+                // Delete: Clear search if not input OR if input is search box
+                if (e.key === 'Delete' && (!targetIsInput || targetIsSearch)) { 
+                    e.preventDefault(); 
+                    this.resetSearchAndFocus(); 
+                    return; 
+                }
+                
+                if (e.key === '?' && !targetIsInput) { e.preventDefault(); this.showShortcutModal = !this.showShortcutModal; return; }
+
+                // Ignore if modal/cart open (except Escape)
+                if (this.isModalOpen || this.showShortcutModal || this.isCartModalOpen || (!this.isDesktop && this.isCartVisible)) return;
+
+                // Double space shortcut
+                if (e.key === ' ' && !targetIsInput) {
+                    e.preventDefault();
+                    const now = Date.now();
+                    if (now - this.lastSpaceTime < 300) { 
+                        this.resetSearchAndFocus(); 
+                        this.lastSpaceTime = 0; 
+                    } else { 
+                        this.lastSpaceTime = now; 
+                    }
                     return;
                 }
 
-                let buffer = '';
-                let lastTime = 0;
-                let scanTimeout;
-                
-                // Scanner State
-                this.lastScannedBarcode = '';
-                this.lastScanTime = 0;
-
-                window.addEventListener('keydown', (e) => {
-                    // Shortcut global
-                    if (e.key === 'F2') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:pay')); return; }
-                    if (e.key === 'F3') { e.preventDefault(); this.isScannerMode = !this.isScannerMode; return; }
-                    if (e.key === 'F4') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:hold')); return; }
-                    if (e.key === 'F7') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:reduction')); return; }
-                    if (e.key === 'F8') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:quantity')); return; }
-                    if (e.key === 'F9') { e.preventDefault(); window.dispatchEvent(new CustomEvent('shortcut:customer')); return; }
-                    if (e.key === 'Escape') { this.handleEscape(); return; }
-
-                    // Ignore if modal/cart open (except Escape)
-                    if (this.isModalOpen || (!this.isDesktop && this.isCartVisible)) return;
-
-                    const targetIsInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
-                    const targetIsSearch = e.target === this.$refs.searchInput;
-
-                    // Double space shortcut
-                    if (e.key === ' ' && !targetIsInput) {
-                        e.preventDefault();
-                        const now = Date.now();
-                        if (now - this.lastSpaceTime < 300) { 
-                            this.resetSearchAndFocus(); 
-                            this.lastSpaceTime = 0; 
-                        } else { 
-                            this.lastSpaceTime = now; 
-                        }
-                        return;
-                    }
-
-                    // Navigation
-                    if (this.selectedIndex > -1) {
-                        if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Enter'].includes(e.key)) {
-                            // Only handle navigation if buffer is empty (not scanning)
-                            if (buffer.length === 0) {
-                                e.preventDefault();
-                                if(e.key === 'ArrowDown' || e.key === 'ArrowRight') { this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1); this.scrollIntoView(); }
-                                if(e.key === 'ArrowUp' || e.key === 'ArrowLeft') { this.selectedIndex = Math.max(0, this.selectedIndex - 1); this.scrollIntoView(); }
-                                if(e.key === 'Enter' && this.products[this.selectedIndex]) { this.openModal(this.products[this.selectedIndex]); }
-                                return;
-                            }
-                        }
-                    }
-
-                    // Enter navigation from search
-                    if (targetIsSearch && e.key === 'ArrowDown' && buffer.length === 0) {
-                        e.preventDefault();
-                        if (this.products.length > 0) { this.selectedIndex = 0; this.scrollIntoView(); }
-                        return;
-                    }
-
-                    // --- OPTIMIZED BARCODE SCANNER LOGIC ---
-                    const now = Date.now();
-                    const timeDiff = now - lastTime;
-                    lastTime = now;
-
-                    // Check if input is fast (scanner usually < 30-50ms)
-                    const isFast = timeDiff < 60;
-
-                    if (isFast) {
-                        this.isScanning = true;
-                        if (this.scanningTimeout) clearTimeout(this.scanningTimeout);
-                        this.scanningTimeout = setTimeout(() => {
-                            this.isScanning = false;
-                        }, 200);
-                    }
-
-                    // If typing in an input but it's SLOW, ignore (let it be manual input)
-                    // If it's FAST, we assume it's a scanner, even if focused on an input
-                    if (!isFast && targetIsInput && !targetIsSearch) {
-                        buffer = ''; // Reset buffer on manual typing
-                        return; 
-                    }
-
-                    // Reset buffer if gap is too long
-                    if (timeDiff > 100) {
-                        buffer = '';
-                    }
-
-                    if (e.key === 'Enter') {
-                        // Determine what to process: buffer or search input
-                        let codeToProcess = '';
-                        
-                        if (buffer.length > 2) {
-                            codeToProcess = buffer;
-                            e.preventDefault(); 
-                            e.stopPropagation();
-                        } else if (targetIsSearch && this.searchQuery.length > 2) {
-                            // Fallback for manual entry in search box
-                            codeToProcess = this.searchQuery;
-                        }
-
-                        if (codeToProcess) {
-                            this.handleScannedCode(codeToProcess);
-                            buffer = ''; 
-                            if (scanTimeout) clearTimeout(scanTimeout);
-                            
-                            if (targetIsSearch) {
-                                this.searchQuery = ''; 
-                                this.ignoreNextSearchQueryWatch = true; 
-                                this.$refs.searchInput.blur(); 
-                            }
-                        }
-                        return;
-                    }
-
-                    // Ignore special keys
-                    if (e.key.length > 1) return;
-
-                    buffer += e.key;
+                // Global ArrowDown: Focus search and ensure selection
+                if (e.key === 'ArrowDown' && !targetIsSearch && this.barcodeBuffer.length === 0) {
+                    e.preventDefault();
+                    this.$refs.searchInput.focus();
                     
-                    // Auto-submit on pause (if no Enter is sent)
-                    if (scanTimeout) clearTimeout(scanTimeout);
-                    scanTimeout = setTimeout(() => {
-                        if (buffer.length > 5) {
-                            this.handleScannedCode(buffer);
-                            buffer = '';
-                        }
-                    }, 200);
-                });
+                    // Visual feedback
+                    this.isSearchFocusedByShortcut = true;
+                    setTimeout(() => this.isSearchFocusedByShortcut = false, 300);
 
-                window.posKeyboardListenerAttached = true;
+                    // If no product selected, select the first one
+                    if (this.selectedIndex === -1) {
+                        if (this.products.length > 0) {
+                            this.selectedIndex = 0;
+                            this.scrollIntoView();
+                        }
+                        return;
+                    }
+                    // If product IS selected, we fall through to the 'Navigation' block below
+                    // to handle the actual movement (Next Item)
+                }
+
+                // Navigation
+                if (this.selectedIndex > -1) {
+                    if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Enter'].includes(e.key)) {
+                        // Only handle navigation if buffer is empty (not scanning)
+                        if (this.barcodeBuffer.length === 0) {
+                            e.preventDefault();
+                            const cols = this.getGridColumns();
+                            
+                            if(e.key === 'ArrowRight') { 
+                                this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + 1); 
+                                this.scrollIntoView(); 
+                            }
+                            if(e.key === 'ArrowLeft') { 
+                                this.selectedIndex = Math.max(0, this.selectedIndex - 1); 
+                                this.scrollIntoView(); 
+                            }
+                            if(e.key === 'ArrowDown') { 
+                                this.selectedIndex = Math.min(this.products.length - 1, this.selectedIndex + cols); 
+                                this.scrollIntoView(); 
+                            }
+                            if(e.key === 'ArrowUp') { 
+                                this.selectedIndex = Math.max(0, this.selectedIndex - cols); 
+                                this.scrollIntoView(); 
+                            }
+                            
+                            if(e.key === 'Enter' && this.products[this.selectedIndex]) { this.openModal(this.products[this.selectedIndex]); }
+                            return;
+                        }
+                    }
+                }
+
+                // Enter navigation from search
+                if (targetIsSearch && e.key === 'ArrowDown' && this.barcodeBuffer.length === 0) {
+                    e.preventDefault();
+                    if (this.products.length > 0) { this.selectedIndex = 0; this.scrollIntoView(); }
+                    return;
+                }
+
+                // --- OPTIMIZED BARCODE SCANNER LOGIC ---
+                const now = Date.now();
+                const timeDiff = now - this.lastKeyTime;
+                this.lastKeyTime = now;
+
+                // Check if input is fast (scanner usually < 30-50ms)
+                const isFast = timeDiff < 60;
+
+                if (isFast) {
+                    this.isScanning = true;
+                    if (this.scanningTimeout) clearTimeout(this.scanningTimeout);
+                    this.scanningTimeout = setTimeout(() => {
+                        this.isScanning = false;
+                    }, 200);
+                }
+
+                // If typing in an input but it's SLOW, ignore (let it be manual input)
+                // If it's FAST, we assume it's a scanner, even if focused on an input
+                if (!isFast && targetIsInput && !targetIsSearch) {
+                    this.barcodeBuffer = ''; // Reset buffer on manual typing
+                    return; 
+                }
+
+                // Reset buffer if gap is too long
+                if (timeDiff > 100) {
+                    this.barcodeBuffer = '';
+                }
+
+                if (e.key === 'Enter') {
+                    // Determine what to process: buffer or search input
+                    let codeToProcess = '';
+                    
+                    if (this.barcodeBuffer.length > 2) {
+                        codeToProcess = this.barcodeBuffer;
+                        e.preventDefault(); 
+                        e.stopPropagation();
+                    } else if (targetIsSearch && this.searchQuery.length > 2) {
+                        // Fallback for manual entry in search box
+                        codeToProcess = this.searchQuery;
+                    }
+
+                    if (codeToProcess) {
+                        this.handleScannedCode(codeToProcess);
+                        this.barcodeBuffer = ''; 
+                        if (this.scanTimeout) clearTimeout(this.scanTimeout);
+                        
+                        if (targetIsSearch) {
+                            this.searchQuery = ''; 
+                            this.ignoreNextSearchQueryWatch = true; 
+                            this.$refs.searchInput.blur(); 
+                        }
+                    }
+                    return;
+                }
+
+                // Ignore special keys
+                if (e.key.length > 1) return;
+
+                this.barcodeBuffer += e.key;
+                
+                // Auto-submit on pause (if no Enter is sent)
+                if (this.scanTimeout) clearTimeout(this.scanTimeout);
+                this.scanTimeout = setTimeout(() => {
+                    if (this.barcodeBuffer.length > 5) {
+                        this.handleScannedCode(this.barcodeBuffer);
+                        this.barcodeBuffer = '';
+                    }
+                }, 200);
             },
 
             handleScannedCode(code) {

@@ -94,6 +94,38 @@
             maxTotal: null,
             selectedPaymentMethods: [],
             selectedStatuses: [],
+            selectedItems: [],
+            availableItems: [],
+            
+            init() {
+                this.$watch('invoiceFilter', () => this.filteredTransactions); 
+                this.$watch('selectedCustomers', () => this.filteredTransactions); 
+                this.$watch('minQty', () => this.filteredTransactions); 
+                this.$watch('maxQty', () => this.filteredTransactions); 
+                this.$watch('minTotal', () => this.filteredTransactions); 
+                this.$watch('maxTotal', () => this.filteredTransactions); 
+                this.$watch('selectedPaymentMethods', () => this.filteredTransactions); 
+                this.$watch('selectedStatuses', () => this.filteredTransactions);
+                this.$watch('selectedItems', () => this.filteredTransactions);
+                
+                // Initialize items list logic
+                this.$nextTick(() => {
+                    this.scanItems();
+                });
+            },
+
+            scanItems() {
+                let items = new Set();
+                if (this.$refs.transactionRows) {
+                    Array.from(this.$refs.transactionRows.children).forEach(row => {
+                        const rowItems = row.dataset.items ? row.dataset.items.split(',') : [];
+                        rowItems.forEach(item => {
+                            if(item) items.add(item.trim());
+                        });
+                    });
+                }
+                this.availableItems = Array.from(items).sort();
+            },
             
             // Get filtered transactions
             get filteredTransactions() {
@@ -145,6 +177,14 @@
                         const status = row.dataset.status;
                         show = show && this.selectedStatuses.includes(status);
                     }
+
+                    // Item filter
+                    if (this.selectedItems.length > 0) {
+                        const rowItems = row.dataset.items ? row.dataset.items.toLowerCase() : '';
+                        // Show if ANY selected item is present in the row
+                        const hasItem = this.selectedItems.some(item => rowItems.includes(item.toLowerCase()));
+                        show = show && hasItem;
+                    }
                     
                     row.style.display = show ? '' : 'none';
                 });
@@ -161,9 +201,10 @@
                 this.maxTotal = null;
                 this.selectedPaymentMethods = [];
                 this.selectedStatuses = [];
+                this.selectedItems = [];
                 this.filteredTransactions; // Trigger filter
             }
-        }" x-init="$watch('invoiceFilter', () => filteredTransactions); $watch('selectedCustomers', () => filteredTransactions); $watch('minQty', () => filteredTransactions); $watch('maxQty', () => filteredTransactions); $watch('minTotal', () => filteredTransactions); $watch('maxTotal', () => filteredTransactions); $watch('selectedPaymentMethods', () => filteredTransactions); $watch('selectedStatuses', () => filteredTransactions);">
+        }">
             <div class="flex justify-between items-center mb-2">
                 <div class="text-sm text-gray-600">
                     <span x-text="filteredTransactions"></span> dari {{ $transactions->count() }} transaksi ditampilkan
@@ -246,15 +287,30 @@
                                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                                             <div class="flex items-center gap-2">
                                                 <span>Item (Qty)</span>
-                                                <!-- Filter Qty -->
+                                                <!-- Filter Item and Qty -->
                                                 <div x-data="{ open: false }" class="relative">
                                                     <button @click.stop="open = !open" class="text-gray-400 hover:text-gray-600">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                                         </svg>
                                                     </button>
-                                                    <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 p-2 border">
+                                                    <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-64 bg-white rounded-md shadow-lg z-20 p-2 border">
+                                                        <!-- Item Filter List -->
+                                                        <div class="mb-2 border-b pb-2">
+                                                            <div class="text-xs font-semibold text-gray-500 mb-1">Filter Barang</div>
+                                                            <div class="max-h-40 overflow-y-auto space-y-1">
+                                                                <template x-for="item in availableItems" :key="item">
+                                                                    <label class="flex items-center px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 cursor-pointer">
+                                                                        <input type="checkbox" x-model="selectedItems" :value="item" class="form-checkbox h-3 w-3 text-indigo-600 transition duration-150 ease-in-out">
+                                                                        <span class="ml-2" x-text="item"></span>
+                                                                    </label>
+                                                                </template>
+                                                                <div x-show="availableItems.length === 0" class="px-2 py-1 text-xs text-gray-500">Tidak ada item</div>
+                                                            </div>
+                                                        </div>
+
                                                         <div class="space-y-2">
+                                                            <div class="text-xs font-semibold text-gray-500">Filter Qty</div>
                                                             <input type="number" x-model="minQty" placeholder="Min Qty" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
                                                             <input type="number" x-model="maxQty" placeholder="Max Qty" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-xs">
                                                         </div>
@@ -366,6 +422,10 @@
                                         $totalQty = $transaction->details->filter(function($d) use ($selectedProductId) {
                                             return $selectedProductId === 'all' || $d->product_id == $selectedProductId;
                                         })->sum('quantity');
+
+                                        $itemNames = $transaction->details->map(function($detail) {
+                                            return $detail->product->name ?? 'Produk Dihapus';
+                                        })->implode(',');
                                     @endphp
                                     <tr 
                                         data-invoice="{{ $transaction->invoice_number }}"
@@ -374,6 +434,7 @@
                                         data-total="{{ $transaction->total_amount }}"
                                         data-payment="{{ $transaction->payment_method }}"
                                         data-status="{{ $transaction->status }}"
+                                        data-items="{{ $itemNames }}"
                                     >
                                         @if($visibleColumns['number'])
                                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">

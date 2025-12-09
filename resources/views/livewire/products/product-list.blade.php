@@ -13,6 +13,9 @@
                 <button wire:click="export" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                     Export Excel
                 </button>
+                <button wire:click="bulkGenerateAbbreviations" onclick="confirm('Generate singkatan otomatis untuk semua produk yang belum punya deskripsi?') || event.stopImmediatePropagation()" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-700 shadow-sm hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
+                    ✨ Auto-Generate Singkatan
+                </button>
                 <a href="{{ route('products.create') }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
                     + Tambah Produk
                 </a>
@@ -43,6 +46,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" wire:click="sortBy('name')" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 cursor-pointer">Nama Produk</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Deskripsi / Singkatan</th>
                         <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 lg:table-cell">Kategori</th>
                         <th scope="col" wire:click="sortBy('stock')" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 sm:table-cell cursor-pointer">Stok</th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Harga Eceran</th>
@@ -55,6 +59,18 @@
                             <td class="w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-6">
                                 <p>{{ $product->name }}</p>
                                 <dl class="font-normal lg:hidden"><dt class="sr-only">Kategori</dt><dd class="mt-1 truncate text-gray-700">{{ $product->category->name }}</dd></dl>
+                            </td>
+                            <td class="px-3 py-4 text-sm text-gray-500">
+                                <div class="flex gap-1">
+                                    <input type="text" 
+                                           value="{{ $product->description }}"
+                                           class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-300"
+                                           placeholder="Tamabahkan singkatan..."
+                                           wire:change="updateProductDescription({{ $product->id }}, $event.target.value)">
+                                    <button wire:click="generateAbbreviation({{ $product->id }})" class="px-2 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200" title="Auto-Generate: Hapus Vokal">
+                                        ✨
+                                    </button>
+                                </div>
                             </td>
                             <td class="hidden px-3 py-4 text-sm text-gray-500 lg:table-cell">{{ $product->category->name }}</td>
                             <td class="hidden px-3 py-4 text-sm text-gray-500 sm:table-cell">

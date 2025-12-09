@@ -98,8 +98,15 @@
             </div>
 
             <!-- Product Sales Details -->
-            <div class="mt-8 overflow-auto">
-                <h3 class="text-lg font-medium leading-6 text-gray-900">Rincian Penjualan Produk pada {{ \Carbon\Carbon::parse($selectedDate)->format('d F Y') }}</h3>
+            <div class="mt-8 overflow-auto" x-data="{ search: '' }">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">Rincian Penjualan Produk pada {{ \Carbon\Carbon::parse($selectedDate)->format('d F Y') }}</h3>
+                    <input type="text" 
+                           x-model="search" 
+                           placeholder="Cari produk..." 
+                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md w-64 print:hidden">
+                </div>
+                
                 <div class="-mx-4 mt-4 overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg print:shadow-none print:ring-0">
                     <table class="min-w-full divide-y divide-gray-300 overflow-y-auto">
                         <thead class="bg-gray-50">
@@ -115,7 +122,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse ($productSalesData as $data)
-                                <tr>
+                                <tr x-show="search === '' || '{{ strtolower($data['product_name']) }}'.includes(search.toLowerCase())">
                                     <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ $data['product_name'] }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['total_quantity'], 2, ',', '.') }}</td>
                                     <td class="px-3 py-4 text-sm text-gray-500 font-medium">{{ number_format($data['remaining_stock'], 2, ',', '.') }}</td>
