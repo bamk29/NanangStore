@@ -1036,6 +1036,15 @@
                     minimumFractionDigits: 0
                 }).format(amount);
             },
+
+            scrollIntoView() {
+                this.$nextTick(() => {
+                    const element = document.getElementById('product-' + this.selectedIndex);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            },
             playSound(type) {
                 if (this.sounds && this.sounds[type]) {
                     const sound = this.sounds[type].cloneNode();

@@ -90,7 +90,7 @@ class ProductController extends Controller
                   ->orWhere('code', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             })
-            ->select('id', 'name', 'code', 'stock', 'units_in_box', 'unit_cost', 'box_cost')
+            ->select('id', 'name', 'code', 'stock', 'units_in_box', 'unit_cost', 'box_cost', 'cost_price')
             ->limit(10)
             ->get();
 

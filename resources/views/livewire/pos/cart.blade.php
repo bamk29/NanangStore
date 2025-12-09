@@ -355,7 +355,9 @@
                     <div>
                         <label class="block text-sm font-semibold mb-2">Uang Dibayarkan</label>
                         <input type="text" x-ref="paidAmountInput" x-model="paid_amount_display"
-                            @input="formatPaidAmount($event)" placeholder="0"
+                            @input="formatPaidAmount($event)" 
+                            @keydown.enter.prevent.stop="completePayment()"
+                            placeholder="0"
                             class="w-full border rounded-lg p-2 font-bold text-lg text-right focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                         <div class="mt-3 grid grid-cols-4 gap-2 text-sm">
                             <template x-for="val in [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]"

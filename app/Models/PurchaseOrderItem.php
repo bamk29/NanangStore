@@ -13,6 +13,9 @@ class PurchaseOrderItem extends Model
         'cost',
         'total_cost',
         'received_quantity',
+        'unit_type', // 'unit' or 'box'
+        'items_per_box',
+        'box_cost',
     ];
 
     public function purchaseOrder()

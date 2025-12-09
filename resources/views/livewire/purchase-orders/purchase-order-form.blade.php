@@ -57,13 +57,28 @@
                                             </button>
                                         </div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-x-4 gap-y-2">
-                                            <div class="sm:col-span-3">
+                                            <div class="sm:col-span-2">
                                                 <label class="block text-xs font-medium text-gray-500">Kuantitas</label>
                                                 <input type="number" x-model.number="item.quantity" @input="updateItem(index)" class="w-full text-sm rounded-md border-gray-300">
                                             </div>
-                                            <div class="sm:col-span-3">
-                                                <label class="block text-xs font-medium text-gray-500">Isi per Boks</label>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-xs font-medium text-gray-500">Isi/Box</label>
                                                 <input type="number" x-model.number="item.items_per_box" @input="updateItem(index, 'items_per_box')" class="w-full text-sm rounded-md border-gray-300">
+                                            </div>
+                                            
+                                            <!-- Pricing Source Selection -->
+                                            <div class="sm:col-span-2 mb-2 sm:mb-0">
+                                                <label class="block text-xs font-medium text-gray-500 mb-2">Sumber Harga:</label>
+                                                <div class="flex flex-col space-y-1">
+                                                    <label class="inline-flex items-center">
+                                                        <input type="radio" value="box" x-model="item.pricing_source" @change="updateCostFromSource(index)" class="form-radio h-3 w-3 text-indigo-600">
+                                                        <span class="ml-1 text-[10px] text-gray-700">Master Box</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center">
+                                                        <input type="radio" value="unit" x-model="item.pricing_source" @change="updateCostFromSource(index)" class="form-radio h-3 w-3 text-indigo-600">
+                                                        <span class="ml-1 text-[10px] text-gray-700">Master Unit</span>
+                                                    </label>
+                                                </div>
                                             </div>
                                             <div class="sm:col-span-3">
                                                 <label class="block text-xs font-medium text-gray-500">Harga Satuan</label>
@@ -170,32 +185,38 @@
                     const itemsPerBox = product.units_in_box > 0 ? product.units_in_box : 1;
                     const unitCost = product.unit_cost || 0;
                     const boxCost = product.box_cost || 0;
+                    const costPrice = product.cost_price || 0; 
 
-                    let finalUnitCost = 0;
-                    let finalBoxCost = 0;
-
+                    let initialPricingSource = 'unit';
                     if (boxCost > 0) {
-                        finalBoxCost = boxCost;
-                        finalUnitCost = Math.round(boxCost / itemsPerBox);
-                    } else if (unitCost > 0) {
-                        finalUnitCost = unitCost;
-                        finalBoxCost = unitCost * itemsPerBox;
+                        initialPricingSource = 'box';
                     }
 
                     this.items.push({
                         id: null,
                         product_id: product.id,
                         product_name: product.name,
-                        purchase_by_box: true,
+                        purchase_by_box: true, // Default to purchasing by box
                         quantity: 1,
                         items_per_box: itemsPerBox,
-                        box_cost: finalBoxCost,
-                        cost: finalUnitCost,
-                        unit_cost: finalUnitCost,
-                        total_cost: finalBoxCost,
+                        
+                        // Current Values (Editable)
+                        box_cost: boxCost, 
+                        cost: costPrice > 0 ? costPrice : unitCost, 
+                        
+                        // Reference Values (Master Data)
+                        original_box_cost: boxCost,
+                        original_cost_price: costPrice > 0 ? costPrice : unitCost,
+                        
+                        pricing_source: initialPricingSource, // 'box' or 'unit'
+
+                        total_cost: 0,
                         received_quantity: 0,
                         quantity_to_receive: 0,
                     });
+                    
+                    // Trigger initial calculation
+                    this.updateCostFromSource(this.items.length - 1);
 
                     this.productSearch = '';
                     this.searchResults = [];
@@ -207,16 +228,46 @@
                     this.calculateGrandTotal();
                 },
 
+                updateCostFromSource(index) {
+                    let item = this.items[index];
+                    const items_per_box = item.items_per_box > 0 ? item.items_per_box : 1;
+
+                    // Logic: Reset costs based on the selected source master data
+                    if (item.pricing_source === 'box') {
+                        // Use Master Box Cost
+                        let sourceCost = item.original_box_cost;
+                        if (sourceCost <= 0) {
+                            // If box cost is 0/invalid, fallback to calculating from unit
+                            sourceCost = item.original_cost_price * items_per_box;
+                        }
+                        
+                        item.box_cost = sourceCost;
+                        item.cost = Math.round(sourceCost / items_per_box);
+                    } else {
+                        // Use Master Unit Cost
+                        let sourceCost = item.original_cost_price;
+                        
+                        item.cost = sourceCost;
+                        item.box_cost = sourceCost * items_per_box;
+                    }
+                    
+                    this.updateItem(index);
+                },
+
                 updateItem(index, field) {
                     let item = this.items[index];
                     const items_per_box = item.items_per_box > 0 ? item.items_per_box : 1;
 
+                    // Manual overrides logic
+                    // If user manually types value, we might want to update the "other" value
                     if (field === 'box_cost') {
                         item.cost = Math.round(item.box_cost / items_per_box);
                     } else if (field === 'cost') {
                         item.box_cost = item.cost * items_per_box;
                     } else if (field === 'items_per_box') {
-                        if (item.purchase_by_box) {
+                        // Recalculate based on current pricing source preference?
+                        // Or just update the derivative
+                         if (item.purchase_by_box) {
                             item.cost = Math.round(item.box_cost / items_per_box);
                         } else {
                             item.box_cost = item.cost * items_per_box;

@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', PurchaseOrderList::class)->name('purchase-orders.index');
         Route::get('/create', PurchaseOrderForm::class)->name('purchase-orders.create');
         Route::get('/{orderId}/edit', PurchaseOrderForm::class)->name('purchase-orders.edit');
+        Route::get('/{purchaseOrder}/print', [App\Http\Controllers\PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
     });
 
     // Goods Receipt Routes
@@ -144,6 +145,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('inventory')->group(function () {
         Route::get('/adjustments', StockAdjustmentList::class)->name('stock-adjustments.index');
         Route::get('/price-adjustments', \App\Livewire\PriceAdjustments\PriceAdjustmentList::class)->name('price-adjustments.index');
+        Route::get('/low-stock', \App\Livewire\Inventory\LowStockMonitor::class)->name('inventory.low-stock');
     });
 
     // Report Routes

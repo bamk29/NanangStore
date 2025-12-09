@@ -87,7 +87,7 @@ class PurchaseOrderList extends Component
 
     public function render()
     {
-        $query = PurchaseOrder::with('supplier')
+        $query = PurchaseOrder::with(['supplier', 'items.product.baseUnit', 'items.product.boxUnit'])
             ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
             ->when($this->supplierFilter, fn($q) => $q->where('supplier_id', $this->supplierFilter))
             ->when($this->search, fn($q) => $q->where('order_number', 'like', '%'.$this->search.'%'))

@@ -55,9 +55,25 @@ class PurchaseOrderForm extends Component
                     $quantityInForm = $item->quantity;
 
                     // Logic to determine if it was a box purchase
-                    if ($product->units_in_box > 1 && ($item->quantity % $product->units_in_box == 0)) {
-                        $purchaseByBox = true;
-                        $quantityInForm = $item->quantity / $product->units_in_box;
+                    // Old inference logic removed in favor of explicit 'unit_type' check
+                    $itemPerBox = $item->items_per_box > 0 ? $item->items_per_box : ($product->units_in_box > 0 ? $product->units_in_box : 1);
+                    $boxCost = $item->box_cost > 0 ? $item->box_cost : ($product->box_cost ?? 0);
+
+                    // Logic to determine if it was a box purchase
+                    // Old inference logic removed in favor of explicit 'unit_type' check
+                    $unitType = $item->unit_type ?? 'unit'; // Default to unit if null (legacy)
+                    
+                    if ($unitType === 'box') {
+                         $purchaseByBox = true;
+                         // Recalculate form quantity: Total Units / Conversion Rate
+                         $quantityInForm = $item->quantity / $itemPerBox;
+                    } else {
+                         // Fallback for legacy data: try to infer if it looks like a box purchase
+                         if ($itemPerBox > 1 && ($item->quantity % $itemPerBox == 0)) {
+                             // We don't force it to true for legacy to avoid confusion, unless we are sure
+                             // But since user complained about persistence, let's stick to unit_type column
+                             // $purchaseByBox = true; 
+                         }
                     }
 
                     $this->items[] = [
@@ -66,15 +82,20 @@ class PurchaseOrderForm extends Component
                         'product_name' => $product->name,
                         'purchase_by_box' => $purchaseByBox,
                         'quantity' => $quantityInForm,
-                        'items_per_box' => $product->units_in_box ?? 1,
+                        'items_per_box' => $itemPerBox,
                         
                         // Refined Cost Logic: Prioritize historical cost from the PO item itself.
-                        'cost' => $item->cost, // The historical unit cost is the source of truth.
-                        'unit_cost' => $item->cost, // The unit cost for this line item IS the historical cost.
-                        'box_cost' => ($product->units_in_box > 1) ? ($item->cost * $product->units_in_box) : $item->cost, // Calculate historical box cost.
+                        'cost' => (float) $item->cost, 
+                        'unit_cost' => (float) $item->cost, 
+                        'box_cost' => (float) $boxCost, 
+                        
+                        // Reference Values (Master Data) for switching pricing source
+                        'original_box_cost' => (float) ($product->box_cost ?? 0),
+                        'original_cost_price' => $product->cost_price > 0 ? (float) $product->cost_price : (float) ($product->unit_cost ?? 0),
+                        'pricing_source' => $unitType === 'box' ? 'box' : 'unit', 
 
-                        'total_cost' => $item->total_cost,
-                        'received_quantity' => $item->received_quantity ?? 0,
+                        'total_cost' => (float) $item->total_cost,
+                        'received_quantity' => (float) ($item->received_quantity ?? 0),
                         'quantity_to_receive' => 0,
                     ];
                 }
@@ -170,6 +191,9 @@ class PurchaseOrderForm extends Component
                         'quantity' => $totalUnits,
                         'cost' => $itemData['cost'],
                         'total_cost' => $itemData['total_cost'],
+                        'unit_type' => $itemData['purchase_by_box'] ? 'box' : 'unit',
+                        'items_per_box' => $itemData['items_per_box'],
+                        'box_cost' => $itemData['box_cost'],
                     ]
                 );
                 $currentItemIds[] = $item->id;

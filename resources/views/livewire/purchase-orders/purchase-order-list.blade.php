@@ -68,6 +68,27 @@
                             <p class="font-bold text-gray-800">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</p>
                         </div>
                         <div class="flex items-center space-x-2">
+                            <!-- Mobile Print Dropdown -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" @click.away="open = false" class="p-2 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200" title="Cetak Options">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                </button>
+                                <div x-show="open" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border ring-1 ring-black ring-opacity-5" style="display: none;">
+                                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'a4', 'with_price' => 1]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        📄 A4 (Lengkap)
+                                    </a>
+                                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'a4', 'with_price' => 0]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        📄 A4 (No Harga)
+                                    </a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'thermal', 'with_price' => 1]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        🧾 Thermal (Lengkap)
+                                    </a>
+                                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'thermal', 'with_price' => 0]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        🧾 Thermal (No Harga)
+                                    </a>
+                                </div>
+                            </div>
                             <a href="{{ route('purchase-orders.edit', $po->id) }}" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200" title="Lihat/Edit">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </a>
@@ -119,10 +140,98 @@
                                 </span>
                             </td>
                             <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <div class="flex items-center justify-end space-x-2">
-                                    <a href="{{ route('purchase-orders.edit', $po->id) }}" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200" title="Lihat/Edit">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </a>
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <!-- WhatsApp Copy Buttons -->
+                                        @php
+                                            // Prepare Simple Text
+                                            $txtSimple = "*Purchase Order: " . $po->order_number . "*\n";
+                                            $txtSimple .= "Supplier: " . $po->supplier->name . "\n";
+                                            $txtSimple .= "Tanggal: " . \Carbon\Carbon::parse($po->order_date)->translatedFormat('d F Y') . "\n\n";
+                                            $txtSimple .= "*Daftar Pesanan:*\n";
+                                            foreach($po->items as $idx => $item) {
+                                                $iPbox = $item->items_per_box > 0 ? $item->items_per_box : 1;
+                                                $isBox = ($item->unit_type ?? 'unit') === 'box';
+                                                
+                                                // Dynamic Unit Names with Fallback
+                                                $baseUnitName = $item->product->baseUnit->name ?? 'Pcs';
+                                                $boxUnitName = $item->product->boxUnit->name ?? 'Box';
+
+                                                $qtyVal = $isBox ? $item->quantity / $iPbox : $item->quantity;
+                                                $qtyDisp = fmod($qtyVal, 1) == 0 ? (int)$qtyVal : number_format($qtyVal, 2, ',', '.');
+                                                $unitDisp = $isBox ? $boxUnitName : $baseUnitName;
+                                                
+                                                $txtSimple .= ($idx+1) . ". " . $item->product->name . " - " . $qtyDisp . " " . $unitDisp . "\n";
+                                            }
+                                            $txtSimple .= "\nCatatan: " . ($po->notes ?? '-') . "\n";
+                                            $txtSimple .= "Mohon diproses, terima kasih.";
+
+                                            // Prepare Detailed Text
+                                            $txtDetail = "*Purchase Order: " . $po->order_number . "*\n";
+                                            $txtDetail .= "Supplier: " . $po->supplier->name . "\n";
+                                            $txtDetail .= "Tanggal: " . \Carbon\Carbon::parse($po->order_date)->translatedFormat('d F Y') . "\n\n";
+                                            $txtDetail .= "*Detail Pesanan:*\n";
+                                            foreach($po->items as $idx => $item) {
+                                                $iPbox = $item->items_per_box > 0 ? $item->items_per_box : 1;
+                                                $isBox = ($item->unit_type ?? 'unit') === 'box';
+
+                                                // Dynamic Unit Names with Fallback
+                                                $baseUnitName = $item->product->baseUnit->name ?? 'Pcs';
+                                                $boxUnitName = $item->product->boxUnit->name ?? 'Box';
+                                                
+                                                $qtyVal = $isBox ? $item->quantity / $iPbox : $item->quantity;
+                                                $qtyDisp = fmod($qtyVal, 1) == 0 ? (int)$qtyVal : number_format($qtyVal, 2, ',', '.');
+                                                $unitDisp = $isBox ? $boxUnitName : $baseUnitName;
+                                                
+                                                $costVal = $isBox ? ($item->box_cost > 0 ? $item->box_cost : $item->cost * $iPbox) : $item->cost;
+                                                $costDisp = number_format($costVal, 0, ',', '.');
+                                                $subtotalDisp = number_format($item->total_cost, 0, ',', '.');
+
+                                                $txtDetail .= ($idx+1) . ". " . $item->product->name . "\n";
+                                                $txtDetail .= "   " . $qtyDisp . " " . $unitDisp . " @ Rp " . $costDisp . " = Rp " . $subtotalDisp . "\n";
+                                            }
+                                            $txtDetail .= "\n*Total: Rp " . number_format($po->total_amount, 0, ',', '.') . "*\n";
+                                            $txtDetail .= "Catatan: " . ($po->notes ?? '-') . "\n";
+                                            $txtDetail .= "Mohon diproses, terima kasih.";
+                                        @endphp
+                                        
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" @click.away="open = false" class="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200" title="Copy Pesanan (WA)">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                            </button>
+                                            <div x-show="open" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border ring-1 ring-black ring-opacity-5" style="display: none;">
+                                                <button onclick="copyToClipboard(@js($txtSimple))" @click="open = false" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    Copy (Barang Saja)
+                                                </button>
+                                                <button onclick="copyToClipboard(@js($txtDetail))" @click="open = false" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    Copy (Lengkap + Harga)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Print Dropdown -->
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button @click="open = !open" @click.away="open = false" class="p-2 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200" title="Cetak Options">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                            </button>
+                                            <div x-show="open" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border ring-1 ring-black ring-opacity-5" style="display: none;">
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'a4', 'with_price' => 1]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    📄 A4 (Lengkap)
+                                                </a>
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'a4', 'with_price' => 0]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    📄 A4 (Tanpa Harga)
+                                                </a>
+                                                <div class="border-t border-gray-100"></div>
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'thermal', 'with_price' => 1]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    🧾 Thermal (Lengkap)
+                                                </a>
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'format' => 'thermal', 'with_price' => 0]) }}" target="_blank" @click="open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    🧾 Thermal (Tanpa Harga)
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('purchase-orders.edit', $po->id) }}" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200" title="Lihat/Edit">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
                                     @if($po->status === 'ordered' || $po->status === 'partially_received')
                                     <button wire:click="receiveOrder({{ $po->id }})" wire:confirm="Anda yakin ingin menerima semua barang di PO ini? Stok akan ditambahkan." class="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200" title="Terima Barang">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -168,3 +277,38 @@
     </div>
     @endif
 </div>
+
+<script>
+    function copyToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Berhasil dicopy ke clipboard! Siap dipaste ke WA.");
+                // Or use a nicer notification if available, e.g. dispatching event
+            }, (err) => {
+                console.error('Async: Could not copy text: ', err);
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            fallbackCopyTextToClipboard(text);
+        }
+    }
+
+    function fallbackCopyTextToClipboard(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            var successful = document.execCommand('copy');
+            if(successful) alert("Berhasil dicopy ke clipboard!");
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            alert("Gagal copy text.");
+        }
+        document.body.removeChild(textArea);
+    }
+</script>
