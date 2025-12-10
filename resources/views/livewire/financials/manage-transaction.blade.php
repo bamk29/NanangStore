@@ -43,7 +43,7 @@
     </div>
 
     <!-- Transaction List -->
-    <div class="-mx-4 mt-4 ring-1 ring-gray-300 sm:-mx-6 md:mx-0 md:rounded-lg">
+    <div class="-mx-4 mt-4 overflow-x-auto ring-1 ring-gray-300 sm:-mx-6 md:mx-0 md:rounded-lg">
         <table class="min-w-full divide-y divide-gray-300">
             <thead class="bg-gray-50">
                 <tr>
