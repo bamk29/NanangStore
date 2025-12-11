@@ -1,6 +1,6 @@
-
 <div x-data="cameraScanner(@entangle($attributes->wire('model')))"
      x-show="isOpen"
+     {{ $attributes }}
      x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
     
@@ -46,6 +46,7 @@
 
 <script>
     function cameraScanner(wireModel) {
+        <x-camera-scanner @scan-completed="$wire.set('search', $event.detail)" />{
         return {
             isOpen: false,
             isLoading: false,
@@ -62,6 +63,14 @@
                 this.isOpen = true;
                 this.isLoading = true;
                 
+                // Check for Secure Context (HTTPS or Localhost)
+                if (!window.isSecureContext) {
+                    alert("Peringatan Keamanan Browser!\n\nKamera tidak dapat diakses melalui koneksi HTTP biasa (selain localhost).\n\nSolusi:\n1. Gunakan HTTPS (Ngrok/Expose)\n2. Atau atur 'Insecure origins' di chrome://flags");
+                    this.isOpen = false;
+                    this.isLoading = false;
+                    return;
+                }
+
                 // Wait for modal transition
                 await new Promise(r => setTimeout(r, 300));
 
@@ -84,7 +93,15 @@
                     );
                 } catch (err) {
                     console.error("Error starting scanner", err);
-                    alert("Gagal mengaktifkan kamera. Pastikan izin kamera diberikan.");
+                    let msg = "Gagal mengaktifkan kamera.";
+                    if (err.name === 'NotAllowedError') {
+                        msg += "\nIzin kamera ditolak. Silakan izinkan akses di pengaturan browser.";
+                    } else if (err.name === 'NotFoundError') {
+                        msg += "\nPerangkat kamera tidak ditemukan.";
+                    } else if (err.name === 'NotReadableError') {
+                        msg += "\nKamera sedang digunakan aplikasi lain atau error hardware.";
+                    }
+                    alert(msg);
                     this.isOpen = false;
                 } finally {
                     this.isLoading = false;
