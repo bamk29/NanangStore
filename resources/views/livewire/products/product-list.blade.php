@@ -45,7 +45,7 @@
             </select>
         </div>
 
-        <x-camera-scanner wire:model.live="search" />
+        <x-camera-scanner @scan-completed="$wire.set('search', $event.detail)" />
 
         <!-- Tabel Produk -->
         <div class="-mx-4 mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg">

@@ -46,7 +46,6 @@
 
 <script>
     function cameraScanner(wireModel) {
-        <x-camera-scanner @scan-completed="$wire.set('search', $event.detail)" />{
         return {
             isOpen: false,
             isLoading: false,
