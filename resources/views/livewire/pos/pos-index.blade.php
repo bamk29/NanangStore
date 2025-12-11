@@ -18,7 +18,6 @@
            x-ref="scannerTrap"
            x-model="ghostQuery"
            class="fixed top-0 left-0 w-px h-px opacity-0 overflow-hidden -z-10"
-           inputmode="none"
            autocomplete="off"
            @keydown="handleTrapKeydown($event)"
            @blur="if(isScannerMode) $nextTick(() => $el.focus())"
@@ -574,15 +573,28 @@
             },
 
             handleTrapKeydown(e) {
-                // Stop global listener from also trying to process this
+                // Allow control keys (F3 to toggle, Escape to exit) to bubble up to global listener
+                if (e.key === 'F3' || e.key === 'Escape') {
+                    return;
+                }
+
+                // Stop global listener from also trying to process this (text input)
                 e.stopPropagation();
                 
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     
-                    if (this.ghostQuery && this.ghostQuery.length > 2) {
-                        this.handleScannedCode(this.ghostQuery);
+                    // Robust value retrieval: Try x-model then DOM value
+                    // This handles cases where x-model update lags behind high-speed scanners
+                    let val = this.ghostQuery;
+                    if (!val || val.length === 0) {
+                        val = e.target.value;
+                    }
+                    
+                    if (val && val.length > 2) {
+                        this.handleScannedCode(val);
                         this.ghostQuery = '';
+                        e.target.value = ''; // Manual clear to be safe
                     }
                 }
             },
@@ -815,8 +827,9 @@
                         
                         if (targetIsSearch) {
                             this.searchQuery = ''; 
-                            this.ignoreNextSearchQueryWatch = true; 
-                            // this.$refs.searchInput.blur(); // Removed to keep focus for continuous scanning/searching
+                            this.ignoreNextSearchQueryWatch = true;
+                            // Optimize Auto Clear: Force render update immediately
+                            if (this.$refs.searchInput) this.$refs.searchInput.value = '';
                         }
                     }
                     return;
@@ -844,10 +857,11 @@
 
                 // SELF-HEALING FOCUS:
                 // Regardless of where the scan came from (global buffer or input),
-                // always return focus to the search input.
-                // This ensures the NEXT scan is captured by the browser's fast native buffer.
+                // we need to return focus to the correct element.
                 this.$nextTick(() => {
-                    if (this.$refs.searchInput) {
+                    if (this.isScannerMode) {
+                        if (this.$refs.scannerTrap) this.$refs.scannerTrap.focus();
+                    } else if (this.$refs.searchInput) {
                         this.$refs.searchInput.focus();
                     }
                 });

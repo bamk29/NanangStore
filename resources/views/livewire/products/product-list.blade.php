@@ -31,7 +31,12 @@
 
         <!-- Filter -->
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input x-ref="searchInput" wire:model.live.debounce.300ms="search" type="text" placeholder="Cari produk (nama atau kode)..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <div class="flex gap-2">
+                <input x-ref="searchInput" wire:model.live.debounce.300ms="search" type="text" placeholder="Cari produk (nama atau kode)..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <button @click="$dispatch('open-camera-scanner')" class="flex-shrink-0 p-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 text-gray-600" title="Scan Kamera">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
             <select wire:model.live="categoryFilter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 <option value="">Semua Kategori</option>
                 @foreach($categories as $category)
@@ -39,6 +44,8 @@
                 @endforeach
             </select>
         </div>
+
+        <x-camera-scanner wire:model.live="search" />
 
         <!-- Tabel Produk -->
         <div class="-mx-4 mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg">

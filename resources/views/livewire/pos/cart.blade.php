@@ -786,7 +786,7 @@
                     if (totalQuantity <= product.stock) {
                         existingItem.quantity = totalQuantity;
                     } else {
-                        existingItem.quantity = product.stock; // Set to max stock
+                        existingItem.quantity = product.stock; 
                         window.Livewire.dispatch('show-alert', {
                             type: 'error',
                             message: 'Stok tidak cukup. Kuantitas diatur ke stok maksimal.'
