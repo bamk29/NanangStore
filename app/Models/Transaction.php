@@ -60,13 +60,13 @@ class Transaction extends Model
         // 1. Kembalikan Stok & Kurangi Popularitas
         foreach ($this->details as $detail) {
             if ($product = $detail->product) {
-                $product->increment('stock', $detail->quantity);
-
-                // Hitung ulang stok boks jika ada
-                if ($product->units_in_box > 0) {
-                    $product->box_stock = floor($product->stock / $product->units_in_box);
-                    $product->save();
-                }
+                // Kembalikan stok menggunakan helper adjustStock
+                $product->adjustStock(
+                    $detail->quantity,
+                    'cancel',
+                    'Cancel Transaction #' . $this->invoice_number,
+                    $this->id
+                );
                 
                 // Kurangi usage count
                 \App\Models\ProductUsage::where('product_id', $product->id)->decrement('usage_count');
@@ -84,8 +84,15 @@ class Transaction extends Model
 
             // Previous Debt = Current Debt - Transaction Value + Net Payment
             // Contoh: Hutang 30k - Belanja 100k + Bayar 120k = 50k (Kembali ke awal)
-            $customer->debt = max(0, (float) $customer->debt - $transactionValue + $netPayment);
-            $customer->save();
+            // Previous Debt = Current Debt - Transaction Value + Net Payment
+            // Contoh: Hutang 30k - Belanja 100k + Bayar 120k = 50k (Kembali ke awal)
+            
+            $debtChange = - $transactionValue + $netPayment;
+            
+            if (abs($debtChange) > 0.01) {
+                 $type = $debtChange > 0 ? 'increase' : 'decrease';
+                 $customer->updateDebt(abs($debtChange), $type, 'Cancel Transaction #' . $this->invoice_number, $this->id);
+            }
 
             // Revert points if they were earned on this transaction.
             // Points are earned if debt did NOT increase (i.e. paid in full or more)

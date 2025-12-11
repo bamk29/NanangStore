@@ -65,6 +65,47 @@ class Product extends Model
         return $this->belongsTo(Unit::class, 'box_unit_id');
     }
 
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    /**
+     * Adjust product stock and record movement in ledger.
+     * 
+     * @param float $quantity Amount to adjust (positive adds stock, negative removes stock)
+     * @param string $type Type of movement (sale, purchase, adjustment, return, correction, etc)
+     * @param string|null $description Description of the movement
+     * @param string|null $referenceId Transaction ID or PO ID
+     * @param int|null $userId User performing the action (optional, defaults to auth user)
+     */
+    public function adjustStock($quantity, $type, $description = null, $referenceId = null, $userId = null)
+    {
+        $currentStock = $this->stock;
+        $newStock = $currentStock + $quantity;
+        
+        $this->stock = $newStock;
+        
+        // Recalculate box stock if applicable
+        if ($this->units_in_box > 0) {
+            $this->box_stock = floor($newStock / $this->units_in_box);
+        }
+
+        $this->save();
+
+        $this->stockMovements()->create([
+            'type' => $type,
+            'quantity' => $quantity,
+            'stock_before' => $currentStock,
+            'stock_after' => $newStock,
+            'description' => $description,
+            'reference_id' => $referenceId,
+            'user_id' => $userId ?? auth()->id(),
+        ]);
+
+        return $newStock;
+    }
+
     public function scopeOrderByUsage($query, $period = '7days')
     {
         $column = match ($period) {

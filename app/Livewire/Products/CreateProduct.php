@@ -76,7 +76,17 @@ class CreateProduct extends Component
     {
         $validated = $this->validate();
 
-        Product::create($validated);
+        // 1. Ambil stok awal & set 0 untuk creation
+        $initialStock = (int) $validated['stock'];
+        $validated['stock'] = 0;
+
+        // 2. Buat produk
+        $product = Product::create($validated);
+
+        // 3. Catat stok awal di ledger (jika ada)
+        if ($initialStock > 0) {
+            $product->adjustStock($initialStock, 'item_add', 'Initial Stock via Create Product');
+        }
 
        $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil ditambahkan.']);
         return redirect()->route('products.index');

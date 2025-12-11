@@ -134,12 +134,8 @@ class CustomerList extends Component
             // Proses penyesuaian hutang jika ada perubahan
             if ($this->debt != $this->initialDebt) {
                 $debtDifference = $this->debt - $this->initialDebt;
-                if ($debtDifference > 0) {
-                    $customer->increment('debt', $debtDifference);
-                } else {
-                    $customer->decrement('debt', abs($debtDifference));
-                }
-                // Di masa depan, bisa ditambahkan logging untuk penyesuaian ini
+                $type = $debtDifference > 0 ? 'increase' : 'decrease';
+                $customer->updateDebt(abs($debtDifference), $type, 'Manual Adjustment');
             }
 
             // Proses penyesuaian poin jika ada perubahan
@@ -175,8 +171,6 @@ class CustomerList extends Component
 
         try {
             DB::transaction(function () {
-                $this->selectedCustomer->decrement('debt', $this->payment_amount);
-
                 $transaction = Transaction::create([
                     'invoice_number' => 'DEBT-' . now()->format('YmdHis'),
                     'user_id' => auth()->id(),
@@ -189,6 +183,8 @@ class CustomerList extends Component
                     'status' => 'completed',
                     'notes' => 'Pembayaran hutang atas nama ' . $this->selectedCustomer->name,
                 ]);
+
+                $this->selectedCustomer->updateDebt($this->payment_amount, 'decrease', 'Debt Payment', $transaction->id);
 
                 \App\Models\FinancialTransaction::create([
                     'business_unit' => 'nanang_store',

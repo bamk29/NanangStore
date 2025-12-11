@@ -36,9 +36,16 @@ class CustomerTransactionHistory extends Component
             ->limit(10)
             ->get();
 
+        $ledgers = \App\Models\CustomerLedger::where('customer_id', $this->customer->id)
+            ->with('transaction')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+
         return view('livewire.customers.customer-transaction-history', [
             'transactions' => $transactions,
             'topProducts' => $topProducts,
+            'ledgers' => $ledgers,
         ]);
     }
 }

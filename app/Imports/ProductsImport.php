@@ -82,12 +82,28 @@ class ProductsImport implements ToCollection, WithHeadingRow
                 'box_unit_id'       => $box_unit_id,
             ];
 
+            $newStock = $row['stock'] ?? 0;
+            unset($data['stock']); // Don't let update/create handle stock directly
+
             if ($product) {
                 // Update existing product
                 $product->update($data);
+                
+                $currentStock = $product->stock;
+                $diff = $newStock - $currentStock;
+                
+                if (abs($diff) > 0) {
+                    $type = $diff > 0 ? 'item_add' : 'item_remove'; // Or 'adjustment' based on context
+                    $product->adjustStock($diff, $type, 'Import Adjustment');
+                }
             } else {
                 // Create new product
-                Product::create($data);
+                $data['stock'] = 0; // Initialize with 0
+                $product = Product::create($data);
+                
+                if ($newStock > 0) {
+                    $product->adjustStock($newStock, 'item_add', 'Initial Import');
+                }
             }
         }
     }

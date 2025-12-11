@@ -141,7 +141,7 @@ class GoodsReceiptForm extends Component
                 // 2. Update Product Stock & Cost
                 $product = Product::find($itemData['product_id']);
                 if ($product) {
-                    $product->increment('stock', $itemData['quantity_received']);
+                    // Update harga dulu (Stock di-update lewat adjustStock)
                     $product->cost_price = $itemData['cost'];
                     $product->retail_price = $itemData['retail_price'];
                     $product->wholesale_price = $itemData['wholesale_price'] ?? 0;
@@ -149,9 +149,15 @@ class GoodsReceiptForm extends Component
                     
                     if ($product->units_in_box > 1) {
                         $product->box_cost = $itemData['cost'] * $product->units_in_box;
-                        $product->box_stock = floor($product->stock / $product->units_in_box);
                     }
-                    $product->save();
+
+                    // Gunakan adjustStock utk update stok + catat ledger + SAVE model
+                    $product->adjustStock(
+                        $itemData['quantity_received'], 
+                        'purchase', 
+                        'Received from ' . $receipt->receipt_number, 
+                        $receipt->id
+                    );
 
                     // Prepare for financial logging
                     $businessUnit = ($product->category_id == 1) ? 'giling_bakso' : 'nanang_store';

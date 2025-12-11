@@ -79,6 +79,9 @@
                             <td class="px-3 py-4 text-sm text-gray-500">Rp {{ number_format($product->retail_price, 0, ',', '.') }}</td>
                             <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <div class="flex items-center justify-end space-x-2">
+                                    <button wire:click="viewHistory({{ $product->id }})" class="p-2 rounded-full bg-purple-100 text-purple-600 hover:bg-purple-200 hover:text-purple-800" title="Riwayat Stok">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
                                     <button wire:click="printQR({{ $product->id }})" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800" title="Cetak QR">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zm-6 12v-2m0 0v-2m0 2H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </button>
@@ -109,6 +112,29 @@
             <div class="flex justify-end space-x-4">
                 <button wire:click="$set('productToDelete', null)" class="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Batal</button>
                 <button wire:click="deleteProduct" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Riwayat Stok -->
+    @if($viewingHistoryProductId)
+    <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-bold">Riwayat Stok</h3>
+                <button wire:click="closeHistory" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <livewire:products.product-stock-history :product-id="$viewingHistoryProductId" :key="'history-'.$viewingHistoryProductId" />
+            
+            <div class="mt-6 flex justify-end">
+                <button wire:click="closeHistory" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Tutup</button>
             </div>
         </div>
     </div>

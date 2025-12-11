@@ -19,6 +19,17 @@ class ProductList extends Component
     public $sortField = 'name';
     public $sortDirection = 'asc';
     public $productToDelete = null;
+    public $viewingHistoryProductId = null;
+
+    public function viewHistory($productId)
+    {
+        $this->viewingHistoryProductId = $productId;
+    }
+
+    public function closeHistory()
+    {
+        $this->viewingHistoryProductId = null;
+    }
 
     protected $queryString = [
         'search' => ['except' => ''],

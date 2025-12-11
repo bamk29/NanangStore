@@ -310,19 +310,16 @@ class Cart extends Component
                 foreach ($cart as $item) {
                     $product = Product::find($item['id']);
                     if ($product) {
-                        // Kurangi stok utama (satuan dasar)
-                        $product->decrement('stock', (float) $item['quantity']);
+                        // Kurangi stok menggunakan helper adjustStock untuk mencatat di ledger
+                        $product->adjustStock(
+                            -(float) $item['quantity'], 
+                            'sale', 
+                            'Transaction #' . $transaction->invoice_number, 
+                            $transaction->id
+                        );
 
                         // Update popularitas produk
                         \App\Models\ProductUsage::incrementUsage($item['id']);
-
-                        // Hitung ulang dan perbarui stok boks
-                        if ($product->units_in_box > 0) {
-                            $product->refresh(); // Ambil data stok terbaru setelah decrement
-                            $newBoxStock = floor($product->stock / $product->units_in_box);
-                            $product->box_stock = $newBoxStock;
-                            $product->save();
-                        }
                     }
 
                     TransactionDetail::create([
@@ -364,8 +361,25 @@ class Cart extends Component
                     }
 
                     // Update hutang pelanggan, pastikan tidak negatif.
-                    $customer->debt = max(0, $newDebt);
-                    $customer->save();
+                    // Update hutang pelanggan dengan mencatat ke ledger
+                    $newDebt = max(0, $newDebt);
+                    $diff = $newDebt - $initialDebt;
+                    
+                    if (abs($diff) > 0.01) { // Use epsilon for float comparison
+                        $type = $diff > 0 ? 'increase' : 'decrease';
+                        $customer->updateDebt(abs($diff), $type, 'Transaction #' . $transaction->invoice_number, $transaction->id);
+                    } else {
+                         // Even if debt value didn't change (e.g. paid exactly what was bought), 
+                         // we might want to log it if it was a "debt" transaction?
+                         // But if net change is 0, ledger entry might be confusing if it says "increase 0".
+                         // However, if I buy 100 and pay 100. Debt change is 0.
+                         // Ledger: Usually we record "Buy 100" and "Pay 100".
+                         // But here we are recording the NET change of the debt *bucket*.
+                         // If I buy 100 and pay 100 immediately, my *Debt Balance* never changed.
+                         // So no ledger entry for *Debt* is correct.
+                         // The transaction history shows the sale.
+                         // If I use "Include Old Debt" mechanism, it recalculates the bucket.
+                    }
 
                     // Beri poin hanya jika hutang mereka tidak bertambah pada transaksi ini
                     if ($customer->debt <= $initialDebt && $paymentDetails['payment_method'] !== 'debt') {

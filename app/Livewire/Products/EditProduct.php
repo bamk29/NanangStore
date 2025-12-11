@@ -106,7 +106,23 @@ class EditProduct extends Component
     {
         try {
             $validatedData = $this->validate();
+            
+            // Pisahkan update stok agar tercatat di ledger
+            $newStock = $validatedData['stock'];
+            unset($validatedData['stock']);
+
+            // 1. Update data non-stok
             $this->product->update($validatedData);
+
+            // 2. Cek perubahan stok
+            $currentStock = $this->product->stock;
+            $diff = $newStock - $currentStock;
+
+            if (abs($diff) > 0) {
+                $type = $diff > 0 ? 'adjustment' : 'correction'; // Or 'item_add'/'item_remove'
+                // adjustStock will update the stock column and save again
+                $this->product->adjustStock($diff, $type, 'Manual Adjustment via Edit Product');
+            }
 
             $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Produk berhasil diperbarui.']);
             return redirect()->route('products.index');
