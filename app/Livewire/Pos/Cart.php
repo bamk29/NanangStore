@@ -306,31 +306,142 @@ class Cart extends Component
                     $transaction = Transaction::create($transactionData);
                 }
 
-                // Buat detail baru dan kurangi stok
-                foreach ($cart as $item) {
-                    $product = Product::find($item['id']);
-                    if ($product) {
-                        // Kurangi stok menggunakan helper adjustStock untuk mencatat di ledger
-                        $product->adjustStock(
-                            -(float) $item['quantity'], 
-                            'sale', 
-                            'Transaction #' . $transaction->invoice_number, 
-                            $transaction->id
-                        );
+                // [BULK OPTIMIZATION START]
+                // 1. Gather all Product IDs and Quantities
+                $cartItems = collect($cart);
+                $productIds = $cartItems->pluck('id')->toArray();
+                
+                // 2. Pre-load all products in one query
+                $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-                        // Update popularitas produk
-                        \App\Models\ProductUsage::incrementUsage($item['id']);
-                    }
+                $stockMovements = [];
+                $transactionDetails = [];
+                $productUsageIds = [];
+                $productsToUpdate = [];
 
-                    TransactionDetail::create([
+                foreach ($cartItems as $item) {
+                     $product = $products->get($item['id']);
+                     
+                     if ($product) {
+                        // Calculate new stock
+                        $qty = (float) $item['quantity'];
+                        $currentStock = (float) $product->stock;
+                        $newStock = $currentStock - $qty;
+                        
+                        // Prepare Stock Movement
+                        $stockMovements[] = [
+                            'product_id' => $product->id,
+                            'type' => 'sale',
+                            'quantity' => -$qty,
+                            'stock_before' => $currentStock,
+                            'stock_after' => $newStock,
+                            'description' => 'Transaction #' . $transaction->invoice_number,
+                            'reference_id' => $transaction->id,
+                            'user_id' => auth()->id(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+
+                        // Prepare Bulk Update Data
+                        $newBoxStock = 0;
+                        if ($product->units_in_box > 0) {
+                            $newBoxStock = floor($newStock / $product->units_in_box);
+                        }
+                        
+                        $productsToUpdate[$product->id] = [
+                            'stock' => $newStock,
+                            'box_stock' => $newBoxStock
+                        ];
+                        
+                        $productUsageIds[] = $product->id;
+                     }
+
+                     // Prepare Transaction Detail
+                     $transactionDetails[] = [
                         'transaction_id' => $transaction->id,
                         'product_id' => $item['id'],
                         'quantity' => (float) $item['quantity'],
                         'price' => (float) $item['price'],
                         'subtotal' => (float) $item['subtotal'],
                         'cost_price' => $product ? $product->cost_price : 0,
-                    ]);
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
+                
+                // 3. Bulk Insert Transaction Details
+                if (!empty($transactionDetails)) {
+                    TransactionDetail::insert($transactionDetails);
+                }
+
+                // 4. Bulk Insert Stock Movements
+                if (!empty($stockMovements)) {
+                    \App\Models\StockMovement::insert($stockMovements);
+                }
+
+                 // 5. Bulk Update Product Stock (Replaces N queries with 1)
+                if (!empty($productsToUpdate)) {
+                    $ids = array_keys($productsToUpdate);
+                    $casesStock = [];
+                    $casesBoxStock = [];
+                    $params = [];
+
+                    foreach ($productsToUpdate as $id => $data) {
+                        $casesStock[] = "WHEN id = ? THEN ?";
+                        $params[] = $id;
+                        $params[] = $data['stock'];
+                        
+                        $casesBoxStock[] = "WHEN id = ? THEN ?";
+                        $params[] = $id;
+                        $params[] = $data['box_stock'];
+                    }
+
+                    $idsString = implode(',', array_fill(0, count($ids), '?'));
+                    $params = array_merge($params, $params, $ids); // Stock params + Box Stock Params + Where IN params
+
+                    // Construct the monolithic query
+                    // UPDATE products SET 
+                    //   stock = CASE WHEN id = ? THEN ? ... END,
+                    //   box_stock = CASE WHEN id = ? THEN ? ... END
+                    // WHERE id IN (?, ?, ...)
+                    
+                    // Note: We duplicate params for the second case statement
+                    // Params structure: [id1, stock1, id2, stock2... | id1, box1, id2, box2... | id1, id2...]
+                    
+                    // Let's rebuilding params clearly to avoid confusion
+                    $finalParams = [];
+                    
+                    // Params for Stock Case
+                    foreach ($productsToUpdate as $id => $data) {
+                        $finalParams[] = $id;
+                        $finalParams[] = $data['stock'];
+                    }
+                    
+                    // Params for Box Stock Case
+                    foreach ($productsToUpdate as $id => $data) {
+                        $finalParams[] = $id;
+                        $finalParams[] = $data['box_stock'];
+                    }
+                    
+                    // Params for Where IN
+                    foreach ($ids as $id) {
+                        $finalParams[] = $id;
+                    }
+
+                    $query = "UPDATE products SET 
+                                stock = CASE " . implode(' ', $casesStock) . " END, 
+                                box_stock = CASE " . implode(' ', $casesBoxStock) . " END,
+                                updated_at = NOW()
+                              WHERE id IN ($idsString)";
+                    
+                    DB::update($query, $finalParams);
+                }
+
+                // 6. Bulk Increment Product Usage
+                if (!empty($productUsageIds)) {
+                     \App\Models\ProductUsage::incrementUsageBulk($productUsageIds);
+                }
+                // [BULK OPTIMIZATION END]
 
                 // Handle hutang & poin
                 if ($customer) {
