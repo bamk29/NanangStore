@@ -41,18 +41,11 @@
                          x-show="searchQuery.length === 0 && !isScannerMode">
                         <kbd class="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-gray-400 bg-gray-50 border border-gray-200 rounded-md shadow-sm">/</kbd>
                     </div>
-
-                         <kbd class="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-gray-400 bg-gray-50 border border-gray-200 rounded-md shadow-sm">/</kbd>
-                    </div>
                     
-                    <!-- Camera Button for POS -->
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-2" x-show="!isScannerMode">
-                        <button @click="$dispatch('open-camera-scanner')" class="p-1.5 mr-2 rounded-lg bg-gray-100 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Scan Kamera">
-                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        </button>
-                    </div>
+                    <!-- Camera Button for POS (Merged) -->
+                     <div class="absolute inset-y-0 right-0 flex items-center pr-2">
 
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-2">
+
                         <button @click="resetSearchAndFocus()"
                                 x-show="searchQuery.length > 0 && !isScannerMode"
                                 x-transition:enter="transition-opacity ease-out duration-200"
@@ -61,8 +54,7 @@
                                 x-transition:leave="transition-opacity ease-in duration-150"
                                 x-transition:leave-start="opacity-100"
                                 x-transition:leave-end="opacity-0"
-                                class="px-2 py-1 border border-zinc-800 bg-zinc-100 rounded-md text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-20 mr-2 flex items-center gap-1"
-                                style="display: none;">
+                                class="px-2 py-1 border border-zinc-800 bg-zinc-100 rounded-md text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-20 mr-2 flex items-center gap-1">
                             Clear <kbd class="text-[10px] px-1 bg-white border border-gray-300 rounded text-gray-500">Del</kbd>
                         </button>
                         <span x-show="isScannerMode" x-transition class="text-xs text-blue-600 font-bold mr-2 animate-pulse">SCANNER AKTIF</span>
@@ -81,6 +73,9 @@
                         </button>
                     </div>
                 </div>
+                <button @click="$dispatch('open-camera-scanner')" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 lg:hidden" title="Scan Kamera">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
                 <button @click="showShortcutModal = true" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600" title="Shortcut Keyboard (?)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -442,6 +437,8 @@
         </div>
     </div>
 </div>
+</div>
+
 
 <script>
     function posManager() {
@@ -1099,3 +1096,4 @@
         }
     }
 </script>
+
