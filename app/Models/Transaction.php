@@ -63,7 +63,7 @@ class Transaction extends Model
                 // Kembalikan stok menggunakan helper adjustStock
                 $product->adjustStock(
                     $detail->quantity,
-                    'cancel',
+                    'correction',
                     'Cancel Transaction #' . $this->invoice_number,
                     $this->id
                 );
@@ -73,35 +73,63 @@ class Transaction extends Model
             }
         }
 
-        // 2. Kembalikan Hutang & Poin Pelanggan
-        if ($customer = $this->customer) {
-            // Calculate real transaction value (goods - reduction), ignoring any "old debt" included in total_amount
-            $goodsValue = (float) $this->details->sum('subtotal');
-            $transactionValue = $goodsValue - (float) $this->total_reduction_amount;
-            
-            // Net Payment = Paid Amount - Change Amount (Uang yang benar-benar masuk ke toko)
-            $netPayment = (float) $this->paid_amount - (float) $this->change_amount;
-
-            // Previous Debt = Current Debt - Transaction Value + Net Payment
-            // Contoh: Hutang 30k - Belanja 100k + Bayar 120k = 50k (Kembali ke awal)
-            // Previous Debt = Current Debt - Transaction Value + Net Payment
-            // Contoh: Hutang 30k - Belanja 100k + Bayar 120k = 50k (Kembali ke awal)
-            
-            $debtChange = - $transactionValue + $netPayment;
-            
-            if (abs($debtChange) > 0.01) {
-                 $type = $debtChange > 0 ? 'increase' : 'decrease';
-                 $customer->updateDebt(abs($debtChange), $type, 'Cancel Transaction #' . $this->invoice_number, $this->id);
+        // 2. Kembalikan Hutang berdasarkan History Ledger
+        // Ini lebih akurat karena mengembalikan apa yang tercatat di ledger saat transaksi terjadi.
+        $ledgers = \App\Models\CustomerLedger::where('transaction_id', $this->id)->get();
+        if ($ledgers->isNotEmpty()) {
+            foreach ($ledgers as $ledger) {
+                $customer = $ledger->customer;
+                if ($customer) {
+                    $reverseType = $ledger->type === 'increase' ? 'decrease' : 'increase';
+                    $customer->updateDebt(
+                        $ledger->amount, 
+                        $reverseType, 
+                        'Cancel Transaction #' . $this->invoice_number, 
+                        $this->id
+                    );
+                }
+                // Opsional: Hapus ledger lama jika ingin 'menghapus jejak'? 
+                // Tapi user bilang 'kalkulasikan hutangnya dan kembalikan keadaan', 
+                // updateDebt di atas akan membuat log baru (Adjustment/Cancel) yang lebih baik untuk audit.
+                // Atau, user mungkin ingin menghapus log lama? 
+                // Jika "correct" biasanya "edit", mungkin lebih bersih jika log lama dihapus?
+                // Tapi `updateDebt` membuat log baru. Jadi history akan:
+                // 1. Beli (Debt +100k)
+                // 2. Cancel (Debt -100k)
+                // Balance kembali ke 0. Correct.
             }
+        } else {
+             // Fallback calculation in case Ledger is missing (Old transactions?)
+             if ($customer = $this->customer) {
+                // Calculate real transaction value (goods - reduction), ignoring any "old debt" included in total_amount
+                $goodsValue = (float) $this->details->sum('subtotal');
+                $transactionValue = $goodsValue - (float) $this->total_reduction_amount;
+                
+                // Net Payment = Paid Amount - Change Amount (Uang yang benar-benar masuk ke toko)
+                $netPayment = (float) $this->paid_amount - (float) $this->change_amount;
 
-            // Revert points if they were earned on this transaction.
-            // Points are earned if debt did NOT increase (i.e. paid in full or more)
+                // Previous Debt = Current Debt - Transaction Value + Net Payment
+                $debtChange = - $transactionValue + $netPayment;
+                
+                if (abs($debtChange) > 0.01) {
+                     $type = $debtChange > 0 ? 'increase' : 'decrease';
+                     $customer->updateDebt(abs($debtChange), $type, 'Cancel Transaction (Calc) #' . $this->invoice_number, $this->id);
+                }
+            }
+        }
+
+        // Revert points if they were earned on this transaction.
+        // Points logic remains calculated because PointsLedger might not exist or be granular.
+        if ($this->customer) {
+            $goodsValue = (float) $this->details->sum('subtotal');
+            $transactionValue = $goodsValue - (float) $this->total_reduction_amount; // Re-calc needed if used above
+            $netPayment = (float) $this->paid_amount - (float) $this->change_amount;
             $debtIncrease = $transactionValue - $netPayment;
             
             if ($debtIncrease <= 0 && $this->payment_method !== 'debt') {
                 $pointsEarned = floor($goodsValue / 10000); // Points based on gross value
                 if ($pointsEarned > 0) {
-                    $customer->decrement('points', $pointsEarned);
+                     $this->customer->decrement('points', $pointsEarned);
                 }
             }
         }

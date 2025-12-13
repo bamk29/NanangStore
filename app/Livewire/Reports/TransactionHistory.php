@@ -65,12 +65,10 @@ class TransactionHistory extends Component
                 $transaction->cancel();
             });
 
-            session()->flash('success', 'Transaksi berhasil dibatalkan.');
-
-            session()->flash('success', 'Transaksi berhasil dibatalkan.');
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Transaksi berhasil dibatalkan.']);
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal membatalkan transaksi: ' . $e->getMessage()]);
         }
     }
 
@@ -99,7 +97,7 @@ class TransactionHistory extends Component
         ]);
 
         if (!$this->editingTransaction) {
-            session()->flash('error', 'Transaksi tidak ditemukan untuk diedit.');
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan untuk diedit.']);
             return;
         }
 
@@ -147,10 +145,10 @@ class TransactionHistory extends Component
             });
 
             $this->closePaymentModal();
-            session()->flash('success', 'Detail pembayaran berhasil diperbarui.');
+            $this->dispatch('show-alert', ['type' => 'success', 'message' => 'Detail pembayaran berhasil diperbarui.']);
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memperbarui pembayaran: ' . $e->getMessage());
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal memperbarui pembayaran: ' . $e->getMessage()]);
         }
     }
 
@@ -167,13 +165,13 @@ class TransactionHistory extends Component
                 }
             });
 
-            session()->flash('info', 'Transaksi lama telah dibatalkan. Silakan buat transaksi baru berdasarkan data lama.');
+            $this->dispatch('show-alert', ['type' => 'info', 'message' => 'Transaksi lama telah dibatalkan. Silakan buat transaksi baru berdasarkan data lama.']);
 
             // Redirect with a query parameter to load the cancelled transaction data
             return $this->redirect(route('pos.index', ['correct' => $transactionId]), navigate: true);
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal memproses koreksi: ' . $e->getMessage());
+            $this->dispatch('show-alert', ['type' => 'error', 'message' => 'Gagal memproses koreksi: ' . $e->getMessage()]);
         }
     }
 }
