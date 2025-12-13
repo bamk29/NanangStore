@@ -306,146 +306,109 @@ class Cart extends Component
                     $transaction = Transaction::create($transactionData);
                 }
 
-                // [BULK OPTIMIZATION START]
-                // 1. Gather all Product IDs and Quantities
-                $cartItems = collect($cart);
-                $productIds = $cartItems->pluck('id')->toArray();
-                
-                // 2. Pre-load all products in one query
+                // Bulk Operations Preparation
+                $productIds = collect($cart)->pluck('id')->toArray();
                 $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-                $stockMovements = [];
                 $transactionDetails = [];
+                $stockMovements = [];
                 $productUsageIds = [];
-                $productsToUpdate = [];
+                $productUpdates = [];
+                $now = now();
 
-                foreach ($cartItems as $item) {
-                     $product = $products->get($item['id']);
-                     
-                     if ($product) {
-                        // Calculate new stock
-                        $qty = (float) $item['quantity'];
-                        $currentStock = (float) $product->stock;
-                        $newStock = $currentStock - $qty;
-                        
-                        // Prepare Stock Movement
-                        $stockMovements[] = [
-                            'product_id' => $product->id,
-                            'type' => 'sale',
-                            'quantity' => -$qty,
-                            'stock_before' => $currentStock,
-                            'stock_after' => $newStock,
-                            'description' => 'Transaction #' . $transaction->invoice_number,
-                            'reference_id' => $transaction->id,
-                            'user_id' => auth()->id(),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-
-                        // Prepare Bulk Update Data
-                        $newBoxStock = 0;
-                        if ($product->units_in_box > 0) {
-                            $newBoxStock = floor($newStock / $product->units_in_box);
-                        }
-                        
-                        $productsToUpdate[$product->id] = [
-                            'stock' => $newStock,
-                            'box_stock' => $newBoxStock
-                        ];
-                        
-                        $productUsageIds[] = $product->id;
-                     }
-
-                     // Prepare Transaction Detail
-                     $transactionDetails[] = [
+                foreach ($cart as $item) {
+                    if (!isset($products[$item['id']])) continue;
+                    $product = $products[$item['id']];
+                    
+                    // Transaction Detail Data
+                    $transactionDetails[] = [
                         'transaction_id' => $transaction->id,
                         'product_id' => $item['id'],
                         'quantity' => (float) $item['quantity'],
                         'price' => (float) $item['price'],
                         'subtotal' => (float) $item['subtotal'],
-                        'cost_price' => $product ? $product->cost_price : 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'cost_price' => 0, // Default 0 as column might be missing on products
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    // Stock Calculation
+                    $qty = (float) $item['quantity'];
+                    $currentStock = $product->stock;
+                    $newStock = $currentStock - $qty;
+                    $newBoxStock = ($product->units_in_box > 0) ? floor($newStock / $product->units_in_box) : 0;
+
+                    // Stock Movement Data
+                    $stockMovements[] = [
+                        'product_id' => $item['id'],
+                        'type' => 'sale',
+                        'quantity' => -$qty,
+                        'stock_before' => $currentStock,
+                        'stock_after' => $newStock,
+                        'reference_id' => $transaction->id,
+                        'description' => 'Penjualan POS (Bulk)',
+                        'user_id' => auth()->id() ?? 1,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    $productUsageIds[] = $item['id'];
+
+                    // Collect data for Bulk Update
+                    $productUpdates[$item['id']] = [
+                        'stock' => $newStock,
+                        'box_stock' => $newBoxStock
                     ];
                 }
-                
-                // 3. Bulk Insert Transaction Details
+
+                // 1. Bulk Insert Transaction Details
                 if (!empty($transactionDetails)) {
                     TransactionDetail::insert($transactionDetails);
                 }
 
-                // 4. Bulk Insert Stock Movements
+                // 2. Bulk Insert Stock Movements
                 if (!empty($stockMovements)) {
                     \App\Models\StockMovement::insert($stockMovements);
                 }
 
-                 // 5. Bulk Update Product Stock (Replaces N queries with 1)
-                if (!empty($productsToUpdate)) {
-                    $ids = array_keys($productsToUpdate);
-                    $casesStock = [];
-                    $casesBoxStock = [];
+                // 3. Bulk Increment Usage
+                if (!empty($productUsageIds)) {
+                    \App\Models\ProductUsage::incrementUsageBulk($productUsageIds);
+                }
+
+                // 4. Bulk Update Product Stocks (Single Query)
+                if (!empty($productUpdates)) {
+                    $stockCases = [];
+                    $boxCases = [];
+                    $ids = [];
                     $params = [];
 
-                    foreach ($productsToUpdate as $id => $data) {
-                        $casesStock[] = "WHEN id = ? THEN ?";
+                    foreach ($productUpdates as $id => $data) {
+                        $ids[] = $id;
+                        $stockCases[] = "WHEN id = ? THEN ?";
                         $params[] = $id;
                         $params[] = $data['stock'];
-                        
-                        $casesBoxStock[] = "WHEN id = ? THEN ?";
+                    }
+
+                    foreach ($productUpdates as $id => $data) {
+                        $boxCases[] = "WHEN id = ? THEN ?";
                         $params[] = $id;
                         $params[] = $data['box_stock'];
                     }
 
-                    $idsString = implode(',', array_fill(0, count($ids), '?'));
-                    $params = array_merge($params, $params, $ids); // Stock params + Box Stock Params + Where IN params
+                    $idsString = implode(',', $ids);
+                    $stockCaseString = implode(' ', $stockCases);
+                    $boxCaseString = implode(' ', $boxCases);
+                    
+                    $params[] = $now; // For updated_at
 
-                    // Construct the monolithic query
-                    // UPDATE products SET 
-                    //   stock = CASE WHEN id = ? THEN ? ... END,
-                    //   box_stock = CASE WHEN id = ? THEN ? ... END
-                    // WHERE id IN (?, ?, ...)
+                    $sql = "UPDATE products SET stock = CASE {$stockCaseString} END, box_stock = CASE {$boxCaseString} END, updated_at = ? WHERE id IN ({$idsString})";
                     
-                    // Note: We duplicate params for the second case statement
-                    // Params structure: [id1, stock1, id2, stock2... | id1, box1, id2, box2... | id1, id2...]
-                    
-                    // Let's rebuilding params clearly to avoid confusion
-                    $finalParams = [];
-                    
-                    // Params for Stock Case
-                    foreach ($productsToUpdate as $id => $data) {
-                        $finalParams[] = $id;
-                        $finalParams[] = $data['stock'];
-                    }
-                    
-                    // Params for Box Stock Case
-                    foreach ($productsToUpdate as $id => $data) {
-                        $finalParams[] = $id;
-                        $finalParams[] = $data['box_stock'];
-                    }
-                    
-                    // Params for Where IN
-                    foreach ($ids as $id) {
-                        $finalParams[] = $id;
-                    }
-
-                    $query = "UPDATE products SET 
-                                stock = CASE " . implode(' ', $casesStock) . " END, 
-                                box_stock = CASE " . implode(' ', $casesBoxStock) . " END,
-                                updated_at = NOW()
-                              WHERE id IN ($idsString)";
-                    
-                    DB::update($query, $finalParams);
+                    DB::update($sql, $params);
                 }
 
-                // 6. Bulk Increment Product Usage
-                if (!empty($productUsageIds)) {
-                     \App\Models\ProductUsage::incrementUsageBulk($productUsageIds);
-                }
-                
-                // 7. CRITICAL: Manually Clear Cache to ensure UI updates immediately
+                // 5. CRITICAL: Manually Clear Cache to ensure UI updates immediately
                 Cache::forget('products_popular_default');
-                
-                // [BULK OPTIMIZATION END]
 
                 // Handle hutang & poin
                 if ($customer) {
@@ -476,25 +439,8 @@ class Cart extends Component
                     }
 
                     // Update hutang pelanggan, pastikan tidak negatif.
-                    // Update hutang pelanggan dengan mencatat ke ledger
-                    $newDebt = max(0, $newDebt);
-                    $diff = $newDebt - $initialDebt;
-                    
-                    if (abs($diff) > 0.01) { // Use epsilon for float comparison
-                        $type = $diff > 0 ? 'increase' : 'decrease';
-                        $customer->updateDebt(abs($diff), $type, 'Transaction #' . $transaction->invoice_number, $transaction->id);
-                    } else {
-                         // Even if debt value didn't change (e.g. paid exactly what was bought), 
-                         // we might want to log it if it was a "debt" transaction?
-                         // But if net change is 0, ledger entry might be confusing if it says "increase 0".
-                         // However, if I buy 100 and pay 100. Debt change is 0.
-                         // Ledger: Usually we record "Buy 100" and "Pay 100".
-                         // But here we are recording the NET change of the debt *bucket*.
-                         // If I buy 100 and pay 100 immediately, my *Debt Balance* never changed.
-                         // So no ledger entry for *Debt* is correct.
-                         // The transaction history shows the sale.
-                         // If I use "Include Old Debt" mechanism, it recalculates the bucket.
-                    }
+                    $customer->debt = max(0, $newDebt);
+                    $customer->save();
 
                     // Beri poin hanya jika hutang mereka tidak bertambah pada transaksi ini
                     if ($customer->debt <= $initialDebt && $paymentDetails['payment_method'] !== 'debt') {

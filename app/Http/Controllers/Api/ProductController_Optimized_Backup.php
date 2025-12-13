@@ -38,34 +38,23 @@ class ProductController extends Controller
     private function fetchProducts($search, $categoryId)
     {
         $query = Product::query()
-            ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.description');
+            ->leftJoin('product_usages', 'products.id', '=', 'product_usages.product_id')
+            ->select('products.id', 'products.name', 'products.code', 'products.retail_price', 'products.stock', 'products.category_id', 'products.wholesale_price', 'products.wholesale_min_qty', 'products.cost_price', 'products.description');
 
         if ($search) {
-             // For search, we do NOT need the join with product_usages, which makes it faster
             $query->where(function ($q) use ($search) {
                 $q->where('products.name', 'like', "%{$search}%")
                   ->orWhere('products.code', 'like', "%{$search}%")
                   ->orWhere('products.description', 'like', "%{$search}%");
             });
-             // Add ordering for search results
-            $query->orderBy('products.name', 'asc');
         } else {
-            // Only join usage stats for the default "Popular" list
-            $query->leftJoin('product_usages', 'products.id', '=', 'product_usages.product_id')
-                  ->orderBy('product_usages.usage_count', 'desc')
-                  ->orderBy('products.name', 'asc');
+            $query->orderBy('product_usages.usage_count', 'desc')->orderBy('products.name', 'asc');
         }
 
-        $products = $query
+        return response()->json($query
             ->when($categoryId, fn($q) => $q->where('products.category_id', $categoryId))
             ->limit(50)
-            ->get();
-            
-        // Fix Duplicate Key Error: Force unique by ID at collection level
-        // Especially critical when leftJoin is used
-        $products = $products->unique('id')->values();
-
-        return response()->json($products);
+            ->get());
     }
 
     public function getByCode($code)
